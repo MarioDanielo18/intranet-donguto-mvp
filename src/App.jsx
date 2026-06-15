@@ -415,7 +415,7 @@ export default function App() {
             </div>
             <div>
               <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)', display: 'block', letterSpacing: '0.5px' }}>DON GUTO</span>
-              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginTop: '-4px', letterSpacing: '1px' }}>INTRANET</span>
+              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginTop: '-4px', letterSpacing: '1px' }}>INTRANET • ONLINE</span>
             </div>
           </div>
 
