@@ -1,0 +1,186 @@
+import React, { useState } from 'react';
+
+export default function Login({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    // Simulate database lookup / latency
+    setTimeout(() => {
+      setLoading(false);
+      
+      const emailLower = email.toLowerCase().trim();
+      
+      // Setup default mock accounts
+      if (emailLower === 'barista@donguto.com') {
+        onLogin({ email: emailLower, name: 'Mateo Quispe', role: 'Barista', store: 'Barranco' });
+      } else if (emailLower === 'cocina@donguto.com') {
+        onLogin({ email: emailLower, name: 'Gabriela Alva', role: 'Cocina', store: 'Barranco' });
+      } else if (emailLower === 'servicio@donguto.com') {
+        onLogin({ email: emailLower, name: 'Rodrigo Flores', role: 'Servicio', store: 'Barranco' });
+      } else if (emailLower === 'admin@donguto.com') {
+        onLogin({ email: emailLower, name: 'Diana Valdivia', role: 'Administrador', store: 'Barranco' });
+      } else if (emailLower === 'gerente@donguto.com') {
+        onLogin({ email: emailLower, name: 'Don Guto', role: 'Gerente', store: 'Todas' });
+      } else {
+        // Fallback for custom accounts (for testing)
+        if (emailLower && password.length >= 4) {
+          onLogin({ email: emailLower, name: 'Usuario Demo', role: 'Barista', store: 'Barranco' });
+        } else {
+          setError('Credenciales inválidas. Usa una cuenta demo (ej: barista@donguto.com, admin@donguto.com)');
+        }
+      }
+    }, 800);
+  };
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100vh',
+      width: '100%',
+      padding: '20px',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* Background decoration elements */}
+      <div style={{
+        position: 'absolute',
+        width: '350px',
+        height: '350px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(139,26,26,0.15) 0%, rgba(250,247,242,0) 70%)',
+        top: '-100px',
+        left: '-50px',
+        zIndex: -1,
+      }} />
+      <div style={{
+        position: 'absolute',
+        width: '450px',
+        height: '450px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(47,79,79,0.1) 0%, rgba(250,247,242,0) 70%)',
+        bottom: '-150px',
+        right: '-100px',
+        zIndex: -1,
+      }} />
+
+      {/* Glass card container */}
+      <div className="card glass animate-scale-in" style={{
+        width: '100%',
+        maxWidth: '400px',
+        padding: '35px 30px',
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-lg)',
+      }}>
+        {/* Header with Logo */}
+        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+          <div style={{ display: 'inline-block', padding: '12px 24px', backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+            <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary)', letterSpacing: '1px' }}>DON GUTO</span>
+            <div style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '2px', marginTop: '-3px' }}>COFFEE COMPANY</div>
+          </div>
+          <h3 style={{ margin: '20px 0 5px 0', fontSize: '18px', color: 'var(--text-main)' }}>Intranet Operativa</h3>
+          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>Ingresa tus credenciales para acceder</p>
+        </div>
+
+        {error && (
+          <div style={{
+            backgroundColor: 'var(--error-light)',
+            color: 'var(--error)',
+            border: '1px solid #ffccd0',
+            borderRadius: 'var(--radius-sm)',
+            padding: '10px 14px',
+            fontSize: '12px',
+            marginBottom: '20px',
+            lineHeight: 1.4,
+          }}>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Correo Electrónico</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="nombre@donguto.com"
+              className="input"
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Contraseña</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="input"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '12px', marginTop: '10px', fontSize: '15px' }}
+          >
+            {loading ? 'Validando...' : 'Iniciar Sesión'}
+          </button>
+        </form>
+
+        <div style={{ marginTop: '25px', borderTop: '1px solid var(--border)', paddingTop: '20px', textAlign: 'center' }}>
+          <h5 style={{ margin: '0 0 8px 0', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>CUENTAS DEMO DE PRUEBA:</h5>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+            <button
+              onClick={() => { setEmail('barista@donguto.com'); setPassword('demo123'); }}
+              className="btn btn-secondary"
+              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
+            >
+              Barista
+            </button>
+            <button
+              onClick={() => { setEmail('cocina@donguto.com'); setPassword('demo123'); }}
+              className="btn btn-secondary"
+              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
+            >
+              Cocina
+            </button>
+            <button
+              onClick={() => { setEmail('servicio@donguto.com'); setPassword('demo123'); }}
+              className="btn btn-secondary"
+              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
+            >
+              Servicio
+            </button>
+            <button
+              onClick={() => { setEmail('admin@donguto.com'); setPassword('demo123'); }}
+              className="btn btn-secondary"
+              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
+            >
+              Admin
+            </button>
+            <button
+              onClick={() => { setEmail('gerente@donguto.com'); setPassword('demo123'); }}
+              className="btn btn-secondary"
+              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
+            >
+              Gerente
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
