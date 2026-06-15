@@ -277,6 +277,66 @@ const INITIAL_AUDIT_LOGS = [
   },
 ];
 
+const INITIAL_INCIDENTS = [
+  {
+    id: 'INC-001',
+    date: '2026-06-12T09:15:00Z',
+    reporterEmail: 'mateo@donguto.com',
+    reporterName: 'Mateo Quispe',
+    reporterRole: 'Barista',
+    store: 'Barranco',
+    type: 'Mantenimiento',
+    title: 'Fuga de vapor en la lanceta izquierda',
+    description: 'La lanceta de vapor izquierda de la máquina La Marzocco gotea agua caliente constantemente y pierde presión al texturizar leche.',
+    urgency: 'Urgente',
+    status: 'Resuelto',
+    adminResponse: 'Ya coordiné con el técnico de La Marzocco. Pasará hoy por la tarde para cambiar los empaques de la lanceta.',
+    adminResponseAt: '2026-06-12T10:30:00Z',
+    supervisorResponse: 'Revisado. Verificado que el técnico realizó el mantenimiento el 12/06 a las 4:00 PM y el equipo quedó al 100%.',
+    supervisorResponseAt: '2026-06-12T17:00:00Z',
+    resolvedBy: 'Supervisor',
+    resolvedAt: '2026-06-12T17:00:00Z'
+  },
+  {
+    id: 'INC-002',
+    date: '2026-06-14T15:30:00Z',
+    reporterEmail: 'gabriela@donguto.com',
+    reporterName: 'Gabriela Alva',
+    reporterRole: 'Cocina',
+    store: 'Barranco',
+    type: 'Insumos',
+    title: 'Faltante de fresas frescas para postres',
+    description: 'El proveedor de frutas no entregó la cantidad completa de fresas para el coulis y decoración de pasteles. Solo tenemos para hoy.',
+    urgency: 'Normal',
+    status: 'En Proceso',
+    adminResponse: 'Estamos comprando 3 kg de fresas en el supermercado local para cubrir el turno de la noche y mañana temprano. El reclamo al proveedor ya está hecho.',
+    adminResponseAt: '2026-06-14T16:15:00Z',
+    supervisorResponse: '',
+    supervisorResponseAt: '',
+    resolvedBy: '',
+    resolvedAt: ''
+  },
+  {
+    id: 'INC-003',
+    date: '2026-06-15T08:00:00Z',
+    reporterEmail: 'rodrigo@donguto.com',
+    reporterName: 'Rodrigo Flores',
+    reporterRole: 'Servicio',
+    store: 'Barranco',
+    type: 'Operaciones',
+    title: 'Incidencia con el datáfono de Visa',
+    description: 'La ticketera de la terminal de Visa no imprime los vouchers para el cliente. La transacción se procesa pero no hay papel de copia física.',
+    urgency: 'Urgente',
+    status: 'Pendiente',
+    adminResponse: '',
+    adminResponseAt: '',
+    supervisorResponse: '',
+    supervisorResponseAt: '',
+    resolvedBy: '',
+    resolvedAt: ''
+  }
+];
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [theme, setTheme] = useState(() => {
@@ -293,6 +353,10 @@ export default function App() {
   const [cleaningTasks, setCleaningTasks] = useState(INITIAL_CLEANING_TASKS);
   const [teamMembers, setTeamMembers] = useState(INITIAL_MOCK_TEAM);
   const [auditLogs, setAuditLogs] = useState(INITIAL_AUDIT_LOGS);
+  const [incidents, setIncidents] = useState(() => {
+    const saved = localStorage.getItem('donguto-incidents');
+    return saved ? JSON.parse(saved) : INITIAL_INCIDENTS;
+  });
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
@@ -399,6 +463,61 @@ export default function App() {
     );
   };
 
+  const handleAddIncident = (newIncident) => {
+    setIncidents(prev => {
+      const updated = [newIncident, ...prev];
+      localStorage.setItem('donguto-incidents', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleRespondIncident = (incidentId, responseText, responderRole) => {
+    setIncidents(prev => {
+      const updated = prev.map(inc => {
+        if (inc.id === incidentId) {
+          const timestamp = new Date().toISOString();
+          if (responderRole === 'Administrador') {
+            return {
+              ...inc,
+              adminResponse: responseText,
+              adminResponseAt: timestamp,
+              status: inc.status === 'Pendiente' ? 'En Proceso' : inc.status
+            };
+          } else {
+            return {
+              ...inc,
+              supervisorResponse: responseText,
+              supervisorResponseAt: timestamp,
+              status: inc.status === 'Pendiente' || inc.status === 'Escalado' || inc.status === 'En Proceso' ? 'En Proceso' : inc.status
+            };
+          }
+        }
+        return inc;
+      });
+      localStorage.setItem('donguto-incidents', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleUpdateIncidentStatus = (incidentId, newStatus, resolvedBy = '') => {
+    setIncidents(prev => {
+      const updated = prev.map(inc => {
+        if (inc.id === incidentId) {
+          const timestamp = new Date().toISOString();
+          return {
+            ...inc,
+            status: newStatus,
+            resolvedBy: newStatus === 'Resuelto' ? (resolvedBy || inc.resolvedBy) : inc.resolvedBy,
+            resolvedAt: newStatus === 'Resuelto' ? timestamp : inc.resolvedAt
+          };
+        }
+        return inc;
+      });
+      localStorage.setItem('donguto-incidents', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   // -------------------------------------------------------------------------
   // RENDERER
   // -------------------------------------------------------------------------
@@ -475,6 +594,9 @@ export default function App() {
                 onSaveAudit={handleSaveAudit}
                 onClockIn={handleClockIn}
                 onUpdateCollaborator={handleUpdateCollaborator}
+                incidents={incidents}
+                onRespondIncident={handleRespondIncident}
+                onUpdateIncidentStatus={handleUpdateIncidentStatus}
               />
             ) : (
               <ColaboradorDashboard
@@ -491,6 +613,8 @@ export default function App() {
                 onSaveCleaning={handleSaveCleaning}
                 onApproveTrainingDay={handleApproveTrainingDay}
                 onClockIn={handleClockIn}
+                incidents={incidents}
+                onAddIncident={handleAddIncident}
               />
             )}
           </div>

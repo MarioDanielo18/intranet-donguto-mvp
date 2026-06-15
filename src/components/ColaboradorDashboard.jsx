@@ -150,11 +150,19 @@ export default function ColaboradorDashboard({
   onApproveTrainingDay,
   arrivalLogs = [],
   onClockIn,
+  incidents = [],
+  onAddIncident,
 }) {
   const [activeTab, setActiveTab] = useState('checklist');
   const [shiftType, setShiftType] = useState('APERTURA');
   const [selectedDayMaterial, setSelectedDayMaterial] = useState(null);
   const [cleaningSubTab, setCleaningSubTab] = useState('semanal'); // 'semanal' | 'mensual'
+
+  const [incTitle, setIncTitle] = useState('');
+  const [incType, setIncType] = useState('Mantenimiento');
+  const [incUrgency, setIncUrgency] = useState('Normal');
+  const [incDesc, setIncDesc] = useState('');
+  const [incSuccessMsg, setIncSuccessMsg] = useState('');
 
   const [userIp, setUserIp] = useState('Obteniendo IP...');
   const [selectedWifi, setSelectedWifi] = useState('external'); // 'Barranco' | 'Miraflores' | 'San Isidro' | 'external'
@@ -346,6 +354,285 @@ export default function ColaboradorDashboard({
     setExamTimer(2700);
     setExamSubmitted(false);
     setExamScore(0);
+  };
+
+  const handleIncidentSubmit = (e) => {
+    e.preventDefault();
+    if (!incTitle.trim() || !incDesc.trim()) return;
+
+    const newInc = {
+      id: `INC-${Date.now().toString().slice(-4)}`,
+      date: new Date().toISOString(),
+      reporterEmail: user.email,
+      reporterName: user.name,
+      reporterRole: user.role,
+      store: user.store,
+      type: incType,
+      title: incTitle.trim(),
+      description: incDesc.trim(),
+      urgency: incUrgency,
+      status: 'Pendiente',
+      adminResponse: '',
+      adminResponseAt: '',
+      supervisorResponse: '',
+      supervisorResponseAt: '',
+      resolvedBy: '',
+      resolvedAt: ''
+    };
+
+    onAddIncident(newInc);
+    setIncTitle('');
+    setIncDesc('');
+    setIncSuccessMsg('¡Incidencia registrada con éxito y notificada al Administrador!');
+    setTimeout(() => setIncSuccessMsg(''), 5000);
+  };
+
+  const renderIncidentsSection = () => {
+    const storeIncidents = (incidents || []).filter(inc => inc.store === user.store);
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
+        <div style={{ borderBottom: '2px solid var(--border)', paddingBottom: '10px' }}>
+          <h3 style={{ margin: 0, color: 'var(--primary)' }}>Centro de Reportes & Incidencias ({user.store})</h3>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: 'var(--text-muted)' }}>
+            Reporta fallos mecánicos, insumos faltantes o cualquier incidencia operativa. Tu Administrador y Supervisor serán alertados.
+          </p>
+        </div>
+
+        {incSuccessMsg && (
+          <div style={{
+            backgroundColor: 'var(--success-light)',
+            color: 'var(--success)',
+            padding: '12px 15px',
+            borderRadius: '6px',
+            border: '1px solid var(--success)',
+            fontSize: '13px',
+            fontWeight: 'bold',
+          }}>
+            {incSuccessMsg}
+          </div>
+        )}
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '25px',
+          alignItems: 'start'
+        }}>
+          <form onSubmit={handleIncidentSubmit} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--border)' }}>
+            <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              📝 Registrar Nueva Incidencia
+            </h4>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Título Breve:</label>
+              <input
+                type="text"
+                required
+                className="input"
+                placeholder="Ej: Fuga de agua en licuadora, falta de vasos 12oz..."
+                value={incTitle}
+                onChange={(e) => setIncTitle(e.target.value)}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Categoría:</label>
+                <select
+                  className="input"
+                  value={incType}
+                  onChange={(e) => setIncType(e.target.value)}
+                  style={{ padding: '9px 12px' }}
+                >
+                  <option value="Mantenimiento">🛠️ Mantenimiento</option>
+                  <option value="Insumos">📦 Insumos / Stock 86</option>
+                  <option value="Operaciones">📋 Operaciones</option>
+                  <option value="Otros">❓ Otros / Dudas</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Urgencia:</label>
+                <select
+                  className="input"
+                  value={incUrgency}
+                  onChange={(e) => setIncUrgency(e.target.value)}
+                  style={{ padding: '9px 12px' }}
+                >
+                  <option value="Normal">⚠️ Normal</option>
+                  <option value="Urgente">🚨 Urgente</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Descripción Detallada:</label>
+              <textarea
+                required
+                className="input"
+                rows="4"
+                placeholder="Describe qué ocurrió, en qué estación y cuál es el impacto (ej: no podemos preparar jugos frozen, afecta el servicio)..."
+                value={incDesc}
+                onChange={(e) => setIncDesc(e.target.value)}
+                style={{ resize: 'vertical', minHeight: '80px', fontFamily: 'inherit' }}
+              />
+            </div>
+
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '10px', marginTop: '5px' }}>
+              🚀 Enviar a Administración
+            </button>
+          </form>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>
+              📋 Historial de Incidencias en {user.store}
+            </h4>
+
+            {storeIncidents.length === 0 ? (
+              <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', backgroundColor: 'var(--bg-main)', border: '1px dashed var(--border)', borderRadius: '8px' }}>
+                No hay incidencias registradas en esta sede.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '550px', overflowY: 'auto', paddingRight: '5px' }}>
+                {storeIncidents.map(inc => {
+                  let statusBg = 'var(--bg-main)';
+                  let statusColor = 'var(--text-muted)';
+                  
+                  if (inc.status === 'Pendiente') {
+                    statusBg = 'var(--warning-light)';
+                    statusColor = 'var(--warning)';
+                  } else if (inc.status === 'En Proceso') {
+                    statusBg = 'var(--primary-light)';
+                    statusColor = 'var(--primary)';
+                  } else if (inc.status === 'Escalado') {
+                    statusBg = 'var(--warning-light)';
+                    statusColor = '#d97706';
+                  } else if (inc.status === 'Resuelto') {
+                    statusBg = 'var(--success-light)';
+                    statusColor = 'var(--success)';
+                  }
+
+                  const formattedDate = new Date(inc.date).toLocaleString('es-PE', {
+                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                  });
+
+                  return (
+                    <div
+                      key={inc.id}
+                      className="card"
+                      style={{
+                        padding: '16px',
+                        border: `1px solid ${inc.status === 'Resuelto' ? 'var(--success)' : 'var(--border)'}`,
+                        backgroundColor: inc.status === 'Resuelto' ? 'var(--success-light)' : 'var(--bg-card)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        fontSize: '12.5px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '5px' }}>
+                        <div>
+                          <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '11px', display: 'block' }}>{inc.id} • {inc.type.toUpperCase()}</span>
+                          <strong style={{ fontSize: '13px', color: 'var(--text-main)', display: 'block', marginTop: '2px' }}>{inc.title}</strong>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '5px' }}>
+                          {inc.urgency === 'Urgente' && (
+                            <span style={{ backgroundColor: 'var(--error-light)', color: 'var(--error)', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 800, border: '1px solid var(--error)' }}>🚨 URGENTE</span>
+                          )}
+                          <span style={{
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                            backgroundColor: statusBg,
+                            color: statusColor,
+                            fontWeight: 800,
+                            fontSize: '9px',
+                            border: '1px solid currentColor',
+                            textTransform: 'uppercase'
+                          }}>
+                            {inc.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.4, fontSize: '12px', backgroundColor: 'rgba(0,0,0,0.02)', padding: '8px 10px', borderRadius: '4px' }}>
+                        {inc.description}
+                      </p>
+
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Por: <strong>{inc.reporterName} ({inc.reporterRole})</strong></span>
+                        <span>{formattedDate}</span>
+                      </div>
+
+                      {(inc.adminResponse || inc.supervisorResponse || inc.status === 'Resuelto') && (
+                        <div style={{
+                          borderTop: '1px dashed var(--border)',
+                          paddingTop: '10px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          backgroundColor: 'rgba(0,0,0,0.01)',
+                          padding: '10px',
+                          borderRadius: '6px'
+                        }}>
+                          {inc.adminResponse ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                              <span style={{ fontWeight: 800, color: 'var(--secondary)', fontSize: '11px' }}>💬 Respuesta del Administrador (Sede):</span>
+                              <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-main)', lineHeight: 1.4 }}>
+                                {inc.adminResponse}
+                              </p>
+                              <span style={{ fontSize: '9px', color: 'var(--text-muted)', textAlign: 'right' }}>
+                                {new Date(inc.adminResponseAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          ) : (
+                            inc.status !== 'Resuelto' && (
+                              <div style={{ fontSize: '11px', fontStyle: 'italic', color: 'var(--text-muted)' }}>
+                                ⏳ Esperando respuesta del Administrador de tienda...
+                              </div>
+                            )
+                          )}
+
+                          {inc.supervisorResponse && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', borderTop: inc.adminResponse ? '1px dotted var(--border)' : 'none', paddingTop: inc.adminResponse ? '8px' : 0 }}>
+                              <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '11px' }}>👤 Respuesta de Supervisión (General):</span>
+                              <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-main)', lineHeight: 1.4 }}>
+                                {inc.supervisorResponse}
+                              </p>
+                              <span style={{ fontSize: '9px', color: 'var(--text-muted)', textAlign: 'right' }}>
+                                {new Date(inc.supervisorResponseAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          )}
+
+                          {inc.status === 'Resuelto' && (
+                            <div style={{
+                              marginTop: '5px',
+                              padding: '6px 8px',
+                              borderRadius: '4px',
+                              backgroundColor: 'var(--success-light)',
+                              color: 'var(--success)',
+                              fontWeight: 700,
+                              fontSize: '11px',
+                              textAlign: 'center',
+                              border: '1px solid var(--success)'
+                            }}>
+                              ✓ Resuelto por {inc.resolvedBy} el {new Date(inc.resolvedAt).toLocaleDateString('es-PE')}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
 
@@ -1218,6 +1505,22 @@ export default function ColaboradorDashboard({
         >
           Carta Digital
         </button>
+        <button
+          onClick={() => setActiveTab('incidents')}
+          style={{
+            padding: '14px 20px',
+            border: 'none',
+            borderBottom: activeTab === 'incidents' ? '3px solid var(--primary)' : '3px solid transparent',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: activeTab === 'incidents' ? 'var(--primary)' : 'var(--text-muted)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          Reportar Incidencia
+        </button>
 
       </div>
 
@@ -1773,6 +2076,7 @@ export default function ColaboradorDashboard({
         {activeTab === 'menu' && (
           <CartaDigital user={user} />
         )}
+        {activeTab === 'incidents' && renderIncidentsSection()}
       </div>
 
       {/* Modal de Capacitación (PDF + Video) */}

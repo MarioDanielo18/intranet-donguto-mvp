@@ -77,11 +77,22 @@ export default function SupervisorDashboard({
   onSaveAudit,
   onClockIn,
   onUpdateCollaborator,
+  incidents = [],
+  onRespondIncident,
+  onUpdateIncidentStatus,
 }) {
   const [activeTab, setActiveTab] = useState('monitoring');
   const [selectedUser, setSelectedUser] = useState(null);
   const [previewPhoto, setPreviewPhoto] = useState(null);
   const [selectedAuditLog, setSelectedAuditLog] = useState(null);
+  
+  // States for Incident Dashboard
+  const [incStoreFilter, setIncStoreFilter] = useState('Todas');
+  const [incStatusFilter, setIncStatusFilter] = useState('Todos');
+  const [incUrgencyFilter, setIncUrgencyFilter] = useState('Todos');
+  const [incTypeFilter, setIncTypeFilter] = useState('Todos');
+  const [incResponseTexts, setIncResponseTexts] = useState({});
+  const [incSuccessMsg, setIncSuccessMsg] = useState('');
   
   const [collabDetailTab, setCollabDetailTab] = useState('training'); // 'training' | 'attendance'
 
@@ -1132,6 +1143,523 @@ export default function SupervisorDashboard({
     );
   };
 
+  const renderIncidentsDashboard = () => {
+    const userStore = user.store;
+    const isStoreAdmin = user.role === 'Administrador';
+
+    const filtered = (incidents || []).filter(inc => {
+      // Store filter
+      if (isStoreAdmin) {
+        if (inc.store !== userStore) return false;
+      } else {
+        if (incStoreFilter !== 'Todas' && inc.store !== incStoreFilter) return false;
+      }
+      
+      // Status filter
+      if (incStatusFilter !== 'Todos' && inc.status !== incStatusFilter) return false;
+      
+      // Urgency filter
+      if (incUrgencyFilter !== 'Todos' && inc.urgency !== incUrgencyFilter) return false;
+      
+      // Type filter
+      if (incTypeFilter !== 'Todos' && inc.type !== incTypeFilter) return false;
+      
+      return true;
+    });
+
+    // Stats
+    const totalCount = filtered.length;
+    const pendingCount = filtered.filter(inc => inc.status === 'Pendiente').length;
+    const processCount = filtered.filter(inc => inc.status === 'En Proceso').length;
+    const escalatedCount = filtered.filter(inc => inc.status === 'Escalado').length;
+    const resolvedCount = filtered.filter(inc => inc.status === 'Resuelto').length;
+
+    // Unique stores for filters (only for non-admins)
+    const uniqueStores = Array.from(new Set([...(incidents || []).map(inc => inc.store), 'Barranco', 'Miraflores', 'San Isidro']));
+
+    const handleSaveResponse = (incidentId) => {
+      const text = incResponseTexts[incidentId] || '';
+      if (!text.trim()) {
+        alert('Por favor, escribe una respuesta antes de guardar.');
+        return;
+      }
+      onRespondIncident(incidentId, text.trim(), user.role);
+      
+      setIncSuccessMsg(`¡Respuesta registrada con éxito para la incidencia ${incidentId}!`);
+      setTimeout(() => setIncSuccessMsg(''), 5000);
+    };
+
+    const handleResolve = (incidentId) => {
+      const text = incResponseTexts[incidentId] || '';
+      if (text.trim()) {
+        onRespondIncident(incidentId, text.trim(), user.role);
+      }
+      onUpdateIncidentStatus(incidentId, 'Resuelto', `${user.name} (${user.role})`);
+      
+      setIncSuccessMsg(`¡Incidencia ${incidentId} marcada como RESUELTA!`);
+      setTimeout(() => setIncSuccessMsg(''), 5000);
+    };
+
+    const handleEscalate = (incidentId) => {
+      const text = incResponseTexts[incidentId] || '';
+      if (text.trim()) {
+        onRespondIncident(incidentId, text.trim(), user.role);
+      }
+      onUpdateIncidentStatus(incidentId, 'Escalado');
+      
+      setIncSuccessMsg(`¡Incidencia ${incidentId} escalada a Supervisión!`);
+      setTimeout(() => setIncSuccessMsg(''), 5000);
+    };
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <div>
+            <h2 style={{ margin: 0, color: 'var(--primary)' }}>Bandeja de Incidencias Operativas</h2>
+            <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: 'var(--text-muted)' }}>
+              {isStoreAdmin 
+                ? `Gestión de fallos, insumos y operaciones para la sede ${userStore}.`
+                : 'Monitoreo y resolución de reportes operativos de todas las sedes de Don Guto.'}
+            </p>
+          </div>
+          <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: 'var(--primary-light)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '12px', border: '1px solid var(--primary)' }}>
+            💼 Rol: {user.role} {isStoreAdmin && `(${userStore})`}
+          </span>
+        </div>
+
+        {incSuccessMsg && (
+          <div style={{
+            backgroundColor: 'var(--success-light)',
+            color: 'var(--success)',
+            padding: '12px 15px',
+            borderRadius: '6px',
+            border: '1px solid var(--success)',
+            fontSize: '13px',
+            fontWeight: 'bold',
+          }}>
+            {incSuccessMsg}
+          </div>
+        )}
+
+        {/* Stats Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
+          <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid var(--border)' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Filtrados</span>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', marginTop: '5px' }}>{totalCount}</div>
+          </div>
+          <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid var(--warning)' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--warning)', textTransform: 'uppercase' }}>⏳ Pendientes</span>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--warning)', marginTop: '5px' }}>{pendingCount}</div>
+          </div>
+          <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid var(--primary)' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase' }}>⚙️ En Proceso</span>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--primary)', marginTop: '5px' }}>{processCount}</div>
+          </div>
+          <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid #d97706' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#d97706', textTransform: 'uppercase' }}>🚨 Escalados</span>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#d97706', marginTop: '5px' }}>{escalatedCount}</div>
+          </div>
+          <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid var(--success)' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase' }}>✓ Resueltos</span>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--success)', marginTop: '5px' }}>{resolvedCount}</div>
+          </div>
+        </div>
+
+        {/* Filters Bar */}
+        <div className="card glass" style={{ padding: '15px', display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'center', border: '1px solid var(--border)' }}>
+          <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>🔍 Filtros rápidos:</strong>
+          
+          {/* Store Filter */}
+          {!isStoreAdmin ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>Sede:</label>
+              <select
+                value={incStoreFilter}
+                onChange={(e) => setIncStoreFilter(e.target.value)}
+                className="input"
+                style={{ padding: '5px 10px', fontSize: '12px', height: '32px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                <option value="Todas">🏢 Todas las sedes</option>
+                {uniqueStores.map(store => (
+                  <option key={store} value={store}>{store}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>Sede:</label>
+              <div style={{ padding: '5px 10px', fontSize: '12px', height: '32px', backgroundColor: 'rgba(0,0,0,0.05)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', display: 'flex', alignItems: 'center', fontWeight: 'bold' }}>
+                📍 {userStore} (Fijo)
+              </div>
+            </div>
+          )}
+
+          {/* Status Filter */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>Estado:</label>
+            <select
+              value={incStatusFilter}
+              onChange={(e) => setIncStatusFilter(e.target.value)}
+              className="input"
+              style={{ padding: '5px 10px', fontSize: '12px', height: '32px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              <option value="Todos">📄 Todos los estados</option>
+              <option value="Pendiente">⏳ Pendiente</option>
+              <option value="En Proceso">⚙️ En Proceso</option>
+              <option value="Escalado">🚨 Escalado</option>
+              <option value="Resuelto">✓ Resuelto</option>
+            </select>
+          </div>
+
+          {/* Category Filter */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>Categoría:</label>
+            <select
+              value={incTypeFilter}
+              onChange={(e) => setIncTypeFilter(e.target.value)}
+              className="input"
+              style={{ padding: '5px 10px', fontSize: '12px', height: '32px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              <option value="Todos">🛠️ Todas las categorías</option>
+              <option value="Mantenimiento">🛠️ Mantenimiento</option>
+              <option value="Insumos">📦 Insumos / Stock 86</option>
+              <option value="Operaciones">📋 Operaciones</option>
+              <option value="Otros">❓ Otros</option>
+            </select>
+          </div>
+
+          {/* Urgency Filter */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
+            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>Urgencia:</label>
+            <select
+              value={incUrgencyFilter}
+              onChange={(e) => setIncUrgencyFilter(e.target.value)}
+              className="input"
+              style={{ padding: '5px 10px', fontSize: '12px', height: '32px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              <option value="Todos">⚠️ Todas las urgencias</option>
+              <option value="Normal">⚠️ Normal</option>
+              <option value="Urgente">🚨 Urgente</option>
+            </select>
+          </div>
+
+          {/* Reset Filters */}
+          <button
+            onClick={() => {
+              setIncStoreFilter('Todas');
+              setIncStatusFilter('Todos');
+              setIncUrgencyFilter('Todos');
+              setIncTypeFilter('Todos');
+            }}
+            className="btn btn-secondary"
+            style={{ padding: '6px 12px', fontSize: '11px', height: '32px', display: 'flex', alignItems: 'center', alignSelf: 'flex-end' }}
+          >
+            🧹 Limpiar Filtros
+          </button>
+        </div>
+
+        {/* Incidents List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {filtered.length === 0 ? (
+            <div className="card text-center" style={{ padding: '40px', color: 'var(--text-muted)', border: '1px dashed var(--border)' }}>
+              📭 No hay incidencias que coincidan con los filtros seleccionados.
+            </div>
+          ) : (
+            filtered.map(inc => {
+              let statusBg = 'var(--bg-main)';
+              let statusColor = 'var(--text-muted)';
+              let statusBorder = 'var(--border)';
+              
+              if (inc.status === 'Pendiente') {
+                statusBg = 'var(--warning-light)';
+                statusColor = 'var(--warning)';
+                statusBorder = 'var(--warning)';
+              } else if (inc.status === 'En Proceso') {
+                statusBg = 'var(--primary-light)';
+                statusColor = 'var(--primary)';
+                statusBorder = 'var(--primary)';
+              } else if (inc.status === 'Escalado') {
+                statusBg = 'var(--warning-light)';
+                statusColor = '#d97706';
+                statusBorder = '#d97706';
+              } else if (inc.status === 'Resuelto') {
+                statusBg = 'var(--success-light)';
+                statusColor = 'var(--success)';
+                statusBorder = 'var(--success)';
+              }
+
+              const formattedDate = new Date(inc.date).toLocaleString('es-PE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              });
+
+              const currentDraft = incResponseTexts[inc.id] || '';
+
+              return (
+                <div
+                  key={inc.id}
+                  className="card animate-scale-in"
+                  style={{
+                    padding: '20px',
+                    border: `1px solid ${statusBorder}`,
+                    backgroundColor: inc.status === 'Resuelto' ? 'rgba(16, 185, 129, 0.01)' : 'var(--bg-card)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '15px',
+                  }}
+                >
+                  {/* Card Top Row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '11px', letterSpacing: '0.5px' }}>
+                          {inc.id} • {inc.type.toUpperCase()}
+                        </span>
+                        <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: 'rgba(0,0,0,0.04)', padding: '2px 8px', borderRadius: '4px', color: 'var(--text-main)' }}>
+                          📍 Sede: {inc.store}
+                        </span>
+                      </div>
+                      <h3 style={{ margin: '6px 0 0 0', fontSize: '15px', color: 'var(--text-main)', fontWeight: 800 }}>
+                        {inc.title}
+                      </h3>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      {inc.urgency === 'Urgente' && (
+                        <span style={{ backgroundColor: 'var(--error-light)', color: 'var(--error)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, border: '1px solid var(--error)' }}>
+                          🚨 URGENTE
+                        </span>
+                      )}
+                      <span style={{
+                        padding: '3px 10px',
+                        borderRadius: '12px',
+                        backgroundColor: statusBg,
+                        color: statusColor,
+                        fontWeight: 800,
+                        fontSize: '10px',
+                        border: '1px solid currentColor',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        {inc.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div style={{
+                    backgroundColor: 'var(--bg-main)',
+                    padding: '12px 15px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    fontSize: '12.5px',
+                    color: 'var(--text-main)',
+                    lineHeight: '1.5'
+                  }}>
+                    <strong>Descripción del problema:</strong>
+                    <p style={{ margin: '6px 0 0 0', whiteSpace: 'pre-line' }}>{inc.description}</p>
+                  </div>
+
+                  {/* Reporter details */}
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '5px' }}>
+                    <span>Reportado por: <strong>{inc.reporterName}</strong> ({inc.reporterRole}) • {inc.reporterEmail}</span>
+                    <span>Fecha de reporte: {formattedDate}</span>
+                  </div>
+
+                  {/* Thread details / communication history */}
+                  {(inc.adminResponse || inc.supervisorResponse || inc.status === 'Resuelto') && (
+                    <div style={{
+                      borderTop: '1px dashed var(--border)',
+                      paddingTop: '15px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      backgroundColor: 'rgba(0,0,0,0.01)',
+                      padding: '12px 15px',
+                      borderRadius: '8px'
+                    }}>
+                      <h4 style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        💬 Historial de Seguimiento:
+                      </h4>
+
+                      {/* Admin response block */}
+                      {inc.adminResponse ? (
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                          borderLeft: '3px solid var(--secondary)',
+                          paddingLeft: '10px',
+                          backgroundColor: 'rgba(0,0,0,0.02)',
+                          padding: '8px 10px',
+                          borderRadius: '0 6px 6px 0'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 800, color: 'var(--secondary)', fontSize: '11px' }}>
+                              💬 Respuesta del Administrador (Diana Valdivia):
+                            </span>
+                            <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>
+                              {new Date(inc.adminResponseAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.4 }}>
+                            {inc.adminResponse}
+                          </p>
+                        </div>
+                      ) : (
+                        inc.status !== 'Resuelto' && (
+                          <div style={{ fontSize: '11.5px', fontStyle: 'italic', color: 'var(--text-muted)', paddingLeft: '10px' }}>
+                            ⏳ Sin respuesta registrada de Administración de tienda todavía.
+                          </div>
+                        )
+                      )}
+
+                      {/* Supervisor response block */}
+                      {inc.supervisorResponse && (
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                          borderLeft: '3px solid var(--primary)',
+                          paddingLeft: '10px',
+                          backgroundColor: 'rgba(0,0,0,0.02)',
+                          padding: '8px 10px',
+                          borderRadius: '0 6px 6px 0'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '11px' }}>
+                              👤 Respuesta de Supervisión / Gerencia:
+                            </span>
+                            <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>
+                              {new Date(inc.supervisorResponseAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.4 }}>
+                            {inc.supervisorResponse}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Resolution details block */}
+                      {inc.status === 'Resuelto' && (
+                        <div style={{
+                          marginTop: '5px',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          backgroundColor: 'var(--success-light)',
+                          color: 'var(--success)',
+                          fontWeight: 700,
+                          fontSize: '12px',
+                          border: '1px solid var(--success)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <span>✅</span>
+                          <div>
+                            <strong>Incidencia Resuelta</strong>
+                            <div style={{ fontSize: '10.5px', fontWeight: 'normal', color: 'var(--text-muted)', marginTop: '2px' }}>
+                              Cerrada por: <strong>{inc.resolvedBy}</strong> el {new Date(inc.resolvedAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Forms - Respond / Resolve / Escalate */}
+                  {inc.status !== 'Resuelto' && (
+                    <div style={{
+                      borderTop: '1px solid var(--border)',
+                      paddingTop: '15px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                          ✍️ Escribir Respuesta / Seguimiento operativo:
+                        </label>
+                        <textarea
+                          className="input"
+                          rows="2"
+                          placeholder={
+                            isStoreAdmin
+                              ? "Escribe la respuesta o plan de acción de la tienda..."
+                              : "Escribe la directiva, indicación o respuesta de supervisión..."
+                          }
+                          value={currentDraft}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setIncResponseTexts(prev => ({ ...prev, [inc.id]: val }));
+                          }}
+                          style={{ resize: 'vertical', minHeight: '60px', fontSize: '12px', fontFamily: 'inherit' }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                        {/* Guardar Respuesta */}
+                        <button
+                          onClick={() => handleSaveResponse(inc.id)}
+                          className="btn btn-secondary"
+                          style={{ padding: '8px 14px', fontSize: '11.5px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          💾 Guardar Respuesta
+                        </button>
+
+                        {/* Escalar (Only for admin and if status is not already escalated) */}
+                        {isStoreAdmin && inc.status !== 'Escalado' && (
+                          <button
+                            onClick={() => handleEscalate(inc.id)}
+                            className="btn"
+                            style={{
+                              padding: '8px 14px',
+                              fontSize: '11.5px',
+                              backgroundColor: '#fffbeb',
+                              color: '#d97706',
+                              border: '1px solid #fcd34d',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              borderRadius: '4px',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}
+                          >
+                            🚨 Escalar a Supervisor
+                          </button>
+                        )}
+
+                        {/* Resolver */}
+                        <button
+                          onClick={() => handleResolve(inc.id)}
+                          className="btn btn-primary"
+                          style={{
+                            padding: '8px 14px',
+                            fontSize: '11.5px',
+                            backgroundColor: 'var(--success)',
+                            borderColor: 'var(--success)',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          ✓ Marcar como Resuelto
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Subtab menu */}
@@ -1215,6 +1743,22 @@ export default function SupervisorDashboard({
           }}
         >
           📷 Escanear QR Asistencia
+        </button>
+        <button
+          onClick={() => setActiveTab('incidents')}
+          style={{
+            padding: '14px 20px',
+            border: 'none',
+            borderBottom: activeTab === 'incidents' ? '3px solid var(--primary)' : '3px solid transparent',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: activeTab === 'incidents' ? 'var(--primary)' : 'var(--text-muted)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          ⚠️ Bandeja de Incidencias
         </button>
         {['Supervisor', 'Gerente'].includes(user.role) && (
           <button
@@ -2461,6 +3005,8 @@ export default function SupervisorDashboard({
         {activeTab === 'multistore' && renderMultistoreDashboard()}
 
         {activeTab === 'managerial_kpis' && renderManagerialDashboard()}
+
+        {activeTab === 'incidents' && renderIncidentsDashboard()}
       </div>
       {/* Modal for previewing photo evidence */}
       {/* Modal for detailed audit log (Veridical Audit) */}
