@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SensoryProfile from './SensoryProfile';
+import CartaDigital from './CartaDigital';
 
 const MANUALS_BY_DAY = {
   D1: {
@@ -1201,6 +1202,22 @@ export default function ColaboradorDashboard({
             Perfil de Espresso
           </button>
         )}
+        <button
+          onClick={() => setActiveTab('menu')}
+          style={{
+            padding: '14px 20px',
+            border: 'none',
+            borderBottom: activeTab === 'menu' ? '3px solid var(--primary)' : '3px solid transparent',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: activeTab === 'menu' ? 'var(--primary)' : 'var(--text-muted)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          Carta Digital
+        </button>
 
       </div>
 
@@ -1753,6 +1770,9 @@ export default function ColaboradorDashboard({
             </div>
           );
         })()}
+        {activeTab === 'menu' && (
+          <CartaDigital user={user} />
+        )}
       </div>
 
       {/* Modal de Capacitación (PDF + Video) */}
