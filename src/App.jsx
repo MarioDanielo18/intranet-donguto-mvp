@@ -441,7 +441,15 @@ export default function App() {
   // App state database simulation
   const [checklists, setChecklists] = useState(INITIAL_CHECKLISTS);
   const [cleaningTasks, setCleaningTasks] = useState(INITIAL_CLEANING_TASKS);
-  const [teamMembers, setTeamMembers] = useState(INITIAL_MOCK_TEAM);
+  const [teamMembers, setTeamMembers] = useState(() => {
+    const saved = localStorage.getItem('donguto-team');
+    return saved ? JSON.parse(saved) : INITIAL_MOCK_TEAM;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('donguto-team', JSON.stringify(teamMembers));
+  }, [teamMembers]);
+
   const [auditLogs, setAuditLogs] = useState(INITIAL_AUDIT_LOGS);
   const [incidents, setIncidents] = useState(() => {
     const saved = localStorage.getItem('donguto-incidents');
@@ -642,13 +650,33 @@ export default function App() {
 
   // Add new employee to simulated db
   const handleAddTeamMember = (newMember) => {
-    setTeamMembers(prev => [
-      ...prev,
-      {
-        ...newMember,
-        trainingProgress: {},
-      },
-    ]);
+    setTeamMembers(prev => {
+      const updated = [
+        ...prev,
+        {
+          ...newMember,
+          trainingProgress: {},
+        },
+      ];
+      localStorage.setItem('donguto-team', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleApproveCollaborator = (email) => {
+    setTeamMembers(prev => {
+      const updated = prev.map(m => m.email === email ? { ...m, pendingApproval: false } : m);
+      localStorage.setItem('donguto-team', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleRejectCollaborator = (email) => {
+    setTeamMembers(prev => {
+      const updated = prev.filter(m => m.email !== email);
+      localStorage.setItem('donguto-team', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // Save operational audit log
@@ -832,6 +860,8 @@ export default function App() {
                 onUpdateDevices={handleUpdateDevices}
                 onBiometricScan={handleBiometricScan}
                 onSelectIncident={handleSelectIncident}
+                onApproveCollaborator={handleApproveCollaborator}
+                onRejectCollaborator={handleRejectCollaborator}
               />
             ) : (
               <ColaboradorDashboard

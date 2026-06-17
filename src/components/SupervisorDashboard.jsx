@@ -86,7 +86,11 @@ export default function SupervisorDashboard({
   onUpdateDevices,
   onBiometricScan,
   onSelectIncident,
+  onApproveCollaborator,
+  onRejectCollaborator,
 }) {
+  const approvedMembers = (teamMembers || []).filter(m => !m.pendingApproval);
+
   const [activeTab, setActiveTab] = useState(() => {
     return user.role === 'Técnico' ? 'technical_panel' : 'monitoring';
   });
@@ -113,13 +117,13 @@ export default function SupervisorDashboard({
 
   // Set default values for simulator dropdowns
   useEffect(() => {
-    if (teamMembers && teamMembers.length > 0 && !simCollabEmail) {
-      setSimCollabEmail(teamMembers[0].email);
+    if (approvedMembers && approvedMembers.length > 0 && !simCollabEmail) {
+      setSimCollabEmail(approvedMembers[0].email);
     }
     if (biometricDevices && biometricDevices.length > 0 && !simDeviceId) {
       setSimDeviceId(biometricDevices[0].id);
     }
-  }, [teamMembers, biometricDevices]);
+  }, [approvedMembers, biometricDevices]);
 
   const handleAddDevSubmit = (e) => {
     e.preventDefault();
@@ -289,7 +293,7 @@ export default function SupervisorDashboard({
 
   const getStorePunctualityStats = () => {
     const storeData = {};
-    teamMembers.forEach(member => {
+    approvedMembers.forEach(member => {
       const storeName = member.store || 'Sin tienda';
       if (!storeData[storeName]) {
         storeData[storeName] = { totalDelay: 0, count: 0 };
@@ -338,8 +342,8 @@ export default function SupervisorDashboard({
   }, [filterArea]);
 
   const visibleMembers = user.role === 'Administrador'
-    ? teamMembers.filter(m => m.store === user.store && ['Barista', 'Cocina', 'Servicio'].includes(m.role))
-    : teamMembers;
+    ? approvedMembers.filter(m => m.store === user.store && ['Barista', 'Cocina', 'Servicio'].includes(m.role))
+    : approvedMembers;
 
   const visibleLogs = user.role === 'Administrador'
     ? auditLogs.filter(log => log.tienda === user.store)
@@ -482,16 +486,27 @@ export default function SupervisorDashboard({
     e.preventDefault();
     if (!newMemberName || !newMemberEmail) return;
     
+    const isPending = user.role === 'Administrador';
+    
     onAddTeamMember({
       name: newMemberName,
       email: newMemberEmail,
       role: newMemberRole,
       store: newMemberStore,
+      pendingApproval: isPending,
+      addedBy: user.name,
+      addedByEmail: user.email,
+      dateAdded: new Date().toISOString()
     });
 
     setNewMemberName('');
     setNewMemberEmail('');
-    alert(`Colaborador ${newMemberName} agregado con éxito.`);
+    
+    if (isPending) {
+      alert(`El colaborador ${newMemberName} ha sido registrado. Su aprobación está pendiente de validación por parte del Supervisor.`);
+    } else {
+      alert(`Colaborador ${newMemberName} agregado con éxito.`);
+    }
   };
 
   const renderCalendarioView = () => {
@@ -950,7 +965,7 @@ export default function SupervisorDashboard({
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
           {storesList.map(storeName => {
-            const storeMembers = teamMembers.filter(m => m.store === storeName);
+            const storeMembers = approvedMembers.filter(m => m.store === storeName);
             const storeLogs = auditLogs.filter(log => log.tienda === storeName);
             
             const avgAuditScore = storeLogs.length > 0
@@ -1094,7 +1109,7 @@ export default function SupervisorDashboard({
     const tiendaTardona = statsByStore.length > 0 ? statsByStore[0].store : 'N/A';
     const tardonaMinutes = statsByStore.length > 0 ? statsByStore[0].avgDelay.toFixed(1) : '0';
 
-    const topPerformers = teamMembers
+    const topPerformers = approvedMembers
       .filter(m => ['Barista', 'Cocina', 'Servicio'].includes(m.role))
       .map(m => {
         const avgDelay = calculateAverageDelay(m.arrivalLogs || []);
@@ -1105,7 +1120,7 @@ export default function SupervisorDashboard({
       .sort((a, b) => a.avgDelay - b.avgDelay)
       .slice(0, 3);
 
-    const observationTeam = teamMembers
+    const observationTeam = approvedMembers
       .filter(m => ['Barista', 'Cocina', 'Servicio'].includes(m.role))
       .map(m => {
         const avgDelay = calculateAverageDelay(m.arrivalLogs || []);
@@ -1168,7 +1183,7 @@ export default function SupervisorDashboard({
           <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', padding: '15px', borderRadius: 'var(--radius-sm)' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Puntualidad General</span>
             <strong style={{ fontSize: '18px', color: 'var(--primary)', display: 'block', margin: '4px 0' }}>
-              {(100 - (teamMembers.reduce((acc, m) => acc + calculateAverageDelay(m.arrivalLogs || []), 0) / teamMembers.length) * 5).toFixed(1)}%
+              {(100 - (approvedMembers.reduce((acc, m) => acc + calculateAverageDelay(m.arrivalLogs || []), 0) / approvedMembers.length) * 5).toFixed(1)}%
             </strong>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>En base al historial de asistencia</span>
           </div>
@@ -1745,7 +1760,7 @@ export default function SupervisorDashboard({
 
   const renderMyAttendanceTab = () => {
     const todayStr = new Date().toISOString().split('T')[0];
-    const memberObj = teamMembers.find(m => m.email === user.email);
+    const memberObj = approvedMembers.find(m => m.email === user.email);
     const logs = memberObj?.arrivalLogs || [];
     const clockedInToday = logs.some(l => l.date === todayStr);
     const todaysLog = logs.find(l => l.date === todayStr);
@@ -2146,7 +2161,7 @@ export default function SupervisorDashboard({
                         className="input"
                         style={{ padding: '8px' }}
                       >
-                        {teamMembers.map(m => (
+                        {approvedMembers.map(m => (
                           <option key={m.email} value={m.email}>
                             {m.name} ({m.role} - {m.store})
                           </option>
@@ -2982,10 +2997,156 @@ main();`}
           </div>
         )}
 
-        {activeTab === 'audits' && <OperationAudit user={user} teamMembers={teamMembers} onSaveAudit={onSaveAudit} />}
+        {activeTab === 'audits' && <OperationAudit user={user} teamMembers={approvedMembers} onSaveAudit={onSaveAudit} />}
 
         {activeTab === 'team' && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
+            {/* Pending Approvals Section for Supervisor / Gerente */}
+            {['Supervisor', 'Gerente'].includes(user.role) && (teamMembers || []).filter(m => m.pendingApproval).length > 0 && (
+              <div className="card glass animate-scale-in" style={{ flex: '1 1 100%', border: '1px solid var(--warning)', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: 'var(--bg-card)' }}>
+                <div style={{ borderBottom: '1px solid var(--warning-light)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      🔔 Aprobaciones de Colaboradores Pendientes
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                      Los siguientes colaboradores fueron registrados por administradores y requieren validación.
+                    </p>
+                  </div>
+                  <span style={{ fontSize: '10px', fontWeight: 800, backgroundColor: 'var(--warning-light)', color: 'var(--warning)', padding: '3px 10px', borderRadius: '12px', border: '1px solid var(--warning)' }}>
+                    {(teamMembers || []).filter(m => m.pendingApproval).length} Pendiente(s)
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {(teamMembers || []).filter(m => m.pendingApproval).map(member => (
+                    <div
+                      key={member.email}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 18px',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        backgroundColor: 'var(--bg-main)',
+                        flexWrap: 'wrap',
+                        gap: '15px'
+                      }}
+                    >
+                      <div>
+                        <strong style={{ display: 'block', fontSize: '14px', color: 'var(--text-main)' }}>{member.name}</strong>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                          📧 {member.email} | 🛠️ {member.role} | 📍 Sede: {member.store}
+                        </span>
+                        <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '4px', fontStyle: 'italic' }}>
+                          ✍️ Solicitado por: <strong>{member.addedBy || 'Administrador'}</strong>
+                        </span>
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => {
+                            if (confirm(`¿Aprobar la incorporación de ${member.name} al equipo?`)) {
+                              onApproveCollaborator(member.email);
+                            }
+                          }}
+                          className="btn"
+                          style={{
+                            padding: '8px 14px',
+                            fontSize: '12px',
+                            backgroundColor: 'var(--success)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          ✓ Aprobar
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`¿Rechazar el registro de ${member.name}? Se borrará del sistema.`)) {
+                              onRejectCollaborator(member.email);
+                            }
+                          }}
+                          className="btn"
+                          style={{
+                            padding: '8px 14px',
+                            fontSize: '12px',
+                            backgroundColor: 'var(--error-light)',
+                            color: 'var(--error)',
+                            border: '1px solid var(--error)',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          ✗ Rechazar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pending Approvals Section for Administrador */}
+            {user.role === 'Administrador' && (teamMembers || []).filter(m => m.pendingApproval && m.store === user.store).length > 0 && (
+              <div className="card glass animate-scale-in" style={{ flex: '1 1 100%', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: 'var(--bg-card)' }}>
+                <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+                  <h3 style={{ margin: 0, color: 'var(--text-muted)' }}>
+                    ⏳ Solicitudes de Registro Pendientes
+                  </h3>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Colaboradores que registraste que están esperando la aprobación de Pedro Supervisor.
+                  </p>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {(teamMembers || []).filter(m => m.pendingApproval && m.store === user.store).map(member => (
+                    <div
+                      key={member.email}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 15px',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        backgroundColor: 'var(--bg-main)',
+                        flexWrap: 'wrap',
+                        gap: '10px'
+                      }}
+                    >
+                      <div>
+                        <strong style={{ display: 'block', fontSize: '13.5px', color: 'var(--text-main)' }}>{member.name}</strong>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                          📧 {member.email} | 🛠️ {member.role}
+                        </span>
+                      </div>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        color: '#d97706',
+                        backgroundColor: '#fffbeb',
+                        padding: '5px 12px',
+                        borderRadius: '12px',
+                        border: '1px solid #fcd34d',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        ⏳ Esperando Aprobación
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Team Members List */}
             <div className="card" style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
