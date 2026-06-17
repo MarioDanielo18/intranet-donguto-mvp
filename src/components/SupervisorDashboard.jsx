@@ -3213,6 +3213,7 @@ main();`}
                         let badgeColor = { bg: 'var(--bg-main)', text: 'var(--text-muted)', border: 'var(--border)' };
                         if (userStatus === 'Completado') badgeColor = { bg: 'var(--success-light)', text: 'var(--success)', border: 'var(--success)' };
                         if (userStatus === 'En Curso') badgeColor = { bg: 'var(--warning-light)', text: 'var(--warning)', border: 'var(--warning)' };
+                        if (userStatus === 'Reprobado') badgeColor = { bg: 'var(--error-light)', text: 'var(--error)', border: 'var(--error)' };
 
                         return (
                           <div
@@ -3234,7 +3235,7 @@ main();`}
                             </div>
                             
                             <div style={{ display: 'flex', gap: '4px' }}>
-                              {['Pendiente', 'En Curso', 'Completado'].map(status => (
+                              {['Pendiente', 'En Curso', 'Completado', 'Reprobado'].map(status => (
                                 <button
                                   key={status}
                                   onClick={() => onApproveTrainingDay(selectedUser.email, day.id, status)}
@@ -3243,7 +3244,7 @@ main();`}
                                     fontSize: '9px',
                                     padding: '4px 8px',
                                     borderRadius: '4px',
-                                    backgroundColor: userStatus === status ? 'var(--primary)' : 'rgba(255,255,255,0.8)',
+                                    backgroundColor: userStatus === status ? (status === 'Reprobado' ? 'var(--error)' : 'var(--primary)') : 'rgba(255,255,255,0.8)',
                                     color: userStatus === status ? '#fff' : 'var(--text-main)',
                                     border: '1px solid var(--border)',
                                     cursor: 'pointer'

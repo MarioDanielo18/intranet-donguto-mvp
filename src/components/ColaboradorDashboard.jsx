@@ -390,6 +390,10 @@ export default function ColaboradorDashboard({
       if (onApproveTrainingDay) {
         onApproveTrainingDay(user.email, 'D4', 'Completado');
       }
+    } else {
+      if (onApproveTrainingDay) {
+        onApproveTrainingDay(user.email, 'D4', 'Reprobado');
+      }
     }
   };
 
@@ -1391,15 +1395,23 @@ export default function ColaboradorDashboard({
           {trainingRoute.map((day) => {
             const isCompleted = day.estado === 'Completado';
             const isInProgress = day.estado === 'En Curso';
+            const isLocked = !isCompleted && !isInProgress;
             
             let statusColor = { bg: 'var(--bg-main)', text: 'var(--text-muted)', border: 'var(--border)' };
             if (isCompleted) statusColor = { bg: 'var(--success-light)', text: 'var(--success)', border: 'var(--success)' };
             if (isInProgress) statusColor = { bg: 'var(--warning-light)', text: 'var(--warning)', border: 'var(--warning)' };
+            if (isLocked) statusColor = { bg: 'var(--bg-main)', text: 'var(--text-muted)', border: 'var(--border)' };
 
             return (
               <div
                 key={day.id}
-                onClick={() => setSelectedDayMaterial(day)}
+                onClick={() => {
+                  if (isLocked) {
+                    alert('Este día se encuentra bloqueado. Comunícate con el Administrador o Supervisor para que te dé de alta ("levante") en esta capacitación.');
+                    return;
+                  }
+                  setSelectedDayMaterial(day);
+                }}
                 style={{
                   padding: '16px',
                   borderRadius: 'var(--radius-md)',
@@ -1408,11 +1420,12 @@ export default function ColaboradorDashboard({
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '8px',
-                  cursor: 'pointer',
+                  cursor: isLocked ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
                   boxShadow: 'var(--shadow-sm)',
+                  opacity: isLocked ? 0.55 : 1,
                 }}
-                className="training-route-card"
+                className={isLocked ? "" : "training-route-card"}
               >
                 <style dangerouslySetInnerHTML={{__html: `
                   .training-route-card {
@@ -1435,7 +1448,7 @@ export default function ColaboradorDashboard({
                     borderRadius: '12px',
                     border: `1px solid ${statusColor.border}`
                   }}>
-                    {day.estado}
+                    {isLocked ? '🔒 Bloqueado' : day.estado}
                   </span>
                 </div>
                 
@@ -2331,7 +2344,7 @@ export default function ColaboradorDashboard({
                         <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
                           {examScore >= 85 
                             ? '🎉 ¡Felicitaciones! Has aprobado satisfactoriamente y tu estado ha sido actualizado a "Completado".'
-                            : '❌ No has alcanzado el 85% aprobatorio requerido. Te recomendamos repasar los manuales y volver a intentarlo.'}
+                            : '❌ No has alcanzado el 85% aprobatorio requerido. Se comunicará contigo el administrador para coordinar los siguientes pasos.'}
                         </p>
                       </div>
                     )}
@@ -2364,21 +2377,20 @@ export default function ColaboradorDashboard({
                       ) : (
                         <>
                           {examScore < 85 ? (
-                            <button
-                              onClick={() => {
-                                if (confirm('¿Estás seguro de que deseas iniciar el examen de certificación? Una vez iniciado, comenzará a correr el tiempo límite de 45 minutos.')) {
-                                  setExamSubmitted(false);
-                                  setExamAnswers({});
-                                  setExamTimer(2700);
-                                  setExamScore(0);
-                                  setExamMode(true);
-                                }
-                              }}
-                              className="btn btn-primary"
-                              style={{ width: '100%', padding: '12px' }}
-                            >
-                              🔄 Reintentar Examen
-                            </button>
+                            <div style={{
+                              padding: '12px',
+                              borderRadius: '6px',
+                              backgroundColor: 'var(--error-light)',
+                              border: '1px solid var(--error)',
+                              color: 'var(--error)',
+                              fontSize: '11.5px',
+                              fontWeight: 700,
+                              textAlign: 'center',
+                              lineHeight: 1.4,
+                              marginBottom: '5px'
+                            }}>
+                              ⚠️ Examen Reprobado. Se comunicará contigo el administrador para habilitar un nuevo intento.
+                            </div>
                           ) : null}
                           <button
                             onClick={handleCloseModal}
