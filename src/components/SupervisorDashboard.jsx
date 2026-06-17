@@ -85,6 +85,7 @@ export default function SupervisorDashboard({
   biometricLogs = [],
   onUpdateDevices,
   onBiometricScan,
+  onSelectIncident,
 }) {
   const [activeTab, setActiveTab] = useState(() => {
     return user.role === 'Técnico' ? 'technical_panel' : 'monitoring';
@@ -1674,8 +1675,10 @@ export default function SupervisorDashboard({
                 <a
                   key={inc.id}
                   href={`?view=incident-detail&id=${inc.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectIncident(inc.id);
+                  }}
                   className="card animate-scale-in"
                   onMouseEnter={() => setHoveredIncId(inc.id)}
                   onMouseLeave={() => setHoveredIncId(null)}

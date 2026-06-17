@@ -7,7 +7,8 @@ export default function IncidentDetailStandalone({
   onRespondIncident,
   onUpdateIncidentStatus,
   theme,
-  setTheme
+  setTheme,
+  onClose
 }) {
   const inc = (incidents || []).find(i => i.id === incidentId);
   const isStoreAdmin = user.role === 'Administrador';
@@ -40,11 +41,11 @@ export default function IncidentDetailStandalone({
             La incidencia con ID <strong>{incidentId}</strong> no existe o ha sido eliminada del sistema.
           </p>
           <button
-            onClick={() => window.close()}
+            onClick={() => onClose()}
             className="btn btn-primary"
             style={{ marginTop: '20px', width: '100%' }}
           >
-            Cerrar esta pestaña
+            Cerrar Detalle ✖
           </button>
         </div>
       </div>
@@ -158,7 +159,7 @@ export default function IncidentDetailStandalone({
 
           {/* Close tab button */}
           <button
-            onClick={() => window.close()}
+            onClick={() => onClose()}
             className="btn"
             style={{
               padding: '8px 16px',
@@ -174,7 +175,7 @@ export default function IncidentDetailStandalone({
               gap: '6px'
             }}
           >
-            ✖ Cerrar Pestaña
+            ✖ Cerrar Detalle
           </button>
         </div>
       </header>

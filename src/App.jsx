@@ -396,6 +396,39 @@ export default function App() {
     }
   }, [user]);
 
+  const [currentView, setCurrentView] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('view') === 'incident-detail' ? 'incident-detail' : 'dashboard';
+  });
+
+  const [detailIncidentId, setDetailIncidentId] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('id') || null;
+  });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setCurrentView(params.get('view') === 'incident-detail' ? 'incident-detail' : 'dashboard');
+      setDetailIncidentId(params.get('id') || null);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleSelectIncident = (incidentId) => {
+    setCurrentView('incident-detail');
+    setDetailIncidentId(incidentId);
+    const newUrl = `${window.location.pathname}?view=incident-detail&id=${incidentId}`;
+    window.history.pushState({ path: newUrl }, '', newUrl);
+  };
+
+  const handleCloseIncidentDetail = () => {
+    setCurrentView('dashboard');
+    setDetailIncidentId(null);
+    window.history.pushState({ path: window.location.pathname }, '', window.location.pathname);
+  };
+
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('donguto-theme') || 'light';
   });
@@ -688,11 +721,7 @@ export default function App() {
   // -------------------------------------------------------------------------
   // RENDERER
   // -------------------------------------------------------------------------
-  const params = new URLSearchParams(window.location.search);
-  const isDetailView = params.get('view') === 'incident-detail';
-  const detailIncidentId = params.get('id');
-
-  if (isDetailView) {
+  if (currentView === 'incident-detail') {
     if (!user) {
       return (
         <div style={{
@@ -716,6 +745,7 @@ export default function App() {
         onUpdateIncidentStatus={handleUpdateIncidentStatus}
         theme={theme}
         setTheme={setTheme}
+        onClose={handleCloseIncidentDetail}
       />
     );
   }
@@ -801,6 +831,7 @@ export default function App() {
                 biometricLogs={biometricLogs}
                 onUpdateDevices={handleUpdateDevices}
                 onBiometricScan={handleBiometricScan}
+                onSelectIncident={handleSelectIncident}
               />
             ) : (
               <ColaboradorDashboard
