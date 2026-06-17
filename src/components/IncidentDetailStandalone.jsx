@@ -117,7 +117,7 @@ export default function IncidentDetailStandalone({
       fontFamily: 'system-ui, sans-serif'
     }}>
       {/* Header bar */}
-      <header style={{
+      <header className="incident-header glass" style={{
         borderBottom: '1px solid var(--border)',
         padding: '15px 30px',
         backgroundColor: 'var(--bg-card)',
@@ -125,7 +125,10 @@ export default function IncidentDetailStandalone({
         justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
-        gap: '15px'
+        gap: '15px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '20px' }}>☕</span>
@@ -253,7 +256,7 @@ export default function IncidentDetailStandalone({
         </div>
 
         {/* 2-Column details container */}
-        <div style={{
+        <div className="mobile-stack" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
           gap: '25px',

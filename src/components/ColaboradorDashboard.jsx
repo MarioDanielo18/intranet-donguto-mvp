@@ -1593,7 +1593,7 @@ export default function ColaboradorDashboard({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Tab Menu Header */}
-      <div className="card glass" style={{ padding: '0 12px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+      <div className="card glass dashboard-tabs" style={{ padding: '0 12px', display: 'flex', gap: '5px' }}>
         <button
           onClick={() => setActiveTab('checklist')}
           style={{

@@ -2388,7 +2388,7 @@ main();`}
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Subtab menu */}
-      <div className="card glass" style={{ padding: '0 12px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+      <div className="card glass dashboard-tabs" style={{ padding: '0 12px', display: 'flex', gap: '5px' }}>
         <button
           onClick={() => setActiveTab('monitoring')}
           style={{
@@ -3031,7 +3031,7 @@ main();`}
         {activeTab === 'audits' && <OperationAudit user={user} teamMembers={approvedMembers} onSaveAudit={onSaveAudit} />}
 
         {activeTab === 'team' && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
+          <div className="mobile-stack" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
             {/* Pending Approvals Section for Supervisor / Gerente */}
             {['Supervisor', 'Gerente'].includes(user.role) && (teamMembers || []).filter(m => m.pendingApproval).length > 0 && (
               <div className="card glass animate-scale-in" style={{ flex: '1 1 100%', border: '1px solid var(--warning)', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: 'var(--bg-card)' }}>

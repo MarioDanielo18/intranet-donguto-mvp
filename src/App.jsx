@@ -433,6 +433,35 @@ export default function App() {
     return localStorage.getItem('donguto-theme') || 'light';
   });
 
+  const [isDevCollapsed, setIsDevCollapsed] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(null);
+
+  const handleTouchStart = (e) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartX === null) return;
+    const currentX = e.touches[0].clientX;
+    const diffX = currentX - touchStartX;
+
+    // If swipe from left to right (diffX > 75) near the left edge (startX < 50), open drawer
+    if (touchStartX < 50 && diffX > 75 && !isDrawerOpen) {
+      setIsDrawerOpen(true);
+      setTouchStartX(null);
+    }
+    // If swipe from right to left (diffX < -75) inside drawer, close it
+    if (diffX < -75 && isDrawerOpen) {
+      setIsDrawerOpen(false);
+      setTouchStartX(null);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStartX(null);
+  };
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('donguto-theme', theme);
@@ -779,11 +808,11 @@ export default function App() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingBottom: '60px' }}>
+    <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingBottom: '60px' }}>
       
       {/* HEADER BAR */}
       <header className="glass" style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div className="container" style={{ height: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="container header-container" style={{ height: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {/* Logo brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ backgroundColor: 'var(--primary)', color: '#fff', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '16px' }}>
@@ -795,8 +824,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Controls Widget (Theme Toggle + User Widget) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          {/* Desktop Controls Widget (Hidden on mobile) */}
+          <div className="header-controls hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             {/* Theme Toggle Button */}
             <button
               onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
@@ -814,9 +843,26 @@ export default function App() {
               {theme === 'light' ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}
             </button>
 
+            {/* Desktop Simulator Trigger Button */}
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="btn btn-secondary"
+              style={{
+                padding: '6px 12px',
+                fontSize: '11px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+              }}
+              title="Abrir simulador de roles"
+            >
+              ⚙️ Simulador
+            </button>
+
             {user && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <div style={{ textAlign: 'right', fontSize: '12px' }}>
+              <div className="user-widget" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div className="user-info" style={{ textAlign: 'right', fontSize: '12px' }}>
                   <strong style={{ color: 'var(--text-main)', display: 'block' }}>{user.name}</strong>
                   <span style={{ color: 'var(--text-muted)' }}>
                     {user.role} | Tienda: <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{user.store}</span>
@@ -828,6 +874,19 @@ export default function App() {
               </div>
             )}
           </div>
+
+          {/* Mobile Menu Button (Hamburger) */}
+          {user && (
+            <div className="show-on-mobile">
+              <button 
+                onClick={() => setIsDrawerOpen(true)}
+                className="hamburger-btn"
+                title="Abrir menú"
+              >
+                ☰
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -888,132 +947,75 @@ export default function App() {
         )}
       </main>
 
-      {/* FLOATING DEVELOPER TESTING PANEL */}
+      {/* SIDEBAR DRAWER (MOBILE-FIRST) */}
       {user && (
-        <div style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: '#2c2523',
-          color: '#fff',
-          padding: '10px 15px',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '15px',
-          zIndex: 999,
-          borderTop: '2px solid var(--primary)',
-          fontSize: '11px',
-          flexWrap: 'wrap',
-        }}>
-          <span style={{ fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Simulador de Roles (Entorno de Pruebas):</span>
-          <div style={{ display: 'flex', gap: '5px' }}>
+        <div className={`drawer-backdrop ${isDrawerOpen ? 'open' : ''}`} onClick={() => setIsDrawerOpen(false)}>
+          <div className="drawer-content" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ backgroundColor: 'var(--primary)', color: '#fff', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '16px' }}>
+                  DG
+                </div>
+                <div>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#fff', display: 'block', letterSpacing: '0.5px' }}>DON GUTO</span>
+                  <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--accent)', display: 'block', marginTop: '-4px', letterSpacing: '1px' }}>INTRANET • MENU</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsDrawerOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer', padding: '5px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="drawer-profile">
+              <span style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>Usuario Activo:</span>
+              <strong style={{ fontSize: '15px', color: '#fff', display: 'block' }}>{user.name}</strong>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', display: 'block', marginTop: '2px' }}>
+                {user.role} | Tienda: <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{user.store}</span>
+              </span>
+              <button 
+                onClick={() => { handleLogout(); setIsDrawerOpen(false); }} 
+                className="btn btn-danger" 
+                style={{ width: '100%', marginTop: '12px', padding: '8px', fontSize: '12.5px', fontWeight: 700 }}
+              >
+                Cerrar Sesión 🚪
+              </button>
+            </div>
+
+            <div className="drawer-section-title">Ajustes</div>
             <button
-              onClick={() => setUser({ username: 'qlopezdg', name: 'Mateo Quispe López', role: 'Barista', store: 'Barranco' })}
-              style={{
-                padding: '3px 8px',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontWeight: 600,
-                backgroundColor: user.role === 'Barista' ? 'var(--primary)' : '#443c3a',
-                color: '#fff',
-              }}
+              onClick={() => { setTheme(prev => prev === 'light' ? 'dark' : 'light'); }}
+              className="drawer-btn"
+              style={{ marginBottom: '15px' }}
             >
-              Barista (Barra)
+              {theme === 'light' ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}
             </button>
-            <button
-              onClick={() => setUser({ username: 'aruizdg', name: 'Gabriela Alva Ruiz', role: 'Cocina', store: 'Barranco' })}
-              style={{
-                padding: '3px 8px',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontWeight: 600,
-                backgroundColor: user.role === 'Cocina' ? 'var(--primary)' : '#443c3a',
-                color: '#fff',
-              }}
-            >
-              Cocina
-            </button>
-            <button
-              onClick={() => setUser({ username: 'fpinedodg', name: 'Rodrigo Flores Pinedo', role: 'Servicio', store: 'Barranco' })}
-              style={{
-                padding: '3px 8px',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontWeight: 600,
-                backgroundColor: user.role === 'Servicio' ? 'var(--primary)' : '#443c3a',
-                color: '#fff',
-              }}
-            >
-              Servicio (Salón)
-            </button>
-            <button
-              onClick={() => setUser({ username: 'vrojasdg', name: 'Diana Valdivia Rojas', role: 'Administrador', store: 'Barranco' })}
-              style={{
-                padding: '3px 8px',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontWeight: 600,
-                backgroundColor: user.role === 'Administrador' ? 'var(--primary)' : '#443c3a',
-                color: '#fff',
-              }}
-            >
-              Administrador
-            </button>
-            <button
-              onClick={() => setUser({ username: 'sgomezdg', name: 'Pedro Supervisor Gómez', role: 'Supervisor', store: 'Todas' })}
-              style={{
-                padding: '3px 8px',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontWeight: 600,
-                backgroundColor: user.role === 'Supervisor' ? 'var(--primary)' : '#443c3a',
-                color: '#fff',
-              }}
-            >
-              Supervisor
-            </button>
-            <button
-              onClick={() => setUser({ username: 'dongutodg', name: 'Don Guto', role: 'Gerente', store: 'Todas' })}
-              style={{
-                padding: '3px 8px',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontWeight: 600,
-                backgroundColor: user.role === 'Gerente' ? 'var(--primary)' : '#443c3a',
-                color: '#fff',
-              }}
-            >
-              Gerente General
-            </button>
-            <button
-              onClick={() => setUser({ username: 'tecnicodg', name: 'Técnico de Sistemas', role: 'Técnico', store: 'Todas' })}
-              style={{
-                padding: '3px 8px',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontWeight: 600,
-                backgroundColor: user.role === 'Técnico' ? 'var(--primary)' : '#443c3a',
-                color: '#fff',
-              }}
-            >
-              🛠️ Técnico
-            </button>
+
+            <div className="drawer-section-title">Simulador de Roles (Pruebas)</div>
+            <div className="drawer-list">
+              {[
+                { username: 'qlopezdg', name: 'Mateo Quispe López', role: 'Barista', label: '☕ Barista (Barra)' },
+                { username: 'aruizdg', name: 'Gabriela Alva Ruiz', role: 'Cocina', label: '🍳 Cocina' },
+                { username: 'fpinedodg', name: 'Rodrigo Flores Pinedo', role: 'Servicio', label: '🍽️ Servicio (Salón)' },
+                { username: 'vrojasdg', name: 'Diana Valdivia Rojas', role: 'Administrador', label: '💼 Administrador' },
+                { username: 'sgomezdg', name: 'Pedro Supervisor Gómez', role: 'Supervisor', label: '🔍 Supervisor' },
+                { username: 'dongutodg', name: 'Don Guto', role: 'Gerente', label: '👑 Gerente General' },
+                { username: 'tecnicodg', name: 'Técnico de Sistemas', role: 'Técnico', label: '🛠️ Técnico' }
+              ].map(r => (
+                <button
+                  key={r.username}
+                  className={`drawer-btn ${user.role === r.role ? 'active' : ''}`}
+                  onClick={() => {
+                    setUser({ username: r.username, name: r.name, role: r.role, store: r.role === 'Supervisor' || r.role === 'Gerente' || r.role === 'Técnico' ? 'Todas' : 'Barranco' });
+                    setIsDrawerOpen(false);
+                  }}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

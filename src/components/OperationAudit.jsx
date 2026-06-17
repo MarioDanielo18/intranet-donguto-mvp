@@ -456,7 +456,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
+      <div className="mobile-stack" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
         {/* Category Accordion / Tab selector */}
         <div className="card" style={{ flex: '1 1 250px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <h4 style={{ margin: '8px 12px', color: 'var(--text-muted)' }}>Categorías de Auditoría</h4>
