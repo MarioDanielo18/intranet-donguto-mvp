@@ -2366,11 +2366,13 @@ export default function ColaboradorDashboard({
                           {examScore < 85 ? (
                             <button
                               onClick={() => {
-                                setExamSubmitted(false);
-                                setExamAnswers({});
-                                setExamTimer(2700);
-                                setExamScore(0);
-                                setExamMode(true);
+                                if (confirm('¿Estás seguro de que deseas iniciar el examen de certificación? Una vez iniciado, comenzará a correr el tiempo límite de 45 minutos.')) {
+                                  setExamSubmitted(false);
+                                  setExamAnswers({});
+                                  setExamTimer(2700);
+                                  setExamScore(0);
+                                  setExamMode(true);
+                                }
                               }}
                               className="btn btn-primary"
                               style={{ width: '100%', padding: '12px' }}
@@ -2556,7 +2558,11 @@ export default function ColaboradorDashboard({
                           </div>
                         ) : (
                           <button
-                            onClick={() => setExamMode(true)}
+                            onClick={() => {
+                              if (confirm('¿Estás seguro de que deseas iniciar el examen de certificación? Una vez iniciado, comenzará a correr el tiempo límite de 45 minutos.')) {
+                                setExamMode(true);
+                              }
+                            }}
                             className="btn btn-primary"
                             style={{ padding: '10px 20px', fontSize: '13px', width: '100%', display: 'flex', gap: '8px', justifyContent: 'center' }}
                           >
