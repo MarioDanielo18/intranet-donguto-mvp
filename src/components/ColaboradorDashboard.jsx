@@ -195,7 +195,7 @@ export default function ColaboradorDashboard({
         
         setTimeout(() => {
           if (onBiometricScan) {
-            const res = onBiometricScan(user.email, bioDevice);
+            const res = onBiometricScan(user.username, bioDevice);
             if (res && res.success) {
               setBioScanState('success');
               setBioFeedback(`¡Identidad Verificada! Bienvenido, ${user.name}. Asistencia registrada.`);
@@ -389,11 +389,11 @@ export default function ColaboradorDashboard({
     
     if (finalScore >= 85) {
       if (onApproveTrainingDay) {
-        onApproveTrainingDay(user.email, 'D4', 'Completado');
+        onApproveTrainingDay(user.username, 'D4', 'Completado');
       }
     } else {
       if (onApproveTrainingDay) {
-        onApproveTrainingDay(user.email, 'D4', 'Reprobado');
+        onApproveTrainingDay(user.username, 'D4', 'Reprobado');
       }
     }
   };
@@ -426,7 +426,7 @@ export default function ColaboradorDashboard({
     const newInc = {
       id: `INC-${Date.now().toString().slice(-4)}`,
       date: new Date().toISOString(),
-      reporterEmail: user.email,
+      reporterUsername: user.username,
       reporterName: user.name,
       reporterRole: user.role,
       store: user.store,
@@ -456,7 +456,7 @@ export default function ColaboradorDashboard({
       .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     const myIncidents = [...(incidents || [])]
-      .filter(inc => inc.reporterEmail === user.email)
+      .filter(inc => inc.reporterUsername === user.username || inc.reporterEmail === user.username)
       .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     const renderIncidentList = (list, noDataMsg) => {
@@ -1902,7 +1902,7 @@ export default function ColaboradorDashboard({
             const delay = Math.max(0, currentMins - expectedMins);
 
             if (onClockIn) {
-              onClockIn(user.email, todayStr, finalTimeStr, finalExpectedTimeStr, delay);
+              onClockIn(user.username, todayStr, finalTimeStr, finalExpectedTimeStr, delay);
             }
           };
 

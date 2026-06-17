@@ -65,6 +65,24 @@ const getTaskResponsible = (taskId) => {
   return 'Sin asignar';
 };
 
+export function generateUsername(primerApellido, segundoApellido) {
+  if (!primerApellido || !segundoApellido) return '';
+  
+  const cleanString = (str) => {
+    return str
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z]/g, "");
+  };
+
+  const firstLetter = cleanString(primerApellido).charAt(0);
+  const secondSurname = cleanString(segundoApellido);
+  
+  return `${firstLetter}${secondSurname}dg`;
+}
+
 export default function SupervisorDashboard({
   user,
   checklists,
@@ -104,7 +122,7 @@ export default function SupervisorDashboard({
   const [newDevStore, setNewDevStore] = useState('Barranco');
   
   // Simulator states
-  const [simCollabEmail, setSimCollabEmail] = useState('');
+  const [simCollabUsername, setSimCollabUsername] = useState('');
   const [simDeviceId, setSimDeviceId] = useState('');
   const [simResult, setSimResult] = useState(null);
 
@@ -117,8 +135,8 @@ export default function SupervisorDashboard({
 
   // Set default values for simulator dropdowns
   useEffect(() => {
-    if (approvedMembers && approvedMembers.length > 0 && !simCollabEmail) {
-      setSimCollabEmail(approvedMembers[0].email);
+    if (approvedMembers && approvedMembers.length > 0 && !simCollabUsername) {
+      setSimCollabUsername(approvedMembers[0].username);
     }
     if (biometricDevices && biometricDevices.length > 0 && !simDeviceId) {
       setSimDeviceId(biometricDevices[0].id);
@@ -179,12 +197,12 @@ export default function SupervisorDashboard({
   };
 
   const handleSimulatePhysicalScan = () => {
-    if (!simCollabEmail || !simDeviceId) {
+    if (!simCollabUsername || !simDeviceId) {
       alert('Por favor, selecciona un colaborador y un dispositivo.');
       return;
     }
 
-    const res = onBiometricScan(simCollabEmail, simDeviceId);
+    const res = onBiometricScan(simCollabUsername, simDeviceId);
     if (res && res.success) {
       setSimResult({
         success: true,
@@ -323,8 +341,9 @@ export default function SupervisorDashboard({
   };
 
   // States for adding team member
-  const [newMemberName, setNewMemberName] = useState('');
-  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [newMemberNames, setNewMemberNames] = useState('');
+  const [newMemberPrimerApellido, setNewMemberPrimerApellido] = useState('');
+  const [newMemberSegundoApellido, setNewMemberSegundoApellido] = useState('');
   const [newMemberRole, setNewMemberRole] = useState('Barista');
   const [newMemberStore, setNewMemberStore] = useState(() => {
     return user && user.role === 'Administrador' ? user.store : 'Barranco';
@@ -484,28 +503,40 @@ export default function SupervisorDashboard({
 
   const handleAddMember = (e) => {
     e.preventDefault();
-    if (!newMemberName || !newMemberEmail) return;
+    if (!newMemberNames.trim() || !newMemberPrimerApellido.trim() || !newMemberSegundoApellido.trim()) {
+      alert('Por favor, completa todos los campos del nombre y apellidos.');
+      return;
+    }
+    
+    const fullName = `${newMemberNames.trim()} ${newMemberPrimerApellido.trim()} ${newMemberSegundoApellido.trim()}`;
+    const generatedUser = generateUsername(newMemberPrimerApellido, newMemberSegundoApellido);
+    
+    if (!generatedUser) {
+      alert('Error al generar el nombre de usuario.');
+      return;
+    }
     
     const isPending = user.role === 'Administrador';
     
     onAddTeamMember({
-      name: newMemberName,
-      email: newMemberEmail,
+      name: fullName,
+      username: generatedUser,
       role: newMemberRole,
       store: newMemberStore,
       pendingApproval: isPending,
       addedBy: user.name,
-      addedByEmail: user.email,
+      addedByUsername: user.username,
       dateAdded: new Date().toISOString()
     });
 
-    setNewMemberName('');
-    setNewMemberEmail('');
+    setNewMemberNames('');
+    setNewMemberPrimerApellido('');
+    setNewMemberSegundoApellido('');
     
     if (isPending) {
-      alert(`El colaborador ${newMemberName} ha sido registrado. Su aprobación está pendiente de validación por parte del Supervisor.`);
+      alert(`El colaborador ${fullName} ha sido registrado. Su aprobación está pendiente de validación por parte del Supervisor.\nUsuario de acceso generado: ${generatedUser}`);
     } else {
-      alert(`Colaborador ${newMemberName} agregado con éxito.`);
+      alert(`Colaborador ${fullName} agregado con éxito.\nUsuario de acceso generado: ${generatedUser}`);
     }
   };
 
@@ -1760,7 +1791,7 @@ export default function SupervisorDashboard({
 
   const renderMyAttendanceTab = () => {
     const todayStr = new Date().toISOString().split('T')[0];
-    const memberObj = approvedMembers.find(m => m.email === user.email);
+    const memberObj = approvedMembers.find(m => m.username === user.username);
     const logs = memberObj?.arrivalLogs || [];
     const clockedInToday = logs.some(l => l.date === todayStr);
     const todaysLog = logs.find(l => l.date === todayStr);
@@ -1784,7 +1815,7 @@ export default function SupervisorDashboard({
 
           setTimeout(() => {
             const device = biometricDevices.find(d => (user.store === 'Todas' || d.store === user.store) && d.status === 'Online') || biometricDevices[0];
-            const res = onBiometricScan(user.email, device ? device.id : 'DEV-001');
+            const res = onBiometricScan(user.username, device ? device.id : 'DEV-001');
             
             if (res && res.success) {
               setMyBioState('success');
@@ -2156,13 +2187,13 @@ export default function SupervisorDashboard({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Colaborador / Huella:</label>
                       <select
-                        value={simCollabEmail}
-                        onChange={(e) => setSimCollabEmail(e.target.value)}
+                        value={simCollabUsername}
+                        onChange={(e) => setSimCollabUsername(e.target.value)}
                         className="input"
                         style={{ padding: '8px' }}
                       >
                         {approvedMembers.map(m => (
-                          <option key={m.email} value={m.email}>
+                          <option key={m.username} value={m.username}>
                             {m.name} ({m.role} - {m.store})
                           </option>
                         ))}
@@ -2241,7 +2272,7 @@ export default function SupervisorDashboard({
                             Marcó entrada en <strong>{log.deviceName}</strong> (Sede: {log.store}).
                           </div>
                           <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Correo: {log.email}</span>
+                            <span>Usuario: {log.username}</span>
                             <span>{new Date(log.date).toLocaleString('es-PE')}</span>
                           </div>
                         </div>
@@ -2327,14 +2358,14 @@ async function main() {
     device.getAttendance(async (err, log) => {
       if (err) return console.error(err);
       
-      // Obtener el correo del empleado asociado al ID del lector
-      const email = mapUserIdToEmail(log.deviceUserId); 
+      // Obtener el usuario del empleado asociado al ID del lector
+      const username = mapUserIdToUsername(log.deviceUserId); 
       
-      console.log(\`Marcación recibida para: \${email}\`);
+      console.log(\`Marcación recibida para: \${username}\`);
       
       // Escribir en base de datos. Esto disparará la actualización en Vercel
       await supabase.from('asistencia_biometrica').insert([{
-        user_email: email,
+        user_username: username,
         device_id: 'DEV-001',
         verification_mode: log.verified
       }]);
@@ -2637,7 +2668,7 @@ main();`}
                       {visibleMembers
                         .filter(m => m.role === 'Barista')
                         .map(m => (
-                          <option key={m.email} value={m.name}>☕ {m.name}</option>
+                          <option key={m.username} value={m.name}>☕ {m.name}</option>
                         ))}
                     </>
                   )}
@@ -2647,7 +2678,7 @@ main();`}
                       {visibleMembers
                         .filter(m => m.role === 'Cocina')
                         .map(m => (
-                          <option key={m.email} value={m.name}>🍳 {m.name}</option>
+                          <option key={m.username} value={m.name}>🍳 {m.name}</option>
                         ))}
                     </>
                   )}
@@ -2657,7 +2688,7 @@ main();`}
                       {visibleMembers
                         .filter(m => m.role === 'Servicio')
                         .map(m => (
-                          <option key={m.email} value={m.name}>🤵 {m.name}</option>
+                          <option key={m.username} value={m.name}>🤵 {m.name}</option>
                         ))}
                     </>
                   )}
@@ -3021,7 +3052,7 @@ main();`}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {(teamMembers || []).filter(m => m.pendingApproval).map(member => (
                     <div
-                      key={member.email}
+                      key={member.username}
                       style={{
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -3037,7 +3068,7 @@ main();`}
                       <div>
                         <strong style={{ display: 'block', fontSize: '14px', color: 'var(--text-main)' }}>{member.name}</strong>
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
-                          📧 {member.email} | 🛠️ {member.role} | 📍 Sede: {member.store}
+                          👤 Usuario: {member.username} | 🛠️ {member.role} | 📍 Sede: {member.store}
                         </span>
                         <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '4px', fontStyle: 'italic' }}>
                           ✍️ Solicitado por: <strong>{member.addedBy || 'Administrador'}</strong>
@@ -3048,7 +3079,7 @@ main();`}
                         <button
                           onClick={() => {
                             if (confirm(`¿Aprobar la incorporación de ${member.name} al equipo?`)) {
-                              onApproveCollaborator(member.email);
+                              onApproveCollaborator(member.username);
                             }
                           }}
                           className="btn"
@@ -3069,7 +3100,7 @@ main();`}
                         <button
                           onClick={() => {
                             if (confirm(`¿Rechazar el registro de ${member.name}? Se borrará del sistema.`)) {
-                              onRejectCollaborator(member.email);
+                              onRejectCollaborator(member.username);
                             }
                           }}
                           className="btn"
@@ -3109,7 +3140,7 @@ main();`}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {(teamMembers || []).filter(m => m.pendingApproval && m.store === user.store).map(member => (
                     <div
-                      key={member.email}
+                      key={member.username}
                       style={{
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -3125,7 +3156,7 @@ main();`}
                       <div>
                         <strong style={{ display: 'block', fontSize: '13.5px', color: 'var(--text-main)' }}>{member.name}</strong>
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                          📧 {member.email} | 🛠️ {member.role}
+                          👤 Usuario: {member.username} | 🛠️ {member.role}
                         </span>
                       </div>
                       <span style={{
@@ -3157,7 +3188,7 @@ main();`}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {visibleMembers.map(member => (
                   <button
-                    key={member.email}
+                    key={member.username}
                     onClick={() => setSelectedUser(member)}
                     style={{
                       display: 'flex',
@@ -3165,15 +3196,15 @@ main();`}
                       alignItems: 'center',
                       padding: '10px 14px',
                       borderRadius: 'var(--radius-sm)',
-                      border: selectedUser?.email === member.email ? '1px solid var(--primary)' : '1px solid var(--border)',
-                      backgroundColor: selectedUser?.email === member.email ? 'var(--primary-light)' : 'transparent',
+                      border: selectedUser?.username === member.username ? '1px solid var(--primary)' : '1px solid var(--border)',
+                      backgroundColor: selectedUser?.username === member.username ? 'var(--primary-light)' : 'transparent',
                       cursor: 'pointer',
                       textAlign: 'left',
                     }}
                   >
                     <div>
                       <strong style={{ display: 'block', fontSize: '13px', color: 'var(--text-main)' }}>{member.name}</strong>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{member.email}</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>👤 {member.username}</span>
                     </div>
                     <span style={{
                       fontSize: '10px',
@@ -3196,21 +3227,32 @@ main();`}
                   <input
                     type="text"
                     required
-                    placeholder="Nombre Completo"
-                    value={newMemberName}
-                    onChange={(e) => setNewMemberName(e.target.value)}
+                    placeholder="Nombres"
+                    value={newMemberNames}
+                    onChange={(e) => setNewMemberNames(e.target.value)}
                     className="input"
                     style={{ padding: '8px 12px' }}
                   />
-                  <input
-                    type="email"
-                    required
-                    placeholder="Correo electrónico"
-                    value={newMemberEmail}
-                    onChange={(e) => setNewMemberEmail(e.target.value)}
-                    className="input"
-                    style={{ padding: '8px 12px' }}
-                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Primer Apellido"
+                      value={newMemberPrimerApellido}
+                      onChange={(e) => setNewMemberPrimerApellido(e.target.value)}
+                      className="input"
+                      style={{ padding: '8px 12px' }}
+                    />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Segundo Apellido"
+                      value={newMemberSegundoApellido}
+                      onChange={(e) => setNewMemberSegundoApellido(e.target.value)}
+                      className="input"
+                      style={{ padding: '8px 12px' }}
+                    />
+                  </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <select
                       value={newMemberRole}
@@ -3266,7 +3308,7 @@ main();`}
                           onChange={(e) => {
                             const newStore = e.target.value;
                             if (confirm(`¿Estás seguro de trasladar a ${selectedUser.name} a la sede de ${newStore}?`)) {
-                              onUpdateCollaborator(selectedUser.email, { store: newStore });
+                              onUpdateCollaborator(selectedUser.username, { store: newStore });
                               setSelectedUser(prev => ({ ...prev, store: newStore }));
                               alert(`${selectedUser.name} ha sido trasladado a la sede de ${newStore} con éxito.`);
                             }
@@ -3353,7 +3395,7 @@ main();`}
                               {['Pendiente', 'En Curso', 'Completado', 'Reprobado'].map(status => (
                                 <button
                                   key={status}
-                                  onClick={() => onApproveTrainingDay(selectedUser.email, day.id, status)}
+                                  onClick={() => onApproveTrainingDay(selectedUser.username, day.id, status)}
                                   className="btn"
                                   style={{
                                     fontSize: '9px',

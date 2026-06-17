@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 export default function Login({ onLogin }) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -15,27 +15,39 @@ export default function Login({ onLogin }) {
     setTimeout(() => {
       setLoading(false);
       
-      const emailLower = email.toLowerCase().trim();
+      const usernameLower = username.toLowerCase().trim();
       
       // Setup default mock accounts
-      if (emailLower === 'barista@donguto.com') {
-        onLogin({ email: emailLower, name: 'Mateo Quispe', role: 'Barista', store: 'Barranco' });
-      } else if (emailLower === 'cocina@donguto.com') {
-        onLogin({ email: emailLower, name: 'Gabriela Alva', role: 'Cocina', store: 'Barranco' });
-      } else if (emailLower === 'servicio@donguto.com') {
-        onLogin({ email: emailLower, name: 'Rodrigo Flores', role: 'Servicio', store: 'Barranco' });
-      } else if (emailLower === 'admin@donguto.com') {
-        onLogin({ email: emailLower, name: 'Diana Valdivia', role: 'Administrador', store: 'Barranco' });
-      } else if (emailLower === 'gerente@donguto.com') {
-        onLogin({ email: emailLower, name: 'Don Guto', role: 'Gerente', store: 'Todas' });
-      } else if (emailLower === 'tecnico@donguto.com') {
-        onLogin({ email: emailLower, name: 'Técnico de Sistemas', role: 'Técnico', store: 'Todas' });
+      if (usernameLower === 'qlopezdg') {
+        onLogin({ username: 'qlopezdg', name: 'Mateo Quispe López', role: 'Barista', store: 'Barranco' });
+      } else if (usernameLower === 'aruizdg') {
+        onLogin({ username: 'aruizdg', name: 'Gabriela Alva Ruiz', role: 'Cocina', store: 'Barranco' });
+      } else if (usernameLower === 'fpinedodg') {
+        onLogin({ username: 'fpinedodg', name: 'Rodrigo Flores Pinedo', role: 'Servicio', store: 'Barranco' });
+      } else if (usernameLower === 'vrojasdg') {
+        onLogin({ username: 'vrojasdg', name: 'Diana Valdivia Rojas', role: 'Administrador', store: 'Barranco' });
+      } else if (usernameLower === 'sgomezdg') {
+        onLogin({ username: 'sgomezdg', name: 'Pedro Supervisor Gómez', role: 'Supervisor', store: 'Todas' });
+      } else if (usernameLower === 'dongutodg') {
+        onLogin({ username: 'dongutodg', name: 'Don Guto', role: 'Gerente', store: 'Todas' });
+      } else if (usernameLower === 'tecnicodg') {
+        onLogin({ username: 'tecnicodg', name: 'Técnico de Sistemas', role: 'Técnico', store: 'Todas' });
       } else {
-        // Fallback for custom accounts (for testing)
-        if (emailLower && password.length >= 4) {
-          onLogin({ email: emailLower, name: 'Usuario Demo', role: 'Barista', store: 'Barranco' });
+        // Fallback for custom accounts in localStorage
+        const savedTeam = localStorage.getItem('donguto-team');
+        const team = savedTeam ? JSON.parse(savedTeam) : [];
+        const matchedUser = team.find(m => m.username === usernameLower);
+        
+        if (matchedUser) {
+          if (matchedUser.pendingApproval) {
+            setError('Tu cuenta está pendiente de aprobación por el Supervisor.');
+            return;
+          }
+          onLogin(matchedUser);
+        } else if (usernameLower && password.length >= 4) {
+          onLogin({ username: usernameLower, name: 'Usuario Demo', role: 'Barista', store: 'Barranco' });
         } else {
-          setError('Credenciales inválidas. Usa una cuenta demo (ej: barista@donguto.com, admin@donguto.com)');
+          setError('Usuario no registrado. Usa una cuenta demo (ej: qlopezdg, vrojasdg)');
         }
       }
     }, 800);
@@ -109,13 +121,13 @@ export default function Login({ onLogin }) {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Correo Electrónico</label>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Usuario de Acceso</label>
             <input
-              type="email"
+              type="text"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nombre@donguto.com"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Ej: qlopezdg"
               className="input"
             />
           </div>
@@ -146,46 +158,46 @@ export default function Login({ onLogin }) {
           <h5 style={{ margin: '0 0 8px 0', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>CUENTAS DEMO DE PRUEBA:</h5>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
             <button
-              onClick={() => { setEmail('barista@donguto.com'); setPassword('demo123'); }}
+              onClick={() => { setUsername('qlopezdg'); setPassword('demo123'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
-              Barista
+              Barista (qlopezdg)
             </button>
             <button
-              onClick={() => { setEmail('cocina@donguto.com'); setPassword('demo123'); }}
+              onClick={() => { setUsername('aruizdg'); setPassword('demo123'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
-              Cocina
+              Cocina (aruizdg)
             </button>
             <button
-              onClick={() => { setEmail('servicio@donguto.com'); setPassword('demo123'); }}
+              onClick={() => { setUsername('fpinedodg'); setPassword('demo123'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
-              Servicio
+              Servicio (fpinedodg)
             </button>
             <button
-              onClick={() => { setEmail('admin@donguto.com'); setPassword('demo123'); }}
+              onClick={() => { setUsername('vrojasdg'); setPassword('demo123'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
-              Admin
+              Admin (vrojasdg)
             </button>
             <button
-              onClick={() => { setEmail('gerente@donguto.com'); setPassword('demo123'); }}
+              onClick={() => { setUsername('dongutodg'); setPassword('demo123'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
-              Gerente
+              Gerente (dongutodg)
             </button>
             <button
-              onClick={() => { setEmail('tecnico@donguto.com'); setPassword('demo123'); }}
+              onClick={() => { setUsername('tecnicodg'); setPassword('demo123'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
-              Técnico
+              Técnico (tecnicodg)
             </button>
           </div>
         </div>

@@ -126,8 +126,8 @@ const INITIAL_TRAINING_ROUTE = [
 
 const INITIAL_MOCK_TEAM = [
   {
-    email: 'mateo@donguto.com',
-    name: 'Mateo Quispe',
+    username: 'qlopezdg',
+    name: 'Mateo Quispe López',
     role: 'Barista',
     store: 'Barranco',
     trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'En Curso' },
@@ -140,8 +140,8 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'carlos.mendoza@donguto.com',
-    name: 'Carlos Mendoza',
+    username: 'mcastrodg',
+    name: 'Carlos Mendoza Castro',
     role: 'Barista',
     store: 'Barranco',
     trainingProgress: { D1: 'Completado' },
@@ -154,8 +154,8 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'gabriela@donguto.com',
-    name: 'Gabriela Alva',
+    username: 'aruizdg',
+    name: 'Gabriela Alva Ruiz',
     role: 'Cocina',
     store: 'Barranco',
     trainingProgress: { D1: 'Completado', D2: 'En Curso' },
@@ -168,8 +168,8 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'elena@donguto.com',
-    name: 'Elena Rojas',
+    username: 'rguerradg',
+    name: 'Elena Rojas Guerra',
     role: 'Cocina',
     store: 'Barranco',
     trainingProgress: { D1: 'Completado' },
@@ -182,8 +182,8 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'rodrigo@donguto.com',
-    name: 'Rodrigo Flores',
+    username: 'fpinedodg',
+    name: 'Rodrigo Flores Pinedo',
     role: 'Servicio',
     store: 'Barranco',
     trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
@@ -196,8 +196,8 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'lucia@donguto.com',
-    name: 'Lucía Díaz',
+    username: 'dortizdg',
+    name: 'Lucía Díaz Ortiz',
     role: 'Servicio',
     store: 'Barranco',
     trainingProgress: { D1: 'Completado' },
@@ -210,8 +210,8 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'carlos.mira@donguto.com',
-    name: 'Carlos Miraflores',
+    username: 'mortizdg',
+    name: 'Carlos Miraflores Ortiz',
     role: 'Barista',
     store: 'Miraflores',
     trainingProgress: { D1: 'Completado' },
@@ -224,8 +224,8 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'laura@donguto.com',
-    name: 'Laura Torres',
+    username: 'tsalasdg',
+    name: 'Laura Torres Salas',
     role: 'Cocina',
     store: 'Miraflores',
     trainingProgress: { D1: 'Completado' },
@@ -238,8 +238,8 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'andres@donguto.com',
-    name: 'Andres Silva',
+    username: 'sramosdg',
+    name: 'Andres Silva Ramos',
     role: 'Servicio',
     store: 'Miraflores',
     trainingProgress: { D1: 'Completado' },
@@ -252,8 +252,8 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'admin@donguto.com',
-    name: 'Diana Valdivia',
+    username: 'vrojasdg',
+    name: 'Diana Valdivia Rojas',
     role: 'Administrador',
     store: 'Barranco',
     trainingProgress: {},
@@ -266,8 +266,8 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'supervisor@donguto.com',
-    name: 'Pedro Supervisor',
+    username: 'sgomezdg',
+    name: 'Pedro Supervisor Gómez',
     role: 'Supervisor',
     store: 'Todas',
     trainingProgress: {},
@@ -280,7 +280,7 @@ const INITIAL_MOCK_TEAM = [
     ]
   },
   {
-    email: 'gerente@donguto.com',
+    username: 'dongutodg',
     name: 'Don Guto',
     role: 'Gerente',
     store: 'Todas',
@@ -288,7 +288,7 @@ const INITIAL_MOCK_TEAM = [
     arrivalLogs: []
   },
   {
-    email: 'tecnico@donguto.com',
+    username: 'tecnicodg',
     name: 'Técnico de Sistemas',
     role: 'Técnico',
     store: 'Todas',
@@ -478,10 +478,10 @@ export default function App() {
   ];
 
   const INITIAL_BIOMETRIC_LOGS = [
-    { id: 'BLOG-001', date: '2026-06-12T07:01:00Z', name: 'Mateo Quispe', email: 'mateo@donguto.com', role: 'Barista', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
-    { id: 'BLOG-002', date: '2026-06-12T07:07:00Z', name: 'Gabriela Alva', email: 'gabriela@donguto.com', role: 'Cocina', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
-    { id: 'BLOG-003', date: '2026-06-12T07:51:00Z', name: 'Diana Valdivia', email: 'admin@donguto.com', role: 'Administrador', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
-    { id: 'BLOG-004', date: '2026-06-12T07:55:00Z', name: 'Pedro Supervisor', email: 'supervisor@donguto.com', role: 'Supervisor', store: 'Todas', deviceId: 'DEV-002', deviceName: 'ZKTeco K40 - Sede Miraflores', status: 'Success' }
+    { id: 'BLOG-001', date: '2026-06-12T07:01:00Z', name: 'Mateo Quispe López', username: 'qlopezdg', role: 'Barista', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
+    { id: 'BLOG-002', date: '2026-06-12T07:07:00Z', name: 'Gabriela Alva Ruiz', username: 'aruizdg', role: 'Cocina', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
+    { id: 'BLOG-003', date: '2026-06-12T07:51:00Z', name: 'Diana Valdivia Rojas', username: 'vrojasdg', role: 'Administrador', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
+    { id: 'BLOG-004', date: '2026-06-12T07:55:00Z', name: 'Pedro Supervisor Gómez', username: 'sgomezdg', role: 'Supervisor', store: 'Todas', deviceId: 'DEV-002', deviceName: 'ZKTeco K40 - Sede Miraflores', status: 'Success' }
   ];
 
   const [biometricDevices, setBiometricDevices] = useState(() => {
@@ -499,8 +499,8 @@ export default function App() {
     localStorage.setItem('donguto-biometric-devices', JSON.stringify(updatedDevices));
   };
 
-  const handleBiometricScan = (email, deviceId) => {
-    const employee = teamMembers.find(m => m.email === email);
+  const handleBiometricScan = (username, deviceId) => {
+    const employee = teamMembers.find(m => m.username === username);
     if (!employee) return { success: false, message: 'Colaborador no encontrado' };
 
     const device = biometricDevices.find(d => d.id === deviceId);
@@ -543,13 +543,13 @@ export default function App() {
 
     const delayMin = Math.max(0, currentMins - expectedMins);
 
-    handleClockIn(email, todayStr, timeStr, expectedTimeStr, delayMin);
+    handleClockIn(username, todayStr, timeStr, expectedTimeStr, delayMin);
 
     const newLog = {
       id: `BLOG-${Date.now().toString().slice(-4)}`,
       date: now.toISOString(),
       name: employee.name,
-      email: email,
+      username: username,
       role: employee.role,
       store: store,
       deviceId: deviceId,
@@ -614,10 +614,10 @@ export default function App() {
   };
 
   // Clock-in attendance registration
-  const handleClockIn = (email, date, time, expectedTime, delayMin) => {
+  const handleClockIn = (username, date, time, expectedTime, delayMin) => {
     setTeamMembers(prev =>
       prev.map(m => {
-        if (m.email === email) {
+        if (m.username === username) {
           const logs = m.arrivalLogs || [];
           if (logs.some(l => l.date === date)) return m; // avoid duplicates
           return {
@@ -631,10 +631,10 @@ export default function App() {
   };
 
   // Approve a training day for an employee
-  const handleApproveTrainingDay = (email, dayId, status) => {
+  const handleApproveTrainingDay = (username, dayId, status) => {
     setTeamMembers(prev =>
       prev.map(m => {
-        if (m.email === email) {
+        if (m.username === username) {
           return {
             ...m,
             trainingProgress: {
@@ -663,17 +663,17 @@ export default function App() {
     });
   };
 
-  const handleApproveCollaborator = (email) => {
+  const handleApproveCollaborator = (username) => {
     setTeamMembers(prev => {
-      const updated = prev.map(m => m.email === email ? { ...m, pendingApproval: false } : m);
+      const updated = prev.map(m => m.username === username ? { ...m, pendingApproval: false } : m);
       localStorage.setItem('donguto-team', JSON.stringify(updated));
       return updated;
     });
   };
 
-  const handleRejectCollaborator = (email) => {
+  const handleRejectCollaborator = (username) => {
     setTeamMembers(prev => {
-      const updated = prev.filter(m => m.email !== email);
+      const updated = prev.filter(m => m.username !== username);
       localStorage.setItem('donguto-team', JSON.stringify(updated));
       return updated;
     });
@@ -685,9 +685,9 @@ export default function App() {
   };
 
   // Move collaborator to a different store or update their details
-  const handleUpdateCollaborator = (email, updatedFields) => {
+  const handleUpdateCollaborator = (username, updatedFields) => {
     setTeamMembers(prev =>
-      prev.map(m => (m.email === email ? { ...m, ...updatedFields } : m))
+      prev.map(m => (m.username === username ? { ...m, ...updatedFields } : m))
     );
   };
 
@@ -871,9 +871,9 @@ export default function App() {
                 trainingRoute={INITIAL_TRAINING_ROUTE.map(d => ({
                   ...d,
                   // Map specific user's training progress status or default to template status
-                  estado: teamMembers.find(m => m.email === user.email)?.trainingProgress?.[d.id] || 'Pendiente'
+                  estado: teamMembers.find(m => m.username === user.username)?.trainingProgress?.[d.id] || 'Pendiente'
                 }))}
-                arrivalLogs={teamMembers.find(m => m.email === user.email)?.arrivalLogs || []}
+                arrivalLogs={teamMembers.find(m => m.username === user.username)?.arrivalLogs || []}
                 onSaveTask={handleSaveTask}
                 onSaveCleaning={handleSaveCleaning}
                 onApproveTrainingDay={handleApproveTrainingDay}
@@ -910,7 +910,7 @@ export default function App() {
           <span style={{ fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Simulador de Roles (Entorno de Pruebas):</span>
           <div style={{ display: 'flex', gap: '5px' }}>
             <button
-              onClick={() => setUser({ email: 'barista@donguto.com', name: 'Mateo Quispe', role: 'Barista', store: 'Barranco' })}
+              onClick={() => setUser({ username: 'qlopezdg', name: 'Mateo Quispe López', role: 'Barista', store: 'Barranco' })}
               style={{
                 padding: '3px 8px',
                 border: 'none',
@@ -925,7 +925,7 @@ export default function App() {
               Barista (Barra)
             </button>
             <button
-              onClick={() => setUser({ email: 'cocina@donguto.com', name: 'Gabriela Alva', role: 'Cocina', store: 'Barranco' })}
+              onClick={() => setUser({ username: 'aruizdg', name: 'Gabriela Alva Ruiz', role: 'Cocina', store: 'Barranco' })}
               style={{
                 padding: '3px 8px',
                 border: 'none',
@@ -940,7 +940,7 @@ export default function App() {
               Cocina
             </button>
             <button
-              onClick={() => setUser({ email: 'servicio@donguto.com', name: 'Rodrigo Flores', role: 'Servicio', store: 'Barranco' })}
+              onClick={() => setUser({ username: 'fpinedodg', name: 'Rodrigo Flores Pinedo', role: 'Servicio', store: 'Barranco' })}
               style={{
                 padding: '3px 8px',
                 border: 'none',
@@ -955,7 +955,7 @@ export default function App() {
               Servicio (Salón)
             </button>
             <button
-              onClick={() => setUser({ email: 'admin@donguto.com', name: 'Diana Valdivia', role: 'Administrador', store: 'Barranco' })}
+              onClick={() => setUser({ username: 'vrojasdg', name: 'Diana Valdivia Rojas', role: 'Administrador', store: 'Barranco' })}
               style={{
                 padding: '3px 8px',
                 border: 'none',
@@ -970,7 +970,7 @@ export default function App() {
               Administrador
             </button>
             <button
-              onClick={() => setUser({ email: 'supervisor@donguto.com', name: 'Pedro Supervisor', role: 'Supervisor', store: 'Todas' })}
+              onClick={() => setUser({ username: 'sgomezdg', name: 'Pedro Supervisor Gómez', role: 'Supervisor', store: 'Todas' })}
               style={{
                 padding: '3px 8px',
                 border: 'none',
@@ -985,7 +985,7 @@ export default function App() {
               Supervisor
             </button>
             <button
-              onClick={() => setUser({ email: 'gerente@donguto.com', name: 'Don Guto', role: 'Gerente', store: 'Todas' })}
+              onClick={() => setUser({ username: 'dongutodg', name: 'Don Guto', role: 'Gerente', store: 'Todas' })}
               style={{
                 padding: '3px 8px',
                 border: 'none',
@@ -1000,7 +1000,7 @@ export default function App() {
               Gerente General
             </button>
             <button
-              onClick={() => setUser({ email: 'tecnico@donguto.com', name: 'Técnico de Sistemas', role: 'Técnico', store: 'Todas' })}
+              onClick={() => setUser({ username: 'tecnicodg', name: 'Técnico de Sistemas', role: 'Técnico', store: 'Todas' })}
               style={{
                 padding: '3px 8px',
                 border: 'none',

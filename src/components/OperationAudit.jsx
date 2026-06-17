@@ -743,7 +743,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
                     <option value="Diana Valdivia">Diana Valdivia (Administrador - Barranco)</option>
                   )}
                   {storeCollaborators.map(m => (
-                    <option key={m.email} value={m.name}>{m.name} ({m.role})</option>
+                    <option key={m.username} value={m.name}>{m.name} ({m.role})</option>
                   ))}
                 </select>
               </div>
