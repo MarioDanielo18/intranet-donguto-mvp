@@ -1843,299 +1843,81 @@ export default function ColaboradorDashboard({
                     </p>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '20px', width: '100%' }}>
+                    <h5 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', fontWeight: 700 }}>
+                      ☝️ Registro Asistencia con Lector Biométrico
+                    </h5>
+                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', maxWidth: '380px' }}>
+                      Coloca tu dedo en el lector biométrico físico (ZKTeco K40) conectado en tu sede para registrar tu ingreso.
+                    </p>
                     
-                    {/* Wi-Fi Verification Banner & Simulator */}
-                    <div style={{
-                      padding: '12px 15px',
-                      borderRadius: '6px',
-                      backgroundColor: isConnectedToStoreWifi ? 'var(--success-light)' : 'var(--error-light)',
-                      border: isConnectedToStoreWifi ? '1px solid var(--success)' : '1px solid var(--error)',
-                      color: isConnectedToStoreWifi ? 'var(--success)' : 'var(--error)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', fontSize: '12.5px' }}>
-                        <span>
-                          {isConnectedToStoreWifi ? (
-                            <span>📡 <strong>Wi-Fi Validado:</strong> Conectado a la red de <strong>Don Guto - {user.store}</strong> (IP: {currentIp})</span>
-                          ) : (
-                            <span>⚠️ <strong>Red No Autorizada:</strong> Estás conectado a Red Externa o Datos Móviles (IP: {currentIp})</span>
-                          )}
-                        </span>
-                        <span style={{ fontSize: '11px', fontWeight: 800 }}>
-                          Tu Sede: {user.store} (IP Autorizada: {allowedIp})
-                        </span>
-                      </div>
-                      
-                      {/* Wi-Fi Simulator Dropdown */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderTop: '1px solid currentColor', paddingTop: '8px', marginTop: '2px', color: 'var(--text-main)', fontSize: '11.5px' }}>
-                        <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>🛠️ Simulador de Wi-Fi de Sede:</span>
-                        <select
-                          value={selectedWifi}
-                          onChange={(e) => setSelectedWifi(e.target.value)}
-                          style={{
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border)',
-                            backgroundColor: 'var(--bg-card)',
-                            color: 'var(--text-main)',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                          }}
-                        >
-                          <option value="external">Red Móvil / Datos Personales (IP Real: {userIp})</option>
-                          <option value="Barranco">Wi-Fi Don Guto - Barranco (IP: 200.121.45.67)</option>
-                          <option value="Miraflores">Wi-Fi Don Guto - Miraflores (IP: 190.235.88.99)</option>
-                          <option value="San Isidro">Wi-Fi Don Guto - San Isidro (IP: 181.65.12.34)</option>
-                        </select>
-                      </div>
+                    {/* Fingerprint scan circle */}
+                    <div 
+                      onClick={triggerFingerprintScan}
+                      style={{
+                        width: '130px',
+                        height: '130px',
+                        borderRadius: '50%',
+                        border: `4px solid ${
+                          bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--border)'
+                        }`,
+                        backgroundColor: bioScanState === 'scanning' ? 'rgba(139,26,26,0.05)' : 'var(--bg-main)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease',
+                        marginTop: '10px',
+                        boxShadow: 'var(--shadow-md)',
+                      }}
+                    >
+                      {bioScanState === 'scanning' && (
+                        <div style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '3px',
+                          backgroundColor: 'var(--primary)',
+                          boxShadow: '0 0 8px var(--primary)',
+                          top: `${bioProgress}%`,
+                          left: 0,
+                          transition: 'top 0.15s linear',
+                        }} />
+                      )}
+
+                      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={
+                        bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--text-muted)'
+                      } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 10a2 2 0 0 0-2 2M14 14a4 4 0 0 0-4-4M2 12a10 10 0 0 1 18 0M10 17v-1a2 2 0 1 1 4 0v1" />
+                        <path d="M12 2a10 10 0 0 0-10 10M12 22a10 10 0 0 0 10-10" />
+                        <path d="M6 12a6 6 0 0 1 12 0M8 12a4 4 0 0 1 8 0" />
+                      </svg>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '25px' }}>
-                      
-                      {/* Opción A: Registrar entrada directamente */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                        <h5 style={{ margin: 0, fontSize: '13px', color: 'var(--text-main)', fontWeight: 700 }}>
-                          🔘 Opción A: Registro Directo Individual
-                        </h5>
-                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                          Marca tu asistencia directamente desde este dispositivo si no está el supervisor.
-                        </p>
-                        
-                        {/* Expected Time Selector */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>1. Hora Esperada de Entrada (Turno):</label>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            {[
-                              { label: '07:00 AM', val: '07:00 AM' },
-                              { label: '08:00 AM', val: '08:00 AM' },
-                              { label: '02:00 PM', val: '02:00 PM' },
-                              { label: 'Personalizado...', val: 'CUSTOM' }
-                            ].map(opt => (
-                              <button
-                                key={opt.val}
-                                type="button"
-                                onClick={() => setExpectedTime(opt.val)}
-                                className="btn"
-                                style={{
-                                  padding: '5px 10px',
-                                  fontSize: '11px',
-                                  fontWeight: 600,
-                                  border: '1px solid var(--border)',
-                                  backgroundColor: expectedTime === opt.val ? 'var(--primary)' : 'var(--bg-main)',
-                                  color: expectedTime === opt.val ? '#fff' : 'var(--text-main)',
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                {opt.label}
-                              </button>
-                            ))}
-                          </div>
-                          {expectedTime === 'CUSTOM' && (
-                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Especifica hora esperada:</span>
-                              <input
-                                type="time"
-                                value={customExpectedTime}
-                                onChange={(e) => setCustomExpectedTime(e.target.value)}
-                                style={{
-                                  padding: '5px 8px',
-                                  borderRadius: '4px',
-                                  border: '1px solid var(--border)',
-                                  backgroundColor: 'var(--bg-card)',
-                                  color: 'var(--text-main)',
-                                }}
-                              />
-                            </div>
-                          )}
-                        </div>
+                    <button
+                      type="button"
+                      onClick={triggerFingerprintScan}
+                      disabled={bioScanState !== 'idle'}
+                      className="btn"
+                      style={{
+                        padding: '8px 22px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        backgroundColor: bioScanState === 'idle' ? 'var(--primary)' : 'var(--bg-card)',
+                        color: bioScanState === 'idle' ? '#fff' : 'var(--text-muted)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
+                        marginTop: '5px',
+                        boxShadow: 'var(--shadow-sm)',
+                      }}
+                    >
+                      {bioScanState === 'idle' ? '☝️ Simular Colocar Dedo' : 'Procesando Marcación...'}
+                    </button>
 
-                        {/* Time Mode Select (Real vs Simulated) */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>2. Hora de Marcación a Registrar:</label>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-main)', cursor: 'pointer' }}>
-                              <input
-                                type="radio"
-                                name="timeMode"
-                                checked={timeMode === 'realtime'}
-                                onChange={() => setTimeMode('realtime')}
-                              />
-                              Hora real ({currentTime.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })})
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-main)', cursor: 'pointer' }}>
-                              <input
-                                type="radio"
-                                name="timeMode"
-                                checked={timeMode === 'simulated'}
-                                onChange={() => setTimeMode('simulated')}
-                              />
-                              Simular otra hora (Fines de prueba)
-                            </label>
-                          </div>
-
-                          {timeMode === 'simulated' && (
-                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Especifica hora de llegada:</span>
-                              <input
-                                type="time"
-                                value={simulatedTime}
-                                onChange={(e) => setSimulatedTime(e.target.value)}
-                                style={{
-                                  padding: '5px 8px',
-                                  borderRadius: '4px',
-                                  border: '1px solid var(--border)',
-                                  backgroundColor: 'var(--bg-card)',
-                                  color: 'var(--text-main)',
-                                }}
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Clock In Button */}
-                        <div style={{ marginTop: '10px' }}>
-                          <button
-                            type="button"
-                            disabled={!isConnectedToStoreWifi}
-                            onClick={handleClockInClick}
-                            className="btn"
-                            style={{
-                              padding: '10px 20px',
-                              fontSize: '12.5px',
-                              fontWeight: 700,
-                              backgroundColor: isConnectedToStoreWifi ? 'var(--primary)' : 'var(--text-muted)',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: '6px',
-                              cursor: isConnectedToStoreWifi ? 'pointer' : 'not-allowed',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              boxShadow: 'var(--shadow-sm)',
-                            }}
-                          >
-                            ⏰ Registrar Asistencia de Entrada
-                          </button>
-                          {!isConnectedToStoreWifi && (
-                            <span style={{ display: 'block', color: 'var(--error)', fontSize: '11px', marginTop: '6px', fontWeight: 600 }}>
-                              ❌ Bloqueado: Conéctate al Wi-Fi de tu sede ({user.store}) para marcar asistencia.
-                            </span>
-                          )}
-                        </div>
-
-                      </div>
-
-                      {/* Opción B: Código QR de Entrada */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', textAlign: 'center', padding: '15px', borderLeft: '1px dashed var(--border)' }} className="qr-option-container">
-                        <h5 style={{ margin: 0, fontSize: '13px', color: 'var(--text-main)', fontWeight: 700 }}>
-                          📱 Opción B: Código QR para Escaneo
-                        </h5>
-                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-muted)', maxWidth: '240px' }}>
-                          Muestra este código QR al Administrador/Supervisor en la entrada del local para que registre tu ingreso:
-                        </p>
-                        
-                        {/* Live scannable QR Code */}
-                        <div style={{
-                          padding: '12px',
-                          backgroundColor: '#fff',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border)',
-                          display: 'inline-block',
-                          boxShadow: 'var(--shadow-sm)',
-                          marginTop: '5px'
-                        }}>
-                          <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&color=2c2523&data=donguto:attendance:${user.email}:${expectedTime === 'CUSTOM' ? convert24hTo12h(customExpectedTime) : expectedTime}`}
-                            alt="Código QR de Asistencia"
-                            style={{ width: '140px', height: '140px', display: 'block' }}
-                          />
-                        </div>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          {user.name}
-                        </span>
-                      </div>
-
-                      {/* Opción C: Lector Biométrico de Huella */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', textAlign: 'center', padding: '15px', borderLeft: '1px dashed var(--border)' }} className="bio-option-container">
-                        <h5 style={{ margin: 0, fontSize: '13px', color: 'var(--text-main)', fontWeight: 700 }}>
-                          ☝️ Opción C: Lector Biométrico
-                        </h5>
-                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-muted)', maxWidth: '240px' }}>
-                          Coloca tu dedo en el lector biométrico conectado en tu sede para registrar tu ingreso:
-                        </p>
-                        
-                        {/* Fingerprint scan circle */}
-                        <div 
-                          onClick={triggerFingerprintScan}
-                          style={{
-                            width: '120px',
-                            height: '120px',
-                            borderRadius: '50%',
-                            border: `4px solid ${
-                              bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--border)'
-                            }`,
-                            backgroundColor: bioScanState === 'scanning' ? 'rgba(139,26,26,0.05)' : 'var(--bg-main)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
-                            position: 'relative',
-                            overflow: 'hidden',
-                            transition: 'all 0.3s ease',
-                            marginTop: '5px',
-                            boxShadow: 'var(--shadow-sm)'
-                          }}
-                        >
-                          {bioScanState === 'scanning' && (
-                            <div style={{
-                              position: 'absolute',
-                              width: '100%',
-                              height: '3px',
-                              backgroundColor: 'var(--primary)',
-                              boxShadow: '0 0 8px var(--primary)',
-                              top: `${bioProgress}%`,
-                              left: 0,
-                              transition: 'top 0.15s linear',
-                            }} />
-                          )}
-
-                          <svg width="45" height="45" viewBox="0 0 24 24" fill="none" stroke={
-                            bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--text-muted)'
-                          } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 10a2 2 0 0 0-2 2M14 14a4 4 0 0 0-4-4M2 12a10 10 0 0 1 18 0M10 17v-1a2 2 0 1 1 4 0v1" />
-                            <path d="M12 2a10 10 0 0 0-10 10M12 22a10 10 0 0 0 10-10" />
-                            <path d="M6 12a6 6 0 0 1 12 0M8 12a4 4 0 0 1 8 0" />
-                          </svg>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={triggerFingerprintScan}
-                          disabled={bioScanState !== 'idle'}
-                          className="btn"
-                          style={{
-                            padding: '6px 15px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            backgroundColor: bioScanState === 'idle' ? 'var(--primary)' : 'var(--bg-card)',
-                            color: bioScanState === 'idle' ? '#fff' : 'var(--text-muted)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '4px',
-                            cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
-                            marginTop: '2px'
-                          }}
-                        >
-                          {bioScanState === 'idle' ? '☝️ Simular Colocar Dedo' : 'Procesando...'}
-                        </button>
-
-                        <div style={{ fontSize: '11px', color: bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '30px', maxWidth: '240px', marginTop: '2px' }}>
-                          {bioFeedback}
-                        </div>
-                      </div>
-
+                    <div style={{ fontSize: '12px', color: bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px', maxWidth: '340px', marginTop: '5px' }}>
+                      {bioFeedback}
                     </div>
                   </div>
                 )}
