@@ -249,7 +249,8 @@ export default function SupervisorDashboard({
     return user && user.store !== 'Todas' ? user.store : 'Barranco';
   });
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [expandedIncidents, setExpandedIncidents] = useState({});
+  const [activeIncidentId, setActiveIncidentId] = useState(null);
+  const [hoveredIncId, setHoveredIncId] = useState(null);
 
   // Filter state for monitoring panel
   const [monitoringStoreFilter, setMonitoringStoreFilter] = useState('Todas');
@@ -1289,6 +1290,8 @@ export default function SupervisorDashboard({
     const userStore = user.store;
     const isStoreAdmin = user.role === 'Administrador';
 
+
+
     const filtered = (incidents || []).filter(inc => {
       // Ignore resolved incidents entirely
       if (inc.status === 'Resuelto') return false;
@@ -1321,39 +1324,7 @@ export default function SupervisorDashboard({
     // Unique stores for filters (only for non-admins)
     const uniqueStores = Array.from(new Set([...(incidents || []).map(inc => inc.store), 'Barranco', 'Miraflores', 'San Isidro']));
 
-    const handleSaveResponse = (incidentId) => {
-      const text = incResponseTexts[incidentId] || '';
-      if (!text.trim()) {
-        alert('Por favor, escribe una respuesta antes de guardar.');
-        return;
-      }
-      onRespondIncident(incidentId, text.trim(), user.role);
-      
-      setIncSuccessMsg(`¡Respuesta registrada con éxito para la incidencia ${incidentId}!`);
-      setTimeout(() => setIncSuccessMsg(''), 5000);
-    };
 
-    const handleResolve = (incidentId) => {
-      const text = incResponseTexts[incidentId] || '';
-      if (text.trim()) {
-        onRespondIncident(incidentId, text.trim(), user.role);
-      }
-      onUpdateIncidentStatus(incidentId, 'Resuelto', `${user.name} (${user.role})`);
-      
-      setIncSuccessMsg(`¡Incidencia ${incidentId} marcada como RESUELTA!`);
-      setTimeout(() => setIncSuccessMsg(''), 5000);
-    };
-
-    const handleEscalate = (incidentId) => {
-      const text = incResponseTexts[incidentId] || '';
-      if (text.trim()) {
-        onRespondIncident(incidentId, text.trim(), user.role);
-      }
-      onUpdateIncidentStatus(incidentId, 'Escalado');
-      
-      setIncSuccessMsg(`¡Incidencia ${incidentId} escalada a Supervisión!`);
-      setTimeout(() => setIncSuccessMsg(''), 5000);
-    };
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
@@ -1695,207 +1666,72 @@ export default function SupervisorDashboard({
                 statusBg = 'var(--warning-light)';
                 statusColor = '#d97706';
                 statusBorder = '#d97706';
-              } else if (inc.status === 'Resuelto') {
-                statusBg = 'var(--success-light)';
-                statusColor = 'var(--success)';
-                statusBorder = 'var(--success)';
               }
 
-              const formattedDate = new Date(inc.date).toLocaleString('es-PE', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              });
-
-              const currentDraft = incResponseTexts[inc.id] || '';
-
-              const isExpanded = !!expandedIncidents[inc.id];
-              const toggleExpand = (e) => {
-                e.stopPropagation();
-                setExpandedIncidents(prev => ({
-                  ...prev,
-                  [inc.id]: !prev[inc.id]
-                }));
-              };
+              const isHovered = hoveredIncId === inc.id;
 
               return (
-                <div
+                <a
                   key={inc.id}
+                  href={`?view=incident-detail&id=${inc.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="card animate-scale-in"
+                  onMouseEnter={() => setHoveredIncId(inc.id)}
+                  onMouseLeave={() => setHoveredIncId(null)}
                   style={{
                     padding: '15px 20px',
-                    border: `1px solid ${statusBorder}`,
-                    backgroundColor: 'var(--bg-card)',
+                    border: `1px solid ${isHovered ? 'var(--primary)' : statusBorder}`,
+                    backgroundColor: isHovered ? 'var(--bg-main)' : 'var(--bg-card)',
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: isExpanded ? '15px' : '0px',
-                    cursor: isExpanded ? 'default' : 'pointer',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
                     transition: 'all 0.2s ease',
+                    transform: isHovered ? 'translateY(-2px)' : 'none',
+                    boxShadow: isHovered ? 'var(--shadow-md)' : 'none',
+                    textDecoration: 'none',
+                    color: 'inherit'
                   }}
-                  onClick={!isExpanded ? (e) => toggleExpand(e) : undefined}
                 >
-                  {/* Clickable Header Row */}
-                  <div 
-                    onClick={isExpanded ? (e) => toggleExpand(e) : undefined}
-                    style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
-                      cursor: 'pointer',
-                      width: '100%',
-                      userSelect: 'none'
-                    }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '11px', letterSpacing: '0.5px' }}>
-                          {inc.id} • {inc.type.toUpperCase()}
-                        </span>
-                        <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: 'rgba(0,0,0,0.04)', padding: '2px 8px', borderRadius: '4px', color: 'var(--text-main)' }}>
-                          📍 Sede: {inc.store}
-                        </span>
-                      </div>
-                      <h3 style={{ margin: '4px 0 0 0', fontSize: '14.5px', color: 'var(--text-main)', fontWeight: 800 }}>
-                        {inc.title}
-                      </h3>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      {inc.urgency === 'Urgente' && (
-                        <span style={{ backgroundColor: 'var(--error-light)', color: 'var(--error)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, border: '1px solid var(--error)' }}>
-                          🚨 URGENTE
-                        </span>
-                      )}
-                      <span style={{
-                        padding: '3px 10px',
-                        borderRadius: '12px',
-                        backgroundColor: statusBg,
-                        color: statusColor,
-                        fontWeight: 800,
-                        fontSize: '10px',
-                        border: '1px solid currentColor',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
-                      }}>
-                        {inc.status}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '11px', letterSpacing: '0.5px' }}>
+                        {inc.id} • {inc.type.toUpperCase()}
                       </span>
-                      <span style={{ fontSize: '14px', color: 'var(--text-muted)', marginLeft: '10px' }}>
-                        {isExpanded ? '▲ Colapsar' : '▼ Expandir'}
+                      <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: 'rgba(0,0,0,0.04)', padding: '2px 8px', borderRadius: '4px', color: 'var(--text-main)' }}>
+                        📍 Sede: {inc.store}
                       </span>
                     </div>
+                    <h3 style={{ margin: '4px 0 0 0', fontSize: '14.5px', color: 'var(--text-main)', fontWeight: 800 }}>
+                      {inc.title}
+                    </h3>
                   </div>
 
-                  {/* Collapsible Details */}
-                  {isExpanded && (
-                    <div 
-                      onClick={(e) => e.stopPropagation()} // Prevent collapse on details click
-                      style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', borderTop: '1px solid var(--border)', paddingTop: '15px' }}
-                    >
-                      {/* Description */}
-                      <div style={{
-                        backgroundColor: 'var(--bg-main)',
-                        padding: '12px 15px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border)',
-                        fontSize: '12.5px',
-                        color: 'var(--text-main)',
-                        lineHeight: '1.5'
-                      }}>
-                        <strong>Descripción del problema:</strong>
-                        <p style={{ margin: '6px 0 0 0', whiteSpace: 'pre-line' }}>{inc.description}</p>
-                      </div>
-
-                      {/* Reporter details */}
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '5px' }}>
-                        <span>Reportado por: <strong>{inc.reporterName}</strong> ({inc.reporterRole}) • {inc.reporterEmail}</span>
-                        <span>Fecha de reporte: {formattedDate}</span>
-                      </div>
-
-                      {/* Action Forms - Respond / Resolve / Escalate */}
-                      {inc.status !== 'Resuelto' && (
-                        <div style={{
-                          borderTop: '1px solid var(--border)',
-                          paddingTop: '15px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '12px'
-                        }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)' }}>
-                              ✍️ Escribir Respuesta / Seguimiento operativo:
-                            </label>
-                            <textarea
-                              className="input"
-                              rows="2"
-                              placeholder={
-                                isStoreAdmin
-                                  ? "Escribe la respuesta o plan de acción de la tienda..."
-                                  : "Escribe la directiva, indicación o respuesta de supervisión..."
-                              }
-                              value={currentDraft}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setIncResponseTexts(prev => ({ ...prev, [inc.id]: val }));
-                              }}
-                              style={{ resize: 'vertical', minHeight: '60px', fontSize: '12px', fontFamily: 'inherit' }}
-                            />
-                          </div>
-
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                            {/* Guardar Respuesta */}
-                            <button
-                              onClick={() => handleSaveResponse(inc.id)}
-                              className="btn btn-secondary"
-                              style={{ padding: '8px 14px', fontSize: '11.5px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                            >
-                              💾 Guardar Respuesta
-                            </button>
-
-                            {/* Escalar (Only for admin and if status is not already escalated) */}
-                            {isStoreAdmin && inc.status !== 'Escalado' && (
-                              <button
-                                onClick={() => handleEscalate(inc.id)}
-                                className="btn"
-                                style={{
-                                  padding: '8px 14px',
-                                  fontSize: '11.5px',
-                                  backgroundColor: '#fffbeb',
-                                  color: '#d97706',
-                                  border: '1px solid #fcd34d',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  borderRadius: '4px',
-                                  transition: 'all 0.2s',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '6px'
-                                }}
-                              >
-                                🚨 Escalar a Supervisor
-                              </button>
-                            )}
-
-                            {/* Resolver */}
-                            <button
-                              onClick={() => handleResolve(inc.id)}
-                              className="btn btn-primary"
-                              style={{
-                                padding: '8px 14px',
-                                fontSize: '11.5px',
-                                backgroundColor: 'var(--success)',
-                                borderColor: 'var(--success)',
-                                color: '#fff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px'
-                              }}
-                            >
-                              ✓ Marcar como Resuelto
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {inc.urgency === 'Urgente' && (
+                      <span style={{ backgroundColor: 'var(--error-light)', color: 'var(--error)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, border: '1px solid var(--error)' }}>
+                        🚨 URGENTE
+                      </span>
+                    )}
+                    <span style={{
+                      padding: '3px 10px',
+                      borderRadius: '12px',
+                      backgroundColor: statusBg,
+                      color: statusColor,
+                      fontWeight: 800,
+                      fontSize: '10px',
+                      border: '1px solid currentColor',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      {inc.status}
+                    </span>
+                    <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 700, marginLeft: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      Gestionar ➜
+                    </span>
+                  </div>
+                </a>
               );
             })
           )}

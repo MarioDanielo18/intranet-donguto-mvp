@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import ColaboradorDashboard from './components/ColaboradorDashboard';
 import SupervisorDashboard from './components/SupervisorDashboard';
+import IncidentDetailStandalone from './components/IncidentDetailStandalone';
 
 // Initialize mock data directly from Don Guto excel specs
 const INITIAL_CHECKLISTS = [
@@ -382,7 +383,19 @@ const INITIAL_INCIDENTS = [
 ];
 
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('donguto-user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('donguto-user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('donguto-user');
+    }
+  }, [user]);
+
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('donguto-theme') || 'light';
   });
@@ -401,6 +414,20 @@ export default function App() {
     const saved = localStorage.getItem('donguto-incidents');
     return saved ? JSON.parse(saved) : INITIAL_INCIDENTS;
   });
+
+  // Keep incidents synchronized across tabs
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'donguto-incidents') {
+        const saved = localStorage.getItem('donguto-incidents');
+        if (saved) {
+          setIncidents(JSON.parse(saved));
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   // Biometric states
   const INITIAL_BIOMETRIC_DEVICES = [
@@ -661,6 +688,38 @@ export default function App() {
   // -------------------------------------------------------------------------
   // RENDERER
   // -------------------------------------------------------------------------
+  const params = new URLSearchParams(window.location.search);
+  const isDetailView = params.get('view') === 'incident-detail';
+  const detailIncidentId = params.get('id');
+
+  if (isDetailView) {
+    if (!user) {
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'var(--bg-main)'
+        }}>
+          <Login onLogin={handleLogin} />
+        </div>
+      );
+    }
+    return (
+      <IncidentDetailStandalone
+        user={user}
+        incidentId={detailIncidentId}
+        incidents={incidents}
+        onRespondIncident={handleRespondIncident}
+        onUpdateIncidentStatus={handleUpdateIncidentStatus}
+        theme={theme}
+        setTheme={setTheme}
+      />
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingBottom: '60px' }}>
       
