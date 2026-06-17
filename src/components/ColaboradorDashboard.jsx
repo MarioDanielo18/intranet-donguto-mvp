@@ -1395,7 +1395,7 @@ export default function ColaboradorDashboard({
           {trainingRoute.map((day) => {
             const isCompleted = day.estado === 'Completado';
             const isInProgress = day.estado === 'En Curso';
-            const isLocked = !isCompleted && !isInProgress;
+            const isLocked = false; // Habilitado temporalmente por requerimiento del usuario
             
             let statusColor = { bg: 'var(--bg-main)', text: 'var(--text-muted)', border: 'var(--border)' };
             if (isCompleted) statusColor = { bg: 'var(--success-light)', text: 'var(--success)', border: 'var(--success)' };
