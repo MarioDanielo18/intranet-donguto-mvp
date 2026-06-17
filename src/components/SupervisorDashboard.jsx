@@ -231,14 +231,13 @@ export default function SupervisorDashboard({
     alert('Directiva operativa publicada con éxito.');
   };
 
-  // States for attendance QR Scanner simulation
-  const [scannerCollabEmail, setScannerCollabEmail] = useState('');
-  const [scannerExpectedTime, setScannerExpectedTime] = useState('07:00 AM');
-  const [scannerTimeMode, setScannerTimeMode] = useState('realtime');
-  const [scannerSimTime, setScannerSimTime] = useState('07:05');
-  const [scannerCustomExpTime, setScannerCustomExpTime] = useState('07:00');
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState(null);
+  // States for my biometric attendance (moved to top level to satisfy Rules of Hooks)
+  const [myBioState, setMyBioState] = useState('idle');
+  const [myBioFeedback, setMyBioFeedback] = useState('Por favor, coloque su dedo en el lector biométrico.');
+  const [myBioProgress, setMyBioProgress] = useState(0);
+
+  // States for technical panel tab (moved to top level to satisfy Rules of Hooks)
+  const [techTabSub, setTechTabSub] = useState('devices'); // 'devices' | 'docs'
 
   // Reset tab to training when collaborator changes
   useEffect(() => {
@@ -1777,9 +1776,6 @@ export default function SupervisorDashboard({
     const clockedInToday = logs.some(l => l.date === todayStr);
     const todaysLog = logs.find(l => l.date === todayStr);
 
-    const [myBioState, setMyBioState] = useState('idle');
-    const [myBioFeedback, setMyBioFeedback] = useState('Por favor, coloque su dedo en el lector biométrico.');
-    const [myBioProgress, setMyBioProgress] = useState(0);
 
     const triggerMyBioScan = () => {
       if (myBioState !== 'idle') return;
@@ -1954,7 +1950,6 @@ export default function SupervisorDashboard({
   };
 
   const renderTechnicalPanelTab = () => {
-    const [techTabSub, setTechTabSub] = useState('devices'); // 'devices' | 'docs'
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
@@ -2438,22 +2433,7 @@ main();`}
         >
           Historial de Auditorías
         </button>
-        <button
-          onClick={() => setActiveTab('qr_scanner')}
-          style={{
-            padding: '14px 20px',
-            border: 'none',
-            borderBottom: activeTab === 'qr_scanner' ? '3px solid var(--primary)' : '3px solid transparent',
-            backgroundColor: 'transparent',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: 700,
-            color: activeTab === 'qr_scanner' ? 'var(--primary)' : 'var(--text-muted)',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          📷 Escanear QR Asistencia
-        </button>
+
         <button
           onClick={() => setActiveTab('incidents')}
           style={{
@@ -3407,347 +3387,7 @@ main();`}
           </div>
         )}
 
-        {activeTab === 'qr_scanner' && (() => {
-          // Calculate helper to convert simulated time formats
-          const convert24hTo12h = (time24) => {
-            if (!time24) return '';
-            const [hoursStr, minutesStr] = time24.split(':');
-            let hours = parseInt(hoursStr, 10);
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12;
-            hours = hours ? hours : 12;
-            return `${hours.toString().padStart(2, '0')}:${minutesStr} ${ampm}`;
-          };
 
-          const handleScanSimulate = () => {
-            if (!scannerCollabEmail) return;
-            
-            setIsScanning(true);
-            setScanResult(null);
-
-            setTimeout(() => {
-              // Finish scan animation
-              setIsScanning(false);
-              
-              const selectedCollab = teamMembers.find(m => m.email === scannerCollabEmail);
-              if (!selectedCollab) return;
-
-              let finalTimeStr = '';
-              let finalExpectedTimeStr = scannerExpectedTime;
-              
-              if (scannerExpectedTime === 'CUSTOM') {
-                finalExpectedTimeStr = convert24hTo12h(scannerCustomExpTime);
-              }
-
-              const now = new Date();
-              if (scannerTimeMode === 'realtime') {
-                const hours = now.getHours();
-                const minutes = now.getMinutes();
-                const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
-                const displayMinutes = minutes.toString().padStart(2, '0');
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                finalTimeStr = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
-              } else {
-                finalTimeStr = convert24hTo12h(scannerSimTime);
-              }
-
-              // Parse delay
-              const [timePart, ampmPart] = finalTimeStr.split(' ');
-              let [h, m] = timePart.split(':').map(Number);
-              if (ampmPart === 'PM' && h < 12) h += 12;
-              if (ampmPart === 'AM' && h === 12) h = 0;
-              const currentMins = h * 60 + m;
-
-              const [expTimePart, expAmpmPart] = finalExpectedTimeStr.split(' ');
-              let [eh, em] = expTimePart.split(':').map(Number);
-              if (expAmpmPart === 'PM' && eh < 12) eh += 12;
-              if (expAmpmPart === 'AM' && eh === 12) eh = 0;
-              const expectedMins = eh * 60 + em;
-
-              const delay = Math.max(0, currentMins - expectedMins);
-              const todayStr = now.toISOString().split('T')[0];
-
-              // Call clock in handler
-              if (onClockIn) {
-                onClockIn(scannerCollabEmail, todayStr, finalTimeStr, finalExpectedTimeStr, delay);
-              }
-
-              setScanResult({
-                name: selectedCollab.name,
-                email: selectedCollab.email,
-                time: finalTimeStr,
-                expected: finalExpectedTimeStr,
-                delay: delay
-              });
-
-            }, 1500);
-          };
-
-          return (
-            <div className="card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
-                <h3 style={{ margin: 0, color: 'var(--primary)' }}>📷 Escáner de Asistencia QR (Tienda)</h3>
-                <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                  Apunta la cámara de la tableta de la tienda al código QR del colaborador para registrar su asistencia al instante.
-                </p>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '25px', marginTop: '10px' }}>
-                
-                {/* Viewfinder simulation column */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-                  <div style={{
-                    width: '100%',
-                    maxWidth: '320px',
-                    height: '240px',
-                    backgroundColor: '#1c1716',
-                    borderRadius: '8px',
-                    border: '3px solid var(--border)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: 'var(--shadow-md)'
-                  }}>
-                    {/* Viewfinder borders overlay */}
-                    <div style={{ position: 'absolute', top: '20px', left: '20px', width: '20px', height: '20px', borderTop: '4px solid var(--primary)', borderLeft: '4px solid var(--primary)' }} />
-                    <div style={{ position: 'absolute', top: '20px', right: '20px', width: '20px', height: '20px', borderTop: '4px solid var(--primary)', borderRight: '4px solid var(--primary)' }} />
-                    <div style={{ position: 'absolute', bottom: '20px', left: '20px', width: '20px', height: '20px', borderBottom: '4px solid var(--primary)', borderLeft: '4px solid var(--primary)' }} />
-                    <div style={{ position: 'absolute', bottom: '20px', right: '20px', width: '20px', height: '20px', borderBottom: '4px solid var(--primary)', borderRight: '4px solid var(--primary)' }} />
-
-                    {/* Scanning red laser line */}
-                    {isScanning && (
-                      <div style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        height: '3px',
-                        backgroundColor: 'red',
-                        boxShadow: '0 0 10px 2px red',
-                        top: 0,
-                        animation: 'scanLaser 1.5s infinite linear'
-                      }} />
-                    )}
-
-                    {/* Center content based on state */}
-                    {isScanning ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', color: '#fff' }}>
-                        <span style={{ fontSize: '24px', animation: 'spin 1.5s infinite linear' }}>🔄</span>
-                        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Analizando Código QR...</span>
-                      </div>
-                    ) : scanResult ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', color: 'var(--success)', textAlign: 'center', padding: '20px' }}>
-                        <span style={{ fontSize: '36px' }}>✓</span>
-                        <strong style={{ fontSize: '13px', textTransform: 'uppercase' }}>¡QR Escaneado con Éxito!</strong>
-                        <span style={{ fontSize: '11px', color: '#fff', opacity: 0.8 }}>
-                          {scanResult.name} registrado
-                        </span>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', color: '#888', textAlign: 'center', padding: '20px' }}>
-                        <span style={{ fontSize: '40px' }}>📷</span>
-                        <span style={{ fontSize: '12px', fontWeight: 600 }}>Simulador de Cámara Activo</span>
-                        <span style={{ fontSize: '10px', opacity: 0.6 }}>Selecciona un colaborador a la derecha</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Inline keyframe animation style */}
-                  <style>{`
-                    @keyframes scanLaser {
-                      0% { top: 10%; }
-                      50% { top: 90%; }
-                      100% { top: 10%; }
-                    }
-                    @keyframes spin {
-                      from { transform: rotate(0deg); }
-                      to { transform: rotate(360deg); }
-                    }
-                  `}</style>
-                </div>
-
-                {/* Simulation controls column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  
-                  {/* Select collaborator */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-muted)' }}>1. Selecciona Colaborador a Escanear:</label>
-                    <select
-                      value={scannerCollabEmail}
-                      onChange={(e) => setScannerCollabEmail(e.target.value)}
-                      style={{
-                        padding: '10px',
-                        borderRadius: 'var(--radius-sm)',
-                        border: '1px solid var(--border)',
-                        backgroundColor: 'var(--bg-card)',
-                        color: 'var(--text-main)',
-                        fontSize: '12.5px',
-                        fontWeight: 600,
-                      }}
-                    >
-                      <option value="">-- Seleccionar Colaborador --</option>
-                      {teamMembers.map(member => (
-                        <option key={member.email} value={member.email}>
-                          {member.name} ({member.role} - Sede: {member.store})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Expected shift/time */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-muted)' }}>2. Hora Esperada de Entrada (Turno):</label>
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                      {[
-                        { label: '07:00 AM (Apertura)', val: '07:00 AM' },
-                        { label: '08:00 AM (Apertura Salón)', val: '08:00 AM' },
-                        { label: '02:00 PM (Tarde/Cierre)', val: '02:00 PM' },
-                        { label: 'Personalizado...', val: 'CUSTOM' }
-                      ].map(opt => (
-                        <button
-                          key={opt.val}
-                          type="button"
-                          onClick={() => setScannerExpectedTime(opt.val)}
-                          className="btn"
-                          style={{
-                            padding: '6px 12px',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            border: '1px solid var(--border)',
-                            backgroundColor: scannerExpectedTime === opt.val ? 'var(--primary)' : 'var(--bg-main)',
-                            color: scannerExpectedTime === opt.val ? '#fff' : 'var(--text-main)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                    {scannerExpectedTime === 'CUSTOM' && (
-                      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Especifica hora esperada:</span>
-                        <input
-                          type="time"
-                          value={scannerCustomExpTime}
-                          onChange={(e) => setScannerCustomExpTime(e.target.value)}
-                          style={{
-                            padding: '5px 8px',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border)',
-                            backgroundColor: 'var(--bg-card)',
-                            color: 'var(--text-main)',
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Arrival time simulation */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-muted)' }}>3. Hora de Llegada a Registrar:</label>
-                    <div style={{ display: 'flex', gap: '15px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-main)', cursor: 'pointer' }}>
-                        <input
-                          type="radio"
-                          name="scannerTimeMode"
-                          checked={scannerTimeMode === 'realtime'}
-                          onChange={() => setScannerTimeMode('realtime')}
-                        />
-                        Hora real del sistema
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-main)', cursor: 'pointer' }}>
-                        <input
-                          type="radio"
-                          name="scannerTimeMode"
-                          checked={scannerTimeMode === 'simulated'}
-                          onChange={() => setScannerTimeMode('simulated')}
-                        />
-                        Simular otra hora
-                      </label>
-                    </div>
-
-                    {scannerTimeMode === 'simulated' && (
-                      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Especifica hora de simulación:</span>
-                        <input
-                          type="time"
-                          value={scannerSimTime}
-                          onChange={(e) => setScannerSimTime(e.target.value)}
-                          style={{
-                            padding: '5px 8px',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border)',
-                            backgroundColor: 'var(--bg-card)',
-                            color: 'var(--text-main)',
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Trigger Simulation Button */}
-                  <div style={{ marginTop: '10px' }}>
-                    <button
-                      type="button"
-                      disabled={isScanning || !scannerCollabEmail}
-                      onClick={handleScanSimulate}
-                      className="btn"
-                      style={{
-                        padding: '12px 24px',
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        backgroundColor: !scannerCollabEmail ? 'var(--text-muted)' : 'var(--primary)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: !scannerCollabEmail ? 'not-allowed' : 'pointer',
-                        width: '100%',
-                        boxShadow: 'var(--shadow-sm)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px'
-                      }}
-                    >
-                      📸 Simular Escaneo de Código QR
-                    </button>
-                  </div>
-
-                </div>
-
-              </div>
-
-              {/* Scan feedback card */}
-              {scanResult && (
-                <div style={{
-                  padding: '15px 20px',
-                  borderRadius: '6px',
-                  backgroundColor: 'var(--success-light)',
-                  border: '1px solid var(--success)',
-                  color: 'var(--success)',
-                  fontSize: '13px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '5px',
-                  marginTop: '10px'
-                }}>
-                  <strong>🟢 REGISTRO DE ASISTENCIA QR COMPLETADO:</strong>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginTop: '5px', color: 'var(--text-main)' }}>
-                    <div>👤 <strong>Colaborador:</strong> {scanResult.name}</div>
-                    <div>📧 <strong>Email:</strong> {scanResult.email}</div>
-                    <div>🕒 <strong>Hora Entrada:</strong> {scanResult.time}</div>
-                    <div>📅 <strong>Hora Esperada:</strong> {scanResult.expected}</div>
-                    <div style={{ fontWeight: 700, color: scanResult.delay > 0 ? 'var(--error)' : 'var(--success)' }}>
-                      ⚠️ <strong>Retraso:</strong> {scanResult.delay > 0 ? `+${scanResult.delay} minutos` : 'A tiempo'}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          );
-        })()}
 
         {activeTab === 'multistore' && renderMultistoreDashboard()}
 
