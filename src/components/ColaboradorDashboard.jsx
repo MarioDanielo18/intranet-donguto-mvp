@@ -221,7 +221,7 @@ export default function ColaboradorDashboard({
   const [incUrgency, setIncUrgency] = useState('Normal');
   const [incDesc, setIncDesc] = useState('');
   const [incSuccessMsg, setIncSuccessMsg] = useState('');
-  const [incidentSubTab, setIncidentSubTab] = useState('register'); // 'register' | 'my_reports' | 'store_history'
+  const [incidentSubTab, setIncidentSubTab] = useState('instructions'); // 'instructions' | 'register' | 'my_reports' | 'store_history'
 
   const [userIp, setUserIp] = useState('Obteniendo IP...');
   const [selectedWifi, setSelectedWifi] = useState('external'); // 'Barranco' | 'Miraflores' | 'San Isidro' | 'external'
@@ -615,8 +615,9 @@ export default function ColaboradorDashboard({
         </div>
 
         {/* Sub-Tab Navigation Bar */}
-        <div className="card glass" style={{ padding: '0 10px', display: 'flex', gap: '5px', border: '1px solid var(--border)' }}>
+        <div className="card glass" style={{ padding: '0 10px', display: 'flex', gap: '5px', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
           {[
+            { id: 'instructions', label: '📖 Instrucciones de Uso' },
             { id: 'register', label: '📝 Registrar Nueva' },
             { id: 'my_reports', label: '👤 Mis Incidencias Generadas' },
             { id: 'store_history', label: '📋 Historial de la Sede' }
@@ -656,6 +657,70 @@ export default function ColaboradorDashboard({
         )}
 
         <div style={{ width: '100%' }}>
+          {incidentSubTab === 'instructions' && (
+            <div className="card" style={{ padding: '25px', border: '1px solid var(--border)', maxWidth: '750px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', color: 'var(--primary)', fontWeight: 800, borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+                📖 Guía e Instrucciones de Uso para Reportar Incidencias
+              </h4>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '12.5px', lineHeight: 1.5 }}>
+                <p style={{ margin: 0 }}>
+                  Este módulo permite reportar fallos, carencias o problemas operativos de forma directa al Administrador de tu sede y a la mesa técnica. Por favor, lee atentamente los siguientes estándares para garantizar una atención rápida y eficiente:
+                </p>
+
+                {/* Urgency section */}
+                <div style={{ padding: '12px 15px', borderRadius: '6px', backgroundColor: 'var(--bg-main)', borderLeft: '4px solid var(--primary)' }}>
+                  <strong style={{ color: 'var(--text-main)', fontSize: '13px', display: 'block', marginBottom: '6px' }}>🔴 Niveles de Urgencia:</strong>
+                  <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <li>
+                      <strong>⚠️ Normal (Impacto leve/moderado)</strong>: Problemas que no detienen la operación de la tienda de forma inmediata. Se atienden en los plazos estándar de mantenimiento o reabastecimiento (ej. focos parpadeando, repisas flojas, requerimiento de útiles de limpieza, desgaste de utensilios).
+                    </li>
+                    <li>
+                      <strong>🚨 Urgente (Impacto crítico/operativo)</strong>: Situaciones que impiden vender o producir de manera correcta, afectando directamente la experiencia del cliente o la seguridad del local. Se atienden con máxima prioridad de forma inmediata (ej. máquina de café espresso rota, campana extractora o cocina inoperativa, corte de luz local, terminales de pago caídos, fugas de gas o agua severas).
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Title standard section */}
+                <div style={{ padding: '12px 15px', borderRadius: '6px', backgroundColor: 'var(--bg-main)', borderLeft: '4px solid var(--secondary)' }}>
+                  <strong style={{ color: 'var(--text-main)', fontSize: '13px', display: 'block', marginBottom: '6px' }}>📝 Estándar Obligatorio para Títulos:</strong>
+                  <p style={{ margin: '0 0 6px 0' }}>
+                    Para que la administración identifique de un vistazo el origen y tipo de fallo, debes redactar los títulos siguiendo esta plantilla estándar:
+                  </p>
+                  <div style={{
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    backgroundColor: 'rgba(0,0,0,0.03)',
+                    fontFamily: 'monospace',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    textAlign: 'center',
+                    border: '1px dashed var(--border)',
+                    color: 'var(--primary)',
+                    marginBottom: '8px'
+                  }}>
+                    [ÁREA / ESTACIÓN] - [Problema principal resumido]
+                  </div>
+                  <strong style={{ display: 'block', marginBottom: '4px', fontSize: '11.5px' }}>Ejemplos correctos:</strong>
+                  <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', fontStyle: 'italic', color: 'var(--text-muted)' }}>
+                    <li>"BARRA - Fuga de agua en manguera de vapor La Marzocco"</li>
+                    <li>"COCINA - Freidora de papas no calienta el aceite"</li>
+                    <li>"SALÓN - Tablet de comandas no se conecta al Wi-Fi"</li>
+                    <li>"SSHH - Pérdida de agua constante en inodoro de caballeros"</li>
+                  </ul>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setIncidentSubTab('register')}
+                className="btn btn-primary" 
+                style={{ alignSelf: 'center', padding: '10px 25px', fontSize: '12.5px', marginTop: '10px' }}
+              >
+                Ir a Registrar Incidencia ✍️
+              </button>
+            </div>
+          )}
+
           {incidentSubTab === 'register' && (
             <form onSubmit={handleIncidentSubmit} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--border)', maxWidth: '650px', margin: '0 auto' }}>
               <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -663,12 +728,15 @@ export default function ColaboradorDashboard({
               </h4>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Título Breve:</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Título de Incidencia:</label>
+                  <span style={{ fontSize: '10px', color: 'var(--primary)', fontWeight: 600 }}>Formato estándar: [ÁREA] - [Problema]</span>
+                </div>
                 <input
                   type="text"
                   required
                   className="input"
-                  placeholder="Ej: Fuga de agua en licuadora, falta de vasos 12oz..."
+                  placeholder="Ej: [BARRA] - Fuga de agua en manguera de vapor"
                   value={incTitle}
                   onChange={(e) => setIncTitle(e.target.value)}
                 />
