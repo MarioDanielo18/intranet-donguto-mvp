@@ -106,12 +106,11 @@ export default function SupervisorDashboard({
   onSelectIncident,
   onApproveCollaborator,
   onRejectCollaborator,
+  activeTab,
+  setActiveTab,
 }) {
   const approvedMembers = (teamMembers || []).filter(m => !m.pendingApproval);
 
-  const [activeTab, setActiveTab] = useState(() => {
-    return user.role === 'Técnico' ? 'technical_panel' : 'monitoring';
-  });
 
   // Biometric states for Técnico
   const [techDevices, setTechDevices] = useState(biometricDevices || []);

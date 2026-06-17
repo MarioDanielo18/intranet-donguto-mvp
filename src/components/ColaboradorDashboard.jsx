@@ -154,6 +154,8 @@ export default function ColaboradorDashboard({
   onAddIncident,
   biometricDevices = [],
   onBiometricScan,
+  activeTab,
+  setActiveTab,
 }) {
   const [bioScanState, setBioScanState] = useState('idle'); // 'idle' | 'scanning' | 'verifying' | 'success' | 'error'
   const [bioFeedback, setBioFeedback] = useState('Por favor, coloque su dedo en el lector biométrico.');
@@ -211,7 +213,6 @@ export default function ColaboradorDashboard({
       }
     }, 150);
   };
-  const [activeTab, setActiveTab] = useState('checklist');
   const [shiftType, setShiftType] = useState('APERTURA');
   const [selectedDayMaterial, setSelectedDayMaterial] = useState(null);
   const [cleaningSubTab, setCleaningSubTab] = useState('semanal'); // 'semanal' | 'mensual'

@@ -468,6 +468,17 @@ export default function App() {
   }, [theme]);
   
   // App state database simulation
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('donguto-user');
+    if (saved) {
+      const u = JSON.parse(saved);
+      if (['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(u.role)) {
+        return u.role === 'Técnico' ? 'technical_panel' : 'monitoring';
+      }
+    }
+    return 'checklist';
+  });
+
   const [checklists, setChecklists] = useState(INITIAL_CHECKLISTS);
   const [cleaningTasks, setCleaningTasks] = useState(INITIAL_CLEANING_TASKS);
   const [teamMembers, setTeamMembers] = useState(() => {
@@ -597,10 +608,16 @@ export default function App() {
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
+    if (['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(loggedInUser.role)) {
+      setActiveTab(loggedInUser.role === 'Técnico' ? 'technical_panel' : 'monitoring');
+    } else {
+      setActiveTab('checklist');
+    }
   };
 
   const handleLogout = () => {
     setUser(null);
+    setActiveTab('checklist');
   };
 
   // -------------------------------------------------------------------------
@@ -900,6 +917,8 @@ export default function App() {
             {['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(user.role) ? (
               <SupervisorDashboard
                 user={user}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
                 checklists={checklists}
                 cleaningTasks={cleaningTasks}
                 trainingRoute={INITIAL_TRAINING_ROUTE}
@@ -925,6 +944,8 @@ export default function App() {
             ) : (
               <ColaboradorDashboard
                 user={user}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
                 checklists={checklists}
                 cleaningTasks={cleaningTasks}
                 trainingRoute={INITIAL_TRAINING_ROUTE.map(d => ({
@@ -993,6 +1014,121 @@ export default function App() {
               {theme === 'light' ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}
             </button>
 
+            <div className="drawer-section-title">Secciones</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '15px' }}>
+              {['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(user.role) ? (
+                <>
+                  <button
+                    className={`drawer-btn ${activeTab === 'monitoring' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('monitoring'); setIsDrawerOpen(false); }}
+                  >
+                    📊 Panel de Monitoreo
+                  </button>
+                  <button
+                    className={`drawer-btn ${activeTab === 'audits' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('audits'); setIsDrawerOpen(false); }}
+                  >
+                    📋 Ficha de Auditoría
+                  </button>
+                  <button
+                    className={`drawer-btn ${activeTab === 'team' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('team'); setIsDrawerOpen(false); }}
+                  >
+                    👥 Equipo y Capacitación
+                  </button>
+                  <button
+                    className={`drawer-btn ${activeTab === 'logs' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('logs'); setIsDrawerOpen(false); }}
+                  >
+                    📜 Historial de Auditorías
+                  </button>
+                  <button
+                    className={`drawer-btn ${activeTab === 'incidents' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('incidents'); setIsDrawerOpen(false); }}
+                  >
+                    ⚠️ Bandeja de Incidencias
+                  </button>
+                  <button
+                    className={`drawer-btn ${activeTab === 'my_attendance' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('my_attendance'); setIsDrawerOpen(false); }}
+                  >
+                    🕒 Mi Asistencia (Huella)
+                  </button>
+                  {user.role === 'Técnico' && (
+                    <button
+                      className={`drawer-btn ${activeTab === 'technical_panel' ? 'active' : ''}`}
+                      onClick={() => { setActiveTab('technical_panel'); setIsDrawerOpen(false); }}
+                    >
+                      🛠️ Panel Técnico
+                    </button>
+                  )}
+                  {['Gerente', 'Supervisor', 'Técnico'].includes(user.role) && (
+                    <>
+                      <button
+                        className={`drawer-btn ${activeTab === 'multistore' ? 'active' : ''}`}
+                        onClick={() => { setActiveTab('multistore'); setIsDrawerOpen(false); }}
+                      >
+                        🏢 Dashboard Multitienda
+                      </button>
+                      <button
+                        className={`drawer-btn ${activeTab === 'managerial_kpis' ? 'active' : ''}`}
+                        onClick={() => { setActiveTab('managerial_kpis'); setIsDrawerOpen(false); }}
+                      >
+                        📈 Panel de Gerencia & KPIs
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <button
+                    className={`drawer-btn ${activeTab === 'checklist' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('checklist'); setIsDrawerOpen(false); }}
+                  >
+                    📝 Checklists Diarios
+                  </button>
+                  <button
+                    className={`drawer-btn ${activeTab === 'cleaning' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('cleaning'); setIsDrawerOpen(false); }}
+                  >
+                    🧹 Tareas de Limpieza
+                  </button>
+                  <button
+                    className={`drawer-btn ${activeTab === 'route' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('route'); setIsDrawerOpen(false); }}
+                  >
+                    🎓 Ruta de Capacitación
+                  </button>
+                  {user.role === 'Barista' && (
+                    <button
+                      className={`drawer-btn ${activeTab === 'sensory' ? 'active' : ''}`}
+                      onClick={() => { setActiveTab('sensory'); setIsDrawerOpen(false); }}
+                    >
+                      ☕ Perfil de Espresso
+                    </button>
+                  )}
+                  <button
+                    className={`drawer-btn ${activeTab === 'attendance' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('attendance'); setIsDrawerOpen(false); }}
+                  >
+                    🕒 Control de Asistencia
+                  </button>
+                  <button
+                    className={`drawer-btn ${activeTab === 'menu' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('menu'); setIsDrawerOpen(false); }}
+                  >
+                    📋 Carta Digital
+                  </button>
+                  <button
+                    className={`drawer-btn ${activeTab === 'incidents' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('incidents'); setIsDrawerOpen(false); }}
+                  >
+                    ⚠️ Reportar Incidencia
+                  </button>
+                </>
+              )}
+            </div>
+
             <div className="drawer-section-title">Simulador de Roles (Pruebas)</div>
             <div className="drawer-list">
               {[
@@ -1009,6 +1145,11 @@ export default function App() {
                   className={`drawer-btn ${user.role === r.role ? 'active' : ''}`}
                   onClick={() => {
                     setUser({ username: r.username, name: r.name, role: r.role, store: r.role === 'Supervisor' || r.role === 'Gerente' || r.role === 'Técnico' ? 'Todas' : 'Barranco' });
+                    if (['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(r.role)) {
+                      setActiveTab(r.role === 'Técnico' ? 'technical_panel' : 'monitoring');
+                    } else {
+                      setActiveTab('checklist');
+                    }
                     setIsDrawerOpen(false);
                   }}
                 >
