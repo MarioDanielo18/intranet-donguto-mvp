@@ -2058,6 +2058,84 @@ export default function ColaboradorDashboard({
                         </span>
                       </div>
 
+                      {/* Opción C: Lector Biométrico de Huella */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', textAlign: 'center', padding: '15px', borderLeft: '1px dashed var(--border)' }} className="bio-option-container">
+                        <h5 style={{ margin: 0, fontSize: '13px', color: 'var(--text-main)', fontWeight: 700 }}>
+                          ☝️ Opción C: Lector Biométrico
+                        </h5>
+                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-muted)', maxWidth: '240px' }}>
+                          Coloca tu dedo en el lector biométrico conectado en tu sede para registrar tu ingreso:
+                        </p>
+                        
+                        {/* Fingerprint scan circle */}
+                        <div 
+                          onClick={triggerFingerprintScan}
+                          style={{
+                            width: '120px',
+                            height: '120px',
+                            borderRadius: '50%',
+                            border: `4px solid ${
+                              bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--border)'
+                            }`,
+                            backgroundColor: bioScanState === 'scanning' ? 'rgba(139,26,26,0.05)' : 'var(--bg-main)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            transition: 'all 0.3s ease',
+                            marginTop: '5px',
+                            boxShadow: 'var(--shadow-sm)'
+                          }}
+                        >
+                          {bioScanState === 'scanning' && (
+                            <div style={{
+                              position: 'absolute',
+                              width: '100%',
+                              height: '3px',
+                              backgroundColor: 'var(--primary)',
+                              boxShadow: '0 0 8px var(--primary)',
+                              top: `${bioProgress}%`,
+                              left: 0,
+                              transition: 'top 0.15s linear',
+                            }} />
+                          )}
+
+                          <svg width="45" height="45" viewBox="0 0 24 24" fill="none" stroke={
+                            bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--text-muted)'
+                          } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 10a2 2 0 0 0-2 2M14 14a4 4 0 0 0-4-4M2 12a10 10 0 0 1 18 0M10 17v-1a2 2 0 1 1 4 0v1" />
+                            <path d="M12 2a10 10 0 0 0-10 10M12 22a10 10 0 0 0 10-10" />
+                            <path d="M6 12a6 6 0 0 1 12 0M8 12a4 4 0 0 1 8 0" />
+                          </svg>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={triggerFingerprintScan}
+                          disabled={bioScanState !== 'idle'}
+                          className="btn"
+                          style={{
+                            padding: '6px 15px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            backgroundColor: bioScanState === 'idle' ? 'var(--primary)' : 'var(--bg-card)',
+                            color: bioScanState === 'idle' ? '#fff' : 'var(--text-muted)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '4px',
+                            cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
+                            marginTop: '2px'
+                          }}
+                        >
+                          {bioScanState === 'idle' ? '☝️ Simular Colocar Dedo' : 'Procesando...'}
+                        </button>
+
+                        <div style={{ fontSize: '11px', color: bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '30px', maxWidth: '240px', marginTop: '2px' }}>
+                          {bioFeedback}
+                        </div>
+                      </div>
+
                     </div>
                   </div>
                 )}
