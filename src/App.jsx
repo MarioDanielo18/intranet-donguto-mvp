@@ -737,6 +737,7 @@ export default function App() {
                 incidents={incidents}
                 onRespondIncident={handleRespondIncident}
                 onUpdateIncidentStatus={handleUpdateIncidentStatus}
+                onAddIncident={handleAddIncident}
                 biometricDevices={biometricDevices}
                 biometricLogs={biometricLogs}
                 onUpdateDevices={handleUpdateDevices}

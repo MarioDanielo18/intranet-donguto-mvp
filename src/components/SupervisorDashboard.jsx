@@ -80,6 +80,7 @@ export default function SupervisorDashboard({
   incidents = [],
   onRespondIncident,
   onUpdateIncidentStatus,
+  onAddIncident,
   biometricDevices = [],
   biometricLogs = [],
   onUpdateDevices,
@@ -238,6 +239,19 @@ export default function SupervisorDashboard({
 
   // States for technical panel tab (moved to top level to satisfy Rules of Hooks)
   const [techTabSub, setTechTabSub] = useState('devices'); // 'devices' | 'docs'
+
+  // States for incident creation form in SupervisorDashboard
+  const [createIncTitle, setCreateIncTitle] = useState('');
+  const [createIncDesc, setCreateIncDesc] = useState('');
+  const [createIncType, setCreateIncType] = useState('Mantenimiento');
+  const [createIncUrgency, setCreateIncUrgency] = useState('Normal');
+  const [createIncStore, setCreateIncStore] = useState(() => {
+    return user && user.store !== 'Todas' ? user.store : 'Barranco';
+  });
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  // Filter state for monitoring panel
+  const [monitoringStoreFilter, setMonitoringStoreFilter] = useState('Todas');
 
   // Reset tab to training when collaborator changes
   useEffect(() => {
@@ -897,7 +911,9 @@ export default function SupervisorDashboard({
   };
 
   const renderMultistoreDashboard = () => {
-    const storesList = ['Barranco', 'Miraflores', 'San Isidro'];
+    const storesList = monitoringStoreFilter === 'Todas'
+      ? ['Barranco', 'Miraflores', 'San Isidro']
+      : [monitoringStoreFilter];
     
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -911,6 +927,22 @@ export default function SupervisorDashboard({
           <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: 'var(--success-light)', color: 'var(--success)', padding: '4px 10px', borderRadius: '12px', border: '1px solid var(--success)' }}>
             🟢 SISTEMA EN LÍNEA (ACTUALIZADO)
           </span>
+        </div>
+
+        {/* Store Filter Selector */}
+        <div className="card glass" style={{ padding: '15px', display: 'flex', gap: '15px', alignItems: 'center', border: '1px solid var(--border)' }}>
+          <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>🏢 Filtrar Monitoreo por Sede:</strong>
+          <select
+            value={monitoringStoreFilter}
+            onChange={(e) => setMonitoringStoreFilter(e.target.value)}
+            className="input"
+            style={{ padding: '5px 10px', fontSize: '12.5px', height: '32px', minWidth: '180px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            <option value="Todas">🏢 Todas las sedes (General)</option>
+            <option value="Barranco">Sede Barranco</option>
+            <option value="Miraflores">Sede Miraflores</option>
+            <option value="San Isidro">Sede San Isidro</option>
+          </select>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
@@ -1257,6 +1289,9 @@ export default function SupervisorDashboard({
     const isStoreAdmin = user.role === 'Administrador';
 
     const filtered = (incidents || []).filter(inc => {
+      // Ignore resolved incidents entirely
+      if (inc.status === 'Resuelto') return false;
+
       // Store filter
       if (isStoreAdmin) {
         if (inc.store !== userStore) return false;
@@ -1281,7 +1316,6 @@ export default function SupervisorDashboard({
     const pendingCount = filtered.filter(inc => inc.status === 'Pendiente').length;
     const processCount = filtered.filter(inc => inc.status === 'En Proceso').length;
     const escalatedCount = filtered.filter(inc => inc.status === 'Escalado').length;
-    const resolvedCount = filtered.filter(inc => inc.status === 'Resuelto').length;
 
     // Unique stores for filters (only for non-admins)
     const uniqueStores = Array.from(new Set([...(incidents || []).map(inc => inc.store), 'Barranco', 'Miraflores', 'San Isidro']));
@@ -1351,6 +1385,179 @@ export default function SupervisorDashboard({
           </div>
         )}
 
+        {/* Incident Creation Form */}
+        <div style={{ marginBottom: '10px' }}>
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="btn btn-primary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              fontSize: '13px',
+              fontWeight: 700,
+              backgroundColor: 'var(--primary)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+          >
+            {showCreateForm ? '✖ Cancelar Registro' : '➕ Reportar / Crear Nueva Incidencia'}
+          </button>
+
+          {showCreateForm && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!createIncTitle.trim() || !createIncDesc.trim()) {
+                  alert('Por favor, ingresa un título y una descripción.');
+                  return;
+                }
+
+                const newInc = {
+                  id: `INC-${Date.now().toString().slice(-4)}`,
+                  date: new Date().toISOString(),
+                  reporterEmail: user.email,
+                  reporterName: user.name,
+                  reporterRole: user.role,
+                  store: user.store !== 'Todas' ? user.store : createIncStore,
+                  type: createIncType,
+                  title: createIncTitle.trim(),
+                  description: createIncDesc.trim(),
+                  urgency: createIncUrgency,
+                  status: 'Pendiente',
+                  adminResponse: '',
+                  adminResponseAt: '',
+                  supervisorResponse: '',
+                  supervisorResponseAt: '',
+                  resolvedBy: '',
+                  resolvedAt: ''
+                };
+
+                if (onAddIncident) {
+                  onAddIncident(newInc);
+                  setCreateIncTitle('');
+                  setCreateIncDesc('');
+                  setShowCreateForm(false);
+                  setIncSuccessMsg('¡Incidencia registrada con éxito en el sistema!');
+                  setTimeout(() => setIncSuccessMsg(''), 5000);
+                } else {
+                  alert('Error: No se pudo registrar la incidencia.');
+                }
+              }}
+              className="card animate-scale-in"
+              style={{
+                marginTop: '15px',
+                padding: '20px',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--bg-card)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                boxShadow: 'var(--shadow-md)'
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--primary)', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+                📝 Formulario de Reporte de Incidencia
+              </h3>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                {/* Store selection (Only if user has access to multiple stores) */}
+                {user.store === 'Todas' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>1. Seleccionar Sede afectada:</label>
+                    <select
+                      value={createIncStore}
+                      onChange={(e) => setCreateIncStore(e.target.value)}
+                      className="input"
+                      style={{ padding: '8px', fontSize: '12.5px', height: '38px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}
+                    >
+                      <option value="Barranco">Sede Barranco</option>
+                      <option value="Miraflores">Sede Miraflores</option>
+                      <option value="San Isidro">Sede San Isidro</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>1. Sede afectada:</label>
+                    <div style={{ padding: '10px', fontSize: '12.5px', height: '38px', backgroundColor: 'rgba(0,0,0,0.05)', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                      📍 Sede {user.store}
+                    </div>
+                  </div>
+                )}
+
+                {/* Category/Type */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>2. Categoría / Tipo:</label>
+                  <select
+                    value={createIncType}
+                    onChange={(e) => setCreateIncType(e.target.value)}
+                    className="input"
+                    style={{ padding: '8px', fontSize: '12.5px', height: '38px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}
+                  >
+                    <option value="Mantenimiento">🛠️ Mantenimiento</option>
+                    <option value="Insumos">📦 Insumos / Stock 86</option>
+                    <option value="Operaciones">📋 Operaciones</option>
+                    <option value="Otros">❓ Otros</option>
+                  </select>
+                </div>
+
+                {/* Urgency */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>3. Nivel de Urgencia:</label>
+                  <select
+                    value={createIncUrgency}
+                    onChange={(e) => setCreateIncUrgency(e.target.value)}
+                    className="input"
+                    style={{ padding: '8px', fontSize: '12.5px', height: '38px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}
+                  >
+                    <option value="Normal">⚠️ Normal (No interrumpe operación inmediatamente)</option>
+                    <option value="Urgente">🚨 Urgente (Interrupción operativa o crítico)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Title */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>4. Título Estándar de la Incidencia:</label>
+                <input
+                  type="text"
+                  placeholder="Ej: Falla en molino de café principal / Desabastecimiento de leche descremada"
+                  value={createIncTitle}
+                  onChange={(e) => setCreateIncTitle(e.target.value)}
+                  className="input"
+                  style={{ padding: '10px', fontSize: '12.5px', border: '1px solid var(--border)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+                />
+              </div>
+
+              {/* Description */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>5. Detalles y Descripción:</label>
+                <textarea
+                  placeholder="Describe de forma clara el problema, ubicación, insumo faltante o equipo afectado..."
+                  value={createIncDesc}
+                  onChange={(e) => setCreateIncDesc(e.target.value)}
+                  className="input"
+                  rows="3"
+                  style={{ padding: '10px', fontSize: '12.5px', border: '1px solid var(--border)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', resize: 'vertical' }}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: 700, alignSelf: 'flex-start', cursor: 'pointer' }}
+              >
+                💾 Registrar Incidencia en Sistema
+              </button>
+            </form>
+          )}
+        </div>
+
         {/* Stats Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
           <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid var(--border)' }}>
@@ -1368,10 +1575,6 @@ export default function SupervisorDashboard({
           <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid #d97706' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: '#d97706', textTransform: 'uppercase' }}>🚨 Escalados</span>
             <div style={{ fontSize: '24px', fontWeight: 800, color: '#d97706', marginTop: '5px' }}>{escalatedCount}</div>
-          </div>
-          <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid var(--success)' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase' }}>✓ Resueltos</span>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--success)', marginTop: '5px' }}>{resolvedCount}</div>
           </div>
         </div>
 
@@ -1417,7 +1620,6 @@ export default function SupervisorDashboard({
               <option value="Pendiente">⏳ Pendiente</option>
               <option value="En Proceso">⚙️ En Proceso</option>
               <option value="Escalado">🚨 Escalado</option>
-              <option value="Resuelto">✓ Resuelto</option>
             </select>
           </div>
 
@@ -1575,106 +1777,7 @@ export default function SupervisorDashboard({
                     <span>Fecha de reporte: {formattedDate}</span>
                   </div>
 
-                  {/* Thread details / communication history */}
-                  {(inc.adminResponse || inc.supervisorResponse || inc.status === 'Resuelto') && (
-                    <div style={{
-                      borderTop: '1px dashed var(--border)',
-                      paddingTop: '15px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '12px',
-                      backgroundColor: 'rgba(0,0,0,0.01)',
-                      padding: '12px 15px',
-                      borderRadius: '8px'
-                    }}>
-                      <h4 style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        💬 Historial de Seguimiento:
-                      </h4>
-
-                      {/* Admin response block */}
-                      {inc.adminResponse ? (
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '4px',
-                          borderLeft: '3px solid var(--secondary)',
-                          paddingLeft: '10px',
-                          backgroundColor: 'rgba(0,0,0,0.02)',
-                          padding: '8px 10px',
-                          borderRadius: '0 6px 6px 0'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 800, color: 'var(--secondary)', fontSize: '11px' }}>
-                              💬 Respuesta del Administrador (Diana Valdivia):
-                            </span>
-                            <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>
-                              {new Date(inc.adminResponseAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.4 }}>
-                            {inc.adminResponse}
-                          </p>
-                        </div>
-                      ) : (
-                        inc.status !== 'Resuelto' && (
-                          <div style={{ fontSize: '11.5px', fontStyle: 'italic', color: 'var(--text-muted)', paddingLeft: '10px' }}>
-                            ⏳ Sin respuesta registrada de Administración de tienda todavía.
-                          </div>
-                        )
-                      )}
-
-                      {/* Supervisor response block */}
-                      {inc.supervisorResponse && (
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '4px',
-                          borderLeft: '3px solid var(--primary)',
-                          paddingLeft: '10px',
-                          backgroundColor: 'rgba(0,0,0,0.02)',
-                          padding: '8px 10px',
-                          borderRadius: '0 6px 6px 0'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '11px' }}>
-                              👤 Respuesta de Supervisión / Gerencia:
-                            </span>
-                            <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>
-                              {new Date(inc.supervisorResponseAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-main)', lineHeight: 1.4 }}>
-                            {inc.supervisorResponse}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Resolution details block */}
-                      {inc.status === 'Resuelto' && (
-                        <div style={{
-                          marginTop: '5px',
-                          padding: '8px 12px',
-                          borderRadius: '6px',
-                          backgroundColor: 'var(--success-light)',
-                          color: 'var(--success)',
-                          fontWeight: 700,
-                          fontSize: '12px',
-                          border: '1px solid var(--success)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}>
-                          <span>✅</span>
-                          <div>
-                            <strong>Incidencia Resuelta</strong>
-                            <div style={{ fontSize: '10.5px', fontWeight: 'normal', color: 'var(--text-muted)', marginTop: '2px' }}>
-                              Cerrada por: <strong>{inc.resolvedBy}</strong> el {new Date(inc.resolvedAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Thread details / communication history removed for noise reduction */}
 
                   {/* Action Forms - Respond / Resolve / Escalate */}
                   {inc.status !== 'Resuelto' && (
