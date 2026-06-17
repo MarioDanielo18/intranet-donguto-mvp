@@ -28,6 +28,8 @@ export default function Login({ onLogin }) {
         onLogin({ email: emailLower, name: 'Diana Valdivia', role: 'Administrador', store: 'Barranco' });
       } else if (emailLower === 'gerente@donguto.com') {
         onLogin({ email: emailLower, name: 'Don Guto', role: 'Gerente', store: 'Todas' });
+      } else if (emailLower === 'tecnico@donguto.com') {
+        onLogin({ email: emailLower, name: 'Técnico de Sistemas', role: 'Técnico', store: 'Todas' });
       } else {
         // Fallback for custom accounts (for testing)
         if (emailLower && password.length >= 4) {
@@ -177,6 +179,13 @@ export default function Login({ onLogin }) {
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
               Gerente
+            </button>
+            <button
+              onClick={() => { setEmail('tecnico@donguto.com'); setPassword('demo123'); }}
+              className="btn btn-secondary"
+              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
+            >
+              Técnico
             </button>
           </div>
         </div>

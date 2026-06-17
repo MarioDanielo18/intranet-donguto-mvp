@@ -152,7 +152,65 @@ export default function ColaboradorDashboard({
   onClockIn,
   incidents = [],
   onAddIncident,
+  biometricDevices = [],
+  onBiometricScan,
 }) {
+  const [bioScanState, setBioScanState] = useState('idle'); // 'idle' | 'scanning' | 'verifying' | 'success' | 'error'
+  const [bioFeedback, setBioFeedback] = useState('Por favor, coloque su dedo en el lector biométrico.');
+  const [bioProgress, setBioProgress] = useState(0);
+  const [bioDevice, setBioDevice] = useState('');
+
+  // Auto-select device based on user's store
+  useEffect(() => {
+    if (biometricDevices && biometricDevices.length > 0) {
+      const match = biometricDevices.find(d => d.store === user.store && d.status === 'Online');
+      if (match) {
+        setBioDevice(match.id);
+      } else {
+        setBioDevice(biometricDevices[0].id);
+      }
+    }
+  }, [biometricDevices, user.store]);
+
+  const triggerFingerprintScan = () => {
+    if (bioScanState !== 'idle') return;
+    if (!bioDevice) {
+      setBioFeedback('Error: No se encontró ningún dispositivo biométrico activo.');
+      return;
+    }
+
+    setBioScanState('scanning');
+    setBioFeedback('Leyendo huella dactilar... Mantenga su dedo sobre el escáner.');
+    setBioProgress(0);
+
+    let progress = 0;
+    const scanInterval = setInterval(() => {
+      progress += 10;
+      setBioProgress(progress);
+      if (progress >= 100) {
+        clearInterval(scanInterval);
+        
+        setBioScanState('verifying');
+        setBioFeedback('Verificando coincidencia en el servidor biométrico...');
+        
+        setTimeout(() => {
+          if (onBiometricScan) {
+            const res = onBiometricScan(user.email, bioDevice);
+            if (res && res.success) {
+              setBioScanState('success');
+              setBioFeedback(`¡Identidad Verificada! Bienvenido, ${user.name}. Asistencia registrada.`);
+            } else {
+              setBioScanState('error');
+              setBioFeedback(res ? res.message : 'Error en la verificación biométrica.');
+            }
+          } else {
+            setBioScanState('success');
+            setBioFeedback('¡Identidad Verificada (Modo Demo)! Asistencia registrada.');
+          }
+        }, 1200);
+      }
+    }, 150);
+  };
   const [activeTab, setActiveTab] = useState('checklist');
   const [shiftType, setShiftType] = useState('APERTURA');
   const [selectedDayMaterial, setSelectedDayMaterial] = useState(null);

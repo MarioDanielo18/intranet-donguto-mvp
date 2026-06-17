@@ -249,6 +249,50 @@ const INITIAL_MOCK_TEAM = [
       { date: '2026-06-11', time: '08:15 AM', expectedTime: '08:00 AM', delayMin: 15 },
       { date: '2026-06-12', time: '08:10 AM', expectedTime: '08:00 AM', delayMin: 10 }
     ]
+  },
+  {
+    email: 'admin@donguto.com',
+    name: 'Diana Valdivia',
+    role: 'Administrador',
+    store: 'Barranco',
+    trainingProgress: {},
+    arrivalLogs: [
+      { date: '2026-06-08', time: '07:45 AM', expectedTime: '08:00 AM', delayMin: 0 },
+      { date: '2026-06-09', time: '07:50 AM', expectedTime: '08:00 AM', delayMin: 0 },
+      { date: '2026-06-10', time: '07:55 AM', expectedTime: '08:00 AM', delayMin: 0 },
+      { date: '2026-06-11', time: '07:48 AM', expectedTime: '08:00 AM', delayMin: 0 },
+      { date: '2026-06-12', time: '07:51 AM', expectedTime: '08:00 AM', delayMin: 0 }
+    ]
+  },
+  {
+    email: 'supervisor@donguto.com',
+    name: 'Pedro Supervisor',
+    role: 'Supervisor',
+    store: 'Todas',
+    trainingProgress: {},
+    arrivalLogs: [
+      { date: '2026-06-08', time: '08:05 AM', expectedTime: '08:00 AM', delayMin: 5 },
+      { date: '2026-06-09', time: '08:10 AM', expectedTime: '08:00 AM', delayMin: 10 },
+      { date: '2026-06-10', time: '07:58 AM', expectedTime: '08:00 AM', delayMin: 0 },
+      { date: '2026-06-11', time: '08:02 AM', expectedTime: '08:00 AM', delayMin: 2 },
+      { date: '2026-06-12', time: '07:55 AM', expectedTime: '08:00 AM', delayMin: 0 }
+    ]
+  },
+  {
+    email: 'gerente@donguto.com',
+    name: 'Don Guto',
+    role: 'Gerente',
+    store: 'Todas',
+    trainingProgress: {},
+    arrivalLogs: []
+  },
+  {
+    email: 'tecnico@donguto.com',
+    name: 'Técnico de Sistemas',
+    role: 'Técnico',
+    store: 'Todas',
+    trainingProgress: {},
+    arrivalLogs: []
   }
 ];
 
@@ -357,6 +401,102 @@ export default function App() {
     const saved = localStorage.getItem('donguto-incidents');
     return saved ? JSON.parse(saved) : INITIAL_INCIDENTS;
   });
+
+  // Biometric states
+  const INITIAL_BIOMETRIC_DEVICES = [
+    { id: 'DEV-001', name: 'ZKTeco K40 - Sede Barranco', model: 'ZKTeco K40', ip: '192.168.1.150', port: '4370', store: 'Barranco', status: 'Online' },
+    { id: 'DEV-002', name: 'ZKTeco K40 - Sede Miraflores', model: 'ZKTeco K40', ip: '192.168.1.151', port: '4370', store: 'Miraflores', status: 'Online' },
+    { id: 'DEV-003', name: 'ZKTeco MB20 - Sede San Isidro', model: 'ZKTeco MB20', ip: '192.168.1.152', port: '4370', store: 'San Isidro', status: 'Offline' }
+  ];
+
+  const INITIAL_BIOMETRIC_LOGS = [
+    { id: 'BLOG-001', date: '2026-06-12T07:01:00Z', name: 'Mateo Quispe', email: 'mateo@donguto.com', role: 'Barista', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
+    { id: 'BLOG-002', date: '2026-06-12T07:07:00Z', name: 'Gabriela Alva', email: 'gabriela@donguto.com', role: 'Cocina', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
+    { id: 'BLOG-003', date: '2026-06-12T07:51:00Z', name: 'Diana Valdivia', email: 'admin@donguto.com', role: 'Administrador', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
+    { id: 'BLOG-004', date: '2026-06-12T07:55:00Z', name: 'Pedro Supervisor', email: 'supervisor@donguto.com', role: 'Supervisor', store: 'Todas', deviceId: 'DEV-002', deviceName: 'ZKTeco K40 - Sede Miraflores', status: 'Success' }
+  ];
+
+  const [biometricDevices, setBiometricDevices] = useState(() => {
+    const saved = localStorage.getItem('donguto-biometric-devices');
+    return saved ? JSON.parse(saved) : INITIAL_BIOMETRIC_DEVICES;
+  });
+
+  const [biometricLogs, setBiometricLogs] = useState(() => {
+    const saved = localStorage.getItem('donguto-biometric-logs');
+    return saved ? JSON.parse(saved) : INITIAL_BIOMETRIC_LOGS;
+  });
+
+  const handleUpdateDevices = (updatedDevices) => {
+    setBiometricDevices(updatedDevices);
+    localStorage.setItem('donguto-biometric-devices', JSON.stringify(updatedDevices));
+  };
+
+  const handleBiometricScan = (email, deviceId) => {
+    const employee = teamMembers.find(m => m.email === email);
+    if (!employee) return { success: false, message: 'Colaborador no encontrado' };
+
+    const device = biometricDevices.find(d => d.id === deviceId);
+    const deviceName = device ? device.name : 'Dispositivo Desconocido';
+    const store = employee.store === 'Todas' ? (device ? device.store : 'Barranco') : employee.store;
+
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    
+    // Check if already clocked in today to avoid duplicates
+    const logs = employee.arrivalLogs || [];
+    const alreadyClocked = logs.some(l => l.date === todayStr);
+    if (alreadyClocked) {
+      return { success: false, message: 'Asistencia ya registrada para hoy' };
+    }
+
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+    const displayMinutes = minutes.toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const timeStr = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
+
+    // Expected time based on employee role
+    let expectedTimeStr = '07:00 AM';
+    if (employee.role === 'Servicio') expectedTimeStr = '08:00 AM';
+    else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico'].includes(employee.role)) expectedTimeStr = '08:00 AM';
+
+    const [timePart, ampmPart] = timeStr.split(' ');
+    let [h, m] = timePart.split(':').map(Number);
+    if (ampmPart === 'PM' && h < 12) h += 12;
+    if (ampmPart === 'AM' && h === 12) h = 0;
+    const currentMins = h * 60 + m;
+
+    const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
+    let [eh, em] = expTimePart.split(':').map(Number);
+    if (expAmpmPart === 'PM' && eh < 12) eh += 12;
+    if (expAmpmPart === 'AM' && eh === 12) eh = 0;
+    const expectedMins = eh * 60 + em;
+
+    const delayMin = Math.max(0, currentMins - expectedMins);
+
+    handleClockIn(email, todayStr, timeStr, expectedTimeStr, delayMin);
+
+    const newLog = {
+      id: `BLOG-${Date.now().toString().slice(-4)}`,
+      date: now.toISOString(),
+      name: employee.name,
+      email: email,
+      role: employee.role,
+      store: store,
+      deviceId: deviceId,
+      deviceName: deviceName,
+      status: 'Success'
+    };
+
+    setBiometricLogs(prev => {
+      const next = [newLog, ...prev];
+      localStorage.setItem('donguto-biometric-logs', JSON.stringify(next));
+      return next;
+    });
+
+    return { success: true, log: newLog };
+  };
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
@@ -581,7 +721,7 @@ export default function App() {
         ) : (
           <div className="animate-fade-in">
             {/* Show view based on user role */}
-            {['Administrador', 'Gerente', 'Supervisor'].includes(user.role) ? (
+            {['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(user.role) ? (
               <SupervisorDashboard
                 user={user}
                 checklists={checklists}
@@ -597,6 +737,10 @@ export default function App() {
                 incidents={incidents}
                 onRespondIncident={handleRespondIncident}
                 onUpdateIncidentStatus={handleUpdateIncidentStatus}
+                biometricDevices={biometricDevices}
+                biometricLogs={biometricLogs}
+                onUpdateDevices={handleUpdateDevices}
+                onBiometricScan={handleBiometricScan}
               />
             ) : (
               <ColaboradorDashboard
@@ -615,6 +759,8 @@ export default function App() {
                 onClockIn={handleClockIn}
                 incidents={incidents}
                 onAddIncident={handleAddIncident}
+                biometricDevices={biometricDevices}
+                onBiometricScan={handleBiometricScan}
               />
             )}
           </div>
@@ -731,6 +877,21 @@ export default function App() {
               }}
             >
               Gerente General
+            </button>
+            <button
+              onClick={() => setUser({ email: 'tecnico@donguto.com', name: 'Técnico de Sistemas', role: 'Técnico', store: 'Todas' })}
+              style={{
+                padding: '3px 8px',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontSize: '10px',
+                fontWeight: 600,
+                backgroundColor: user.role === 'Técnico' ? 'var(--primary)' : '#443c3a',
+                color: '#fff',
+              }}
+            >
+              🛠️ Técnico
             </button>
           </div>
         </div>

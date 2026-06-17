@@ -80,8 +80,118 @@ export default function SupervisorDashboard({
   incidents = [],
   onRespondIncident,
   onUpdateIncidentStatus,
+  biometricDevices = [],
+  biometricLogs = [],
+  onUpdateDevices,
+  onBiometricScan,
 }) {
-  const [activeTab, setActiveTab] = useState('monitoring');
+  const [activeTab, setActiveTab] = useState(() => {
+    return user.role === 'Técnico' ? 'technical_panel' : 'monitoring';
+  });
+
+  // Biometric states for Técnico
+  const [techDevices, setTechDevices] = useState(biometricDevices || []);
+  const [newDevName, setNewDevName] = useState('');
+  const [newDevModel, setNewDevModel] = useState('ZKTeco K40');
+  const [newDevIp, setNewDevIp] = useState('192.168.1.');
+  const [newDevPort, setNewDevPort] = useState('4370');
+  const [newDevStore, setNewDevStore] = useState('Barranco');
+  
+  // Simulator states
+  const [simCollabEmail, setSimCollabEmail] = useState('');
+  const [simDeviceId, setSimDeviceId] = useState('');
+  const [simResult, setSimResult] = useState(null);
+
+  // Sync state with props
+  useEffect(() => {
+    if (biometricDevices) {
+      setTechDevices(biometricDevices);
+    }
+  }, [biometricDevices]);
+
+  // Set default values for simulator dropdowns
+  useEffect(() => {
+    if (teamMembers && teamMembers.length > 0 && !simCollabEmail) {
+      setSimCollabEmail(teamMembers[0].email);
+    }
+    if (biometricDevices && biometricDevices.length > 0 && !simDeviceId) {
+      setSimDeviceId(biometricDevices[0].id);
+    }
+  }, [teamMembers, biometricDevices]);
+
+  const handleAddDevSubmit = (e) => {
+    e.preventDefault();
+    if (!newDevName.trim() || !newDevIp.trim()) return;
+
+    const ipPattern = /^([0-9]{1,3}\.){3}[0-9]{1,3}$/;
+    if (!ipPattern.test(newDevIp.trim())) {
+      alert('Por favor, ingresa una dirección IP válida (ej: 192.168.1.150)');
+      return;
+    }
+
+    const newDev = {
+      id: `DEV-${Date.now().toString().slice(-4)}`,
+      name: newDevName.trim(),
+      model: newDevModel,
+      ip: newDevIp.trim(),
+      port: newDevPort.trim(),
+      store: newDevStore,
+      status: 'Online'
+    };
+
+    const updated = [...techDevices, newDev];
+    setTechDevices(updated);
+    if (onUpdateDevices) {
+      onUpdateDevices(updated);
+    }
+    setNewDevName('');
+    setNewDevIp('192.168.1.');
+    setNewDevPort('4370');
+    alert(`Dispositivo "${newDev.name}" registrado con éxito.`);
+  };
+
+  const handleDeleteDevice = (id) => {
+    if (!window.confirm('¿Estás seguro de eliminar este dispositivo biométrico de la red?')) return;
+    const updated = techDevices.filter(d => d.id !== id);
+    setTechDevices(updated);
+    if (onUpdateDevices) {
+      onUpdateDevices(updated);
+    }
+  };
+
+  const toggleDeviceStatus = (id) => {
+    const updated = techDevices.map(d => {
+      if (d.id === id) {
+        return { ...d, status: d.status === 'Online' ? 'Offline' : 'Online' };
+      }
+      return d;
+    });
+    setTechDevices(updated);
+    if (onUpdateDevices) {
+      onUpdateDevices(updated);
+    }
+  };
+
+  const handleSimulatePhysicalScan = () => {
+    if (!simCollabEmail || !simDeviceId) {
+      alert('Por favor, selecciona un colaborador y un dispositivo.');
+      return;
+    }
+
+    const res = onBiometricScan(simCollabEmail, simDeviceId);
+    if (res && res.success) {
+      setSimResult({
+        success: true,
+        message: `¡Marcación física simulada! Colaborador registrado a las ${res.log.time}.`
+      });
+    } else {
+      setSimResult({
+        success: false,
+        message: res ? res.message : 'Error en la comunicación con la terminal.'
+      });
+    }
+    setTimeout(() => setSimResult(null), 5000);
+  };
   const [selectedUser, setSelectedUser] = useState(null);
   const [previewPhoto, setPreviewPhoto] = useState(null);
   const [selectedAuditLog, setSelectedAuditLog] = useState(null);
@@ -1660,6 +1770,606 @@ export default function SupervisorDashboard({
     );
   };
 
+  const renderMyAttendanceTab = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const memberObj = teamMembers.find(m => m.email === user.email);
+    const logs = memberObj?.arrivalLogs || [];
+    const clockedInToday = logs.some(l => l.date === todayStr);
+    const todaysLog = logs.find(l => l.date === todayStr);
+
+    const [myBioState, setMyBioState] = useState('idle');
+    const [myBioFeedback, setMyBioFeedback] = useState('Por favor, coloque su dedo en el lector biométrico.');
+    const [myBioProgress, setMyBioProgress] = useState(0);
+
+    const triggerMyBioScan = () => {
+      if (myBioState !== 'idle') return;
+      
+      setMyBioState('scanning');
+      setMyBioFeedback('Leyendo huella... Mantenga el dedo en el lector.');
+      setMyBioProgress(0);
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 10;
+        setMyBioProgress(progress);
+        if (progress >= 100) {
+          clearInterval(interval);
+          setMyBioState('verifying');
+          setMyBioFeedback('Verificando firma digital...');
+
+          setTimeout(() => {
+            const device = biometricDevices.find(d => (user.store === 'Todas' || d.store === user.store) && d.status === 'Online') || biometricDevices[0];
+            const res = onBiometricScan(user.email, device ? device.id : 'DEV-001');
+            
+            if (res && res.success) {
+              setMyBioState('success');
+              setMyBioFeedback('¡Acceso Autorizado! Asistencia registrada con éxito.');
+            } else {
+              setMyBioState('error');
+              setMyBioFeedback(res ? res.message : 'Error en la verificación.');
+            }
+          }, 1000);
+        }
+      }, 150);
+    };
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
+        <div style={{ borderBottom: '2px solid var(--border)', paddingBottom: '10px' }}>
+          <h3 style={{ margin: 0, color: 'var(--primary)' }}>Registro de Entrada Biométrica (Mi Rol: {user.role})</h3>
+          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+            Marca tu asistencia diaria utilizando el escáner biométrico conectado en tu sede ({user.store}).
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '25px', alignItems: 'start' }}>
+          {/* Biometric Scan Card */}
+          <div className="card" style={{ padding: '25px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', border: '1px solid var(--border)' }}>
+            <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>Escáner de Huella Digital Táctil</h4>
+            
+            {clockedInToday ? (
+              <div style={{
+                padding: '20px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--success-light)',
+                border: '1px solid var(--success)',
+                color: 'var(--success)',
+                textAlign: 'center',
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span style={{ fontSize: '32px' }}>🟢</span>
+                <strong>¡ASISTENCIA REGISTRADA!</strong>
+                <p style={{ margin: 0, fontSize: '12.5px' }}>
+                  Marcaste tu entrada hoy a las <strong>{todaysLog?.time}</strong> (Hora esperada: {todaysLog?.expectedTime}).
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', width: '100%' }}>
+                {/* Fingerprint scan circle */}
+                <div 
+                  onClick={triggerMyBioScan}
+                  style={{
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
+                    border: `4px solid ${
+                      myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : myBioState === 'scanning' ? 'var(--primary)' : 'var(--border)'
+                    }`,
+                    backgroundColor: myBioState === 'scanning' ? 'rgba(139,26,26,0.05)' : 'var(--bg-main)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: myBioState === 'idle' ? 'pointer' : 'not-allowed',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  {myBioState === 'scanning' && (
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '3px',
+                      backgroundColor: 'var(--primary)',
+                      boxShadow: '0 0 8px var(--primary)',
+                      top: `${myBioProgress}%`,
+                      left: 0,
+                      transition: 'top 0.15s linear',
+                    }} />
+                  )}
+
+                  <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={
+                    myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : myBioState === 'scanning' ? 'var(--primary)' : 'var(--text-muted)'
+                  } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 10a2 2 0 0 0-2 2M14 14a4 4 0 0 0-4-4M2 12a10 10 0 0 1 18 0M10 17v-1a2 2 0 1 1 4 0v1" />
+                    <path d="M12 2a10 10 0 0 0-10 10M12 22a10 10 0 0 0 10-10" />
+                    <path d="M6 12a6 6 0 0 1 12 0M8 12a4 4 0 0 1 8 0" />
+                  </svg>
+                </div>
+
+                <button
+                  onClick={triggerMyBioScan}
+                  disabled={myBioState !== 'idle'}
+                  className="btn"
+                  style={{
+                    padding: '8px 20px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    backgroundColor: myBioState === 'idle' ? 'var(--primary)' : 'var(--bg-main)',
+                    color: myBioState === 'idle' ? '#fff' : 'var(--text-muted)',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: myBioState === 'idle' ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  {myBioState === 'idle' ? '☝️ Simular Colocar Dedo' : 'Procesando Marcación...'}
+                </button>
+
+                <div style={{ fontSize: '12px', color: myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px' }}>
+                  {myBioFeedback}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* History Card */}
+          <div className="card" style={{ padding: '20px', border: '1px solid var(--border)' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-main)' }}>Mi Historial de Marcaciones Biométricas</h4>
+            {logs.length === 0 ? (
+              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>Aún no has registrado marcaciones en el sistema.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '6px' }}>Fecha</th>
+                      <th style={{ padding: '6px' }}>Hora de Entrada</th>
+                      <th style={{ padding: '6px' }}>Hora Esperada</th>
+                      <th style={{ padding: '6px' }}>Tardanza</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...logs].reverse().map((log, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '8px 6px', fontWeight: 600 }}>{log.date}</td>
+                        <td style={{ padding: '8px 6px' }}>{log.time}</td>
+                        <td style={{ padding: '8px 6px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
+                        <td style={{ padding: '8px 6px', fontWeight: 700, color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
+                          {log.delayMin > 0 ? `+${log.delayMin} min` : '0 min'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTechnicalPanelTab = () => {
+    const [techTabSub, setTechTabSub] = useState('devices'); // 'devices' | 'docs'
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
+        <div style={{ borderBottom: '2px solid var(--border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <div>
+            <h2 style={{ margin: 0, color: 'var(--primary)' }}>🖥️ Consola de Dispositivos e Integración Biométrica</h2>
+            <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: 'var(--text-muted)' }}>
+              Área de administración de hardware y conectividad de red de los terminales de huella dactilar.
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setTechTabSub('devices')}
+              className="btn"
+              style={{
+                padding: '6px 12px',
+                fontSize: '11px',
+                backgroundColor: techTabSub === 'devices' ? 'var(--primary)' : 'var(--bg-main)',
+                color: techTabSub === 'devices' ? '#fff' : 'var(--text-main)',
+                border: '1px solid var(--border)',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              ⚙️ Dispositivos y Sincronizador
+            </button>
+            <button
+              onClick={() => setTechTabSub('docs')}
+              className="btn"
+              style={{
+                padding: '6px 12px',
+                fontSize: '11px',
+                backgroundColor: techTabSub === 'docs' ? 'var(--primary)' : 'var(--bg-main)',
+                color: techTabSub === 'docs' ? '#fff' : 'var(--text-main)',
+                border: '1px solid var(--border)',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              📘 Manual de Integración Física
+            </button>
+          </div>
+        </div>
+
+        {techTabSub === 'devices' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '25px', alignItems: 'start' }}>
+              
+              {/* Left Column: Biometric Devices CRUD */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                {/* List of Registered Devices */}
+                <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--border)' }}>
+                  <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>📟 Lectoras Biométricas de Sede</h4>
+                  
+                  {techDevices.length === 0 ? (
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>No hay dispositivos registrados.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {techDevices.map(dev => (
+                        <div
+                          key={dev.id}
+                          style={{
+                            padding: '12px',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            backgroundColor: 'var(--bg-main)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '12.5px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <strong style={{ color: 'var(--text-main)' }}>{dev.name}</strong>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                              IP: {dev.ip}:{dev.port} | Modelo: {dev.model}
+                            </span>
+                            <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>
+                              Sede Asignada: {dev.store}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                            <button
+                              onClick={() => toggleDeviceStatus(dev.id)}
+                              style={{
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                padding: '3px 8px',
+                                color: '#fff',
+                                backgroundColor: dev.status === 'Online' ? 'var(--success)' : 'var(--text-muted)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {dev.status === 'Online' ? 'ONLINE 🟢' : 'OFFLINE 🔴'}
+                            </button>
+                            
+                            <button
+                              onClick={() => handleDeleteDevice(dev.id)}
+                              style={{
+                                border: 'none',
+                                backgroundColor: 'transparent',
+                                color: 'var(--error)',
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                textDecoration: 'underline'
+                              }}
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Add Device Form */}
+                <form onSubmit={handleAddDevSubmit} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--border)' }}>
+                  <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>➕ Vincular Nuevo Lector (ZKTeco)</h4>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Nombre del Lector:</label>
+                    <input
+                      type="text"
+                      required
+                      className="input"
+                      placeholder="Ej: Lector Principal - Miraflores"
+                      value={newDevName}
+                      onChange={(e) => setNewDevName(e.target.value)}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Modelo:</label>
+                      <select
+                        className="input"
+                        value={newDevModel}
+                        onChange={(e) => setNewDevModel(e.target.value)}
+                        style={{ padding: '8px' }}
+                      >
+                        <option value="ZKTeco K40">ZKTeco K40</option>
+                        <option value="ZKTeco LX50">ZKTeco LX50</option>
+                        <option value="ZKTeco MB20">ZKTeco MB20</option>
+                        <option value="DigitalPersona USB">DigitalPersona USB</option>
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Sede:</label>
+                      <select
+                        className="input"
+                        value={newDevStore}
+                        onChange={(e) => setNewDevStore(e.target.value)}
+                        style={{ padding: '8px' }}
+                      >
+                        <option value="Barranco">Barranco</option>
+                        <option value="Miraflores">Miraflores</option>
+                        <option value="San Isidro">San Isidro</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Dirección IP Local:</label>
+                      <input
+                        type="text"
+                        required
+                        className="input"
+                        placeholder="192.168.1.150"
+                        value={newDevIp}
+                        onChange={(e) => setNewDevIp(e.target.value)}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Puerto:</label>
+                      <input
+                        type="number"
+                        required
+                        className="input"
+                        value={newDevPort}
+                        onChange={(e) => setNewDevPort(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '10px', fontSize: '12px' }}>
+                    🔌 Enlazar Lector a Intranet
+                  </button>
+                </form>
+
+              </div>
+
+              {/* Right Column: Simulator & Logs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                {/* Physical Scan Simulator Console */}
+                <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--primary)', backgroundColor: 'rgba(139, 26, 26, 0.01)' }}>
+                  <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    ⚡ Consola Simuladora de Transmisión de Hardware
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                    Simula la recepción de un pulso de asistencia física desde la lectora biométrica conectada. Sirve para certificar que el log entra a la base de datos y actualiza la intranet.
+                  </p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Colaborador / Huella:</label>
+                      <select
+                        value={simCollabEmail}
+                        onChange={(e) => setSimCollabEmail(e.target.value)}
+                        className="input"
+                        style={{ padding: '8px' }}
+                      >
+                        {teamMembers.map(m => (
+                          <option key={m.email} value={m.email}>
+                            {m.name} ({m.role} - {m.store})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Lector de Origen:</label>
+                      <select
+                        value={simDeviceId}
+                        onChange={(e) => setSimDeviceId(e.target.value)}
+                        className="input"
+                        style={{ padding: '8px' }}
+                      >
+                        {techDevices.map(d => (
+                          <option key={d.id} value={d.id} disabled={d.status === 'Offline'}>
+                            {d.name} ({d.status})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSimulatePhysicalScan}
+                    className="btn btn-primary"
+                    style={{ width: '100%', padding: '10px', fontSize: '12.5px' }}
+                  >
+                    📡 Enviar Marcación (Simular ZK Hardware Push)
+                  </button>
+
+                  {simResult && (
+                    <div style={{
+                      padding: '10px',
+                      borderRadius: '4px',
+                      backgroundColor: simResult.success ? 'var(--success-light)' : 'var(--error-light)',
+                      border: `1px solid ${simResult.success ? 'var(--success)' : 'var(--error)'}`,
+                      color: simResult.success ? 'var(--success)' : 'var(--error)',
+                      fontSize: '11.5px',
+                      fontWeight: 'bold',
+                      textAlign: 'center'
+                    }}>
+                      {simResult.message}
+                    </div>
+                  )}
+                </div>
+
+                {/* Real-time event log */}
+                <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--border)' }}>
+                  <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>📜 Transmisiones Recientes del Servidor de Huellas</h4>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '310px', overflowY: 'auto', paddingRight: '5px' }}>
+                    {biometricLogs.length === 0 ? (
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>No hay transmisiones registradas en esta sesión.</p>
+                    ) : (
+                      biometricLogs.map((log) => (
+                        <div
+                          key={log.id}
+                          style={{
+                            padding: '10px',
+                            border: '1px solid var(--border)',
+                            borderRadius: '4px',
+                            backgroundColor: 'var(--bg-main)',
+                            fontSize: '11.5px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                            <span style={{ color: 'var(--primary)' }}>{log.id} • {log.name}</span>
+                            <span style={{ color: 'var(--success)' }}>{log.status.toUpperCase()}</span>
+                          </div>
+                          <div style={{ color: 'var(--text-main)' }}>
+                            Marcó entrada en <strong>{log.deviceName}</strong> (Sede: {log.store}).
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Correo: {log.email}</span>
+                            <span>{new Date(log.date).toLocaleString('es-PE')}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        ) : (
+          /* Technical Manual / Docs Tab */
+          <div className="card animate-scale-in" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', border: '1px solid var(--border)' }}>
+            <h3 style={{ margin: 0, color: 'var(--secondary)', fontSize: '16px' }}>📘 Guía de Cableado e Integración de Hardware</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', fontSize: '13px', lineHeight: 1.5, textAlign: 'left' }}>
+              <p style={{ margin: 0 }}>
+                Para integrar un reloj control biométrico físico **ZKTeco K40 (o similar)** y lograr que las huellas registradas se transmitan en tiempo real a la intranet sin pagar licencias costosas, sigue estos pasos técnicos:
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '3px solid var(--primary)', paddingLeft: '12px', backgroundColor: 'var(--bg-main)', padding: '12px', borderRadius: '0 4px 4px 0' }}>
+                <strong style={{ color: 'var(--text-main)', fontSize: '14px' }}>⚙️ Paso 1: Configurar la Base de Datos (SQL en Supabase)</strong>
+                <span>Crea la tabla en tu base de datos utilizando el editor SQL de Supabase para alojar los logs del lector:</span>
+                <pre style={{
+                  margin: '8px 0 0 0',
+                  padding: '10px',
+                  backgroundColor: '#2c2523',
+                  color: '#fff',
+                  borderRadius: '4px',
+                  overflowX: 'auto',
+                  fontSize: '11.5px',
+                  fontFamily: 'monospace'
+                }}>
+{`CREATE TABLE public.asistencia_biometrica (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_email VARCHAR(100) NOT NULL,
+  device_id VARCHAR(50) NOT NULL,
+  timestamp TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  verification_mode INTEGER, -- 1: Huella, 2: Clave, 3: Tarjeta
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);`}
+                </pre>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '3px solid var(--secondary)', paddingLeft: '12px', backgroundColor: 'var(--bg-main)', padding: '12px', borderRadius: '0 4px 4px 0' }}>
+                <strong style={{ color: 'var(--text-main)', fontSize: '14px' }}>📡 Paso 2: Configurar la red del Lector ZKTeco</strong>
+                <ol style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <li>Conecta el ZKTeco K40 al router de la sede por Wi-Fi o Cable Ethernet.</li>
+                  <li>Asígnale una **IP Estática** (ej. \`192.168.1.150\`).</li>
+                  <li>Registra a los colaboradores en el dispositivo biométrico asignándoles un ID de usuario que coincida con su código o correo.</li>
+                </ol>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '3px solid #d97706', paddingLeft: '12px', backgroundColor: 'var(--bg-main)', padding: '12px', borderRadius: '0 4px 4px 0' }}>
+                <strong style={{ color: 'var(--text-main)', fontSize: '14px' }}>🚀 Paso 3: Lanzar el Script de Sincronización (Node.js)</strong>
+                <span>En la computadora de caja/POS de cada sede (o en un servidor local centralizado), instala las dependencias y ejecuta el siguiente daemon que escucha al lector biométrico y escribe directo a Supabase:</span>
+                <pre style={{
+                  margin: '8px 0 0 0',
+                  padding: '10px',
+                  backgroundColor: '#2c2523',
+                  color: '#fff',
+                  borderRadius: '4px',
+                  overflowX: 'auto',
+                  fontSize: '11.5px',
+                  fontFamily: 'monospace'
+                }}>
+{`const ZKLib = require('zkteco-js'); // npm i zkteco-js
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient('https://tu-proyecto.supabase.co', 'tu-anon-key');
+
+async function main() {
+  const ip = '192.168.1.150'; // IP del lector en Sede
+  const device = new ZKLib(ip, 4370, 10000, 4000);
+
+  try {
+    await device.createSocket();
+    console.log('Conectado a ZKTeco K40 con éxito.');
+
+    // Escuchar marcaciones físicas
+    device.getAttendance(async (err, log) => {
+      if (err) return console.error(err);
+      
+      // Obtener el correo del empleado asociado al ID del lector
+      const email = mapUserIdToEmail(log.deviceUserId); 
+      
+      console.log(\`Marcación recibida para: \${email}\`);
+      
+      // Escribir en base de datos. Esto disparará la actualización en Vercel
+      await supabase.from('asistencia_biometrica').insert([{
+        user_email: email,
+        device_id: 'DEV-001',
+        verification_mode: log.verified
+      }]);
+    });
+  } catch (err) {
+    console.error('Error de conexión:', err);
+  }
+}
+main();`}
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    );
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Subtab menu */}
@@ -1760,6 +2470,42 @@ export default function SupervisorDashboard({
         >
           ⚠️ Bandeja de Incidencias
         </button>
+        {['Administrador', 'Supervisor', 'Gerente'].includes(user.role) && (
+          <button
+            onClick={() => setActiveTab('my_attendance')}
+            style={{
+              padding: '14px 20px',
+              border: 'none',
+              borderBottom: activeTab === 'my_attendance' ? '3px solid var(--primary)' : '3px solid transparent',
+              backgroundColor: 'transparent',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 700,
+              color: activeTab === 'my_attendance' ? 'var(--primary)' : 'var(--text-muted)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            ☝️ Mi Asistencia (Huella)
+          </button>
+        )}
+        {['Técnico', 'Supervisor', 'Gerente'].includes(user.role) && (
+          <button
+            onClick={() => setActiveTab('technical_panel')}
+            style={{
+              padding: '14px 20px',
+              border: 'none',
+              borderBottom: activeTab === 'technical_panel' ? '3px solid var(--primary)' : '3px solid transparent',
+              backgroundColor: 'transparent',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 700,
+              color: activeTab === 'technical_panel' ? 'var(--primary)' : 'var(--text-muted)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            🛠️ Panel Técnico
+          </button>
+        )}
         {['Supervisor', 'Gerente'].includes(user.role) && (
           <button
             onClick={() => setActiveTab('multistore')}
@@ -3007,6 +3753,10 @@ export default function SupervisorDashboard({
         {activeTab === 'managerial_kpis' && renderManagerialDashboard()}
 
         {activeTab === 'incidents' && renderIncidentsDashboard()}
+
+        {activeTab === 'my_attendance' && renderMyAttendanceTab()}
+
+        {activeTab === 'technical_panel' && renderTechnicalPanelTab()}
       </div>
       {/* Modal for previewing photo evidence */}
       {/* Modal for detailed audit log (Veridical Audit) */}
