@@ -6,51 +6,72 @@ export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    // Simulate database lookup / latency
+    const usernameLower = username.toLowerCase().trim();
+
+    try {
+      // 1. Try Supabase login via Vercel serverless function
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: usernameLower, password: password })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          setLoading(false);
+          onLogin(data.user);
+          return;
+        }
+        
+        // If server indicates fallback (Supabase not configured), proceed to local check
+        if (data.status !== 'fallback') {
+          setLoading(false);
+          setError(data.error || 'Credenciales inválidas');
+          return;
+        }
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        setLoading(false);
+        setError(errData.error || 'Usuario o contraseña incorrectos');
+        return;
+      }
+    } catch (apiErr) {
+      console.warn('[Login] API connection error, falling back to local verification:', apiErr);
+    }
+
+    // 2. Local fallback verification (checks localStorage & default team)
     setTimeout(() => {
       setLoading(false);
       
-      const usernameLower = username.toLowerCase().trim();
+      const savedTeam = localStorage.getItem('donguto-team');
+      const team = savedTeam ? JSON.parse(savedTeam) : [];
       
-      // Setup default mock accounts
-      if (usernameLower === 'qlopezdg') {
-        onLogin({ username: 'qlopezdg', name: 'Mateo Quispe López', role: 'Barista', store: 'Barranco' });
-      } else if (usernameLower === 'aruizdg') {
-        onLogin({ username: 'aruizdg', name: 'Gabriela Alva Ruiz', role: 'Cocina', store: 'Barranco' });
-      } else if (usernameLower === 'fpinedodg') {
-        onLogin({ username: 'fpinedodg', name: 'Rodrigo Flores Pinedo', role: 'Servicio', store: 'Barranco' });
-      } else if (usernameLower === 'vrojasdg') {
-        onLogin({ username: 'vrojasdg', name: 'Diana Valdivia Rojas', role: 'Administrador', store: 'Barranco' });
-      } else if (usernameLower === 'sgomezdg') {
-        onLogin({ username: 'sgomezdg', name: 'Pedro Supervisor Gómez', role: 'Supervisor', store: 'Todas' });
-      } else if (usernameLower === 'dongutodg') {
-        onLogin({ username: 'dongutodg', name: 'Don Guto', role: 'Gerente', store: 'Todas' });
-      } else if (usernameLower === 'tecnicodg') {
-        onLogin({ username: 'tecnicodg', name: 'Técnico de Sistemas', role: 'Técnico', store: 'Todas' });
-      } else {
-        // Fallback for custom accounts in localStorage
-        const savedTeam = localStorage.getItem('donguto-team');
-        const team = savedTeam ? JSON.parse(savedTeam) : [];
-        const matchedUser = team.find(m => m.username === usernameLower);
-        
-        if (matchedUser) {
-          if (matchedUser.pendingApproval) {
-            setError('Tu cuenta está pendiente de aprobación por el Supervisor.');
-            return;
-          }
-          onLogin(matchedUser);
-        } else if (usernameLower && password.length >= 4) {
-          onLogin({ username: usernameLower, name: 'Usuario Demo', role: 'Barista', store: 'Barranco' });
-        } else {
-          setError('Usuario no registrado. Usa una cuenta demo (ej: qlopezdg, vrojasdg)');
+      const matchedUser = team.find(m => m.username === usernameLower);
+      
+      if (matchedUser) {
+        if (matchedUser.pendingApproval) {
+          setError('Tu cuenta está pendiente de aprobación por el Supervisor.');
+          return;
         }
+        
+        // Validate password (defaulting to demo123 for backward compatibility)
+        const expectedPassword = matchedUser.password || 'demo123';
+        if (expectedPassword === password) {
+          onLogin(matchedUser);
+        } else {
+          setError('Contraseña incorrecta.');
+        }
+      } else {
+        setError('Usuario no registrado. Verifica tus credenciales o contacta al Técnico.');
       }
-    }, 800);
+    }, 500);
   };
 
   return (
@@ -158,42 +179,42 @@ export default function Login({ onLogin }) {
           <h5 style={{ margin: '0 0 8px 0', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>CUENTAS DEMO DE PRUEBA:</h5>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
             <button
-              onClick={() => { setUsername('qlopezdg'); setPassword('demo123'); }}
+              onClick={() => { setUsername('qlopezdg'); setPassword('baristadg'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
               Barista (qlopezdg)
             </button>
             <button
-              onClick={() => { setUsername('aruizdg'); setPassword('demo123'); }}
+              onClick={() => { setUsername('aruizdg'); setPassword('cocinadg'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
               Cocina (aruizdg)
             </button>
             <button
-              onClick={() => { setUsername('fpinedodg'); setPassword('demo123'); }}
+              onClick={() => { setUsername('fpinedodg'); setPassword('serviciodg'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
               Servicio (fpinedodg)
             </button>
             <button
-              onClick={() => { setUsername('vrojasdg'); setPassword('demo123'); }}
+              onClick={() => { setUsername('vrojasdg'); setPassword('admindg'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
               Admin (vrojasdg)
             </button>
             <button
-              onClick={() => { setUsername('dongutodg'); setPassword('demo123'); }}
+              onClick={() => { setUsername('mquispedg'); setPassword('gerentedg'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >
-              Gerente (dongutodg)
+              Gerente (mquispedg)
             </button>
             <button
-              onClick={() => { setUsername('tecnicodg'); setPassword('demo123'); }}
+              onClick={() => { setUsername('tecnicodg'); setPassword('tecnicodg'); }}
               className="btn btn-secondary"
               style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
             >

@@ -127,6 +127,7 @@ const INITIAL_TRAINING_ROUTE = [
 const INITIAL_MOCK_TEAM = [
   {
     username: 'qlopezdg',
+    password: 'baristadg',
     name: 'Mateo Quispe López',
     role: 'Barista',
     store: 'Barranco',
@@ -141,6 +142,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'mcastrodg',
+    password: 'baristadg',
     name: 'Carlos Mendoza Castro',
     role: 'Barista',
     store: 'Barranco',
@@ -155,6 +157,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'aruizdg',
+    password: 'cocinadg',
     name: 'Gabriela Alva Ruiz',
     role: 'Cocina',
     store: 'Barranco',
@@ -169,6 +172,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'rguerradg',
+    password: 'cocinadg',
     name: 'Elena Rojas Guerra',
     role: 'Cocina',
     store: 'Barranco',
@@ -183,6 +187,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'fpinedodg',
+    password: 'serviciodg',
     name: 'Rodrigo Flores Pinedo',
     role: 'Servicio',
     store: 'Barranco',
@@ -197,6 +202,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'dortizdg',
+    password: 'serviciodg',
     name: 'Lucía Díaz Ortiz',
     role: 'Servicio',
     store: 'Barranco',
@@ -211,6 +217,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'mortizdg',
+    password: 'baristadg',
     name: 'Carlos Miraflores Ortiz',
     role: 'Barista',
     store: 'Miraflores',
@@ -225,6 +232,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'tsalasdg',
+    password: 'cocinadg',
     name: 'Laura Torres Salas',
     role: 'Cocina',
     store: 'Miraflores',
@@ -239,6 +247,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'sramosdg',
+    password: 'serviciodg',
     name: 'Andres Silva Ramos',
     role: 'Servicio',
     store: 'Miraflores',
@@ -253,6 +262,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'vrojasdg',
+    password: 'admindg',
     name: 'Diana Valdivia Rojas',
     role: 'Administrador',
     store: 'Barranco',
@@ -267,6 +277,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'sgomezdg',
+    password: 'supervisordg',
     name: 'Pedro Supervisor Gómez',
     role: 'Supervisor',
     store: 'Todas',
@@ -281,6 +292,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'dongutodg',
+    password: 'gerentedg',
     name: 'Don Guto',
     role: 'Gerente',
     store: 'Todas',
@@ -289,6 +301,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'mquispedg',
+    password: 'gerentedg',
     name: 'Mario Quispe',
     role: 'Gerente',
     store: 'Todas',
@@ -298,6 +311,7 @@ const INITIAL_MOCK_TEAM = [
   },
   {
     username: 'tecnicodg',
+    password: 'tecnicodg',
     name: 'Técnico de Sistemas',
     role: 'Técnico',
     store: 'Todas',
@@ -498,6 +512,32 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('donguto-team', JSON.stringify(teamMembers));
   }, [teamMembers]);
+
+  // Load team members from Supabase database if configured
+  useEffect(() => {
+    const fetchCloudUsers = async () => {
+      try {
+        const res = await fetch('/api/manage-users');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.status === 'success' && data.users && data.users.length > 0) {
+          setTeamMembers(prev => {
+            return data.users.map(u => {
+              const localCopy = prev.find(p => p.username === u.username);
+              return {
+                ...u,
+                trainingProgress: localCopy ? (localCopy.trainingProgress || {}) : {},
+                arrivalLogs: localCopy ? (localCopy.arrivalLogs || []) : []
+              };
+            });
+          });
+        }
+      } catch (err) {
+        console.warn('[App] Failed to load users from Supabase, using localStorage fallback:', err);
+      }
+    };
+    fetchCloudUsers();
+  }, []);
 
   const [auditLogs, setAuditLogs] = useState(INITIAL_AUDIT_LOGS);
   const [incidents, setIncidents] = useState(() => {
@@ -810,17 +850,37 @@ export default function App() {
 
   // Add new employee to simulated db
   const handleAddTeamMember = (newMember) => {
+    const userPassword = newMember.password || `${newMember.username}dg`;
+    
+    const memberObj = {
+      ...newMember,
+      password: userPassword,
+      trainingProgress: {},
+    };
+
     setTeamMembers(prev => {
       const updated = [
         ...prev,
-        {
-          ...newMember,
-          trainingProgress: {},
-        },
+        memberObj,
       ];
       localStorage.setItem('donguto-team', JSON.stringify(updated));
       return updated;
     });
+
+    // Write to Supabase in the background
+    fetch('/api/manage-users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create',
+        username: memberObj.username,
+        password: memberObj.password,
+        name: memberObj.name,
+        role: memberObj.role,
+        store: memberObj.store,
+        biometricId: memberObj.biometricId || null
+      })
+    }).catch(err => console.error('[App] Supabase create user error:', err));
   };
 
   const handleApproveCollaborator = (username) => {
@@ -837,6 +897,16 @@ export default function App() {
       localStorage.setItem('donguto-team', JSON.stringify(updated));
       return updated;
     });
+
+    // Delete from Supabase in the background
+    fetch('/api/manage-users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'delete',
+        username: username
+      })
+    }).catch(err => console.error('[App] Supabase delete user error:', err));
   };
 
   // Save operational audit log
@@ -849,6 +919,21 @@ export default function App() {
     setTeamMembers(prev =>
       prev.map(m => (m.username === username ? { ...m, ...updatedFields } : m))
     );
+
+    // Update in Supabase in the background
+    fetch('/api/manage-users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update',
+        username: username,
+        password: updatedFields.password,
+        name: updatedFields.name,
+        role: updatedFields.role,
+        store: updatedFields.store,
+        biometricId: updatedFields.biometricId
+      })
+    }).catch(err => console.error('[App] Supabase update user error:', err));
   };
 
   const handleAddIncident = (newIncident) => {

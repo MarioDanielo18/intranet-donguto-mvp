@@ -260,7 +260,15 @@ export default function SupervisorDashboard({
   const [myBioProgress, setMyBioProgress] = useState(0);
 
   // States for technical panel tab (moved to top level to satisfy Rules of Hooks)
-  const [techTabSub, setTechTabSub] = useState('devices'); // 'devices' | 'docs'
+  const [techTabSub, setTechTabSub] = useState('users'); // 'users' | 'devices' | 'docs'
+  
+  // States for system technician user management panel
+  const [manageUserNames, setManageUserNames] = useState('');
+  const [manageUserUsername, setManageUserUsername] = useState('');
+  const [manageUserPassword, setManageUserPassword] = useState('');
+  const [manageUserRole, setManageUserRole] = useState('Barista');
+  const [manageUserStore, setManageUserStore] = useState('Barranco');
+  const [manageUserBiometricId, setManageUserBiometricId] = useState('');
 
   // States for incident creation form in SupervisorDashboard
   const [createIncTitle, setCreateIncTitle] = useState('');
@@ -1979,11 +1987,26 @@ export default function SupervisorDashboard({
           <div>
             <h2 style={{ margin: 0, color: 'var(--primary)' }}>🖥️ Consola de Dispositivos e Integración Biométrica</h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: 'var(--text-muted)' }}>
-              Área de administración de hardware y conectividad de red de los terminales de huella dactilar.
+              Área de administración de cuentas de usuario, hardware y conectividad de red de los terminales de huella dactilar.
             </p>
           </div>
           
           <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setTechTabSub('users')}
+              className="btn"
+              style={{
+                padding: '6px 12px',
+                fontSize: '11px',
+                backgroundColor: techTabSub === 'users' ? 'var(--primary)' : 'var(--bg-main)',
+                color: techTabSub === 'users' ? '#fff' : 'var(--text-main)',
+                border: '1px solid var(--border)',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              👥 Cuentas y Contraseñas
+            </button>
             <button
               onClick={() => setTechTabSub('devices')}
               className="btn"
@@ -2017,7 +2040,254 @@ export default function SupervisorDashboard({
           </div>
         </div>
 
-        {techTabSub === 'devices' ? (
+        {/* SUBTAB 1: USER MANAGEMENT */}
+        {techTabSub === 'users' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }} className="animate-fade-in">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '25px', alignItems: 'start' }}>
+              
+              {/* Left Column: Create User Form */}
+              <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--border)' }}>
+                <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>👤 Crear Nuevo Usuario de Acceso</h4>
+                
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!manageUserNames.trim() || !manageUserUsername.trim() || !manageUserPassword.trim()) {
+                    alert('Por favor, completa Nombre completo, Usuario y Contraseña.');
+                    return;
+                  }
+                  
+                  if (teamMembers.some(m => m.username === manageUserUsername.toLowerCase().trim())) {
+                    alert('Este nombre de usuario ya está registrado.');
+                    return;
+                  }
+
+                  onAddTeamMember({
+                    name: manageUserNames.trim(),
+                    username: manageUserUsername.toLowerCase().trim(),
+                    password: manageUserPassword.trim(),
+                    role: manageUserRole,
+                    store: manageUserStore,
+                    biometricId: manageUserBiometricId.trim() || null
+                  });
+
+                  alert(`Usuario ${manageUserUsername.toLowerCase().trim()} creado con éxito.`);
+                  
+                  setManageUserNames('');
+                  setManageUserUsername('');
+                  setManageUserPassword('');
+                  setManageUserBiometricId('');
+                }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Nombre Completo:</label>
+                    <input
+                      type="text"
+                      required
+                      className="input"
+                      placeholder="Ej: Mateo Quispe"
+                      value={manageUserNames}
+                      onChange={(e) => setManageUserNames(e.target.value)}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Usuario (Username):</label>
+                      <input
+                        type="text"
+                        required
+                        className="input"
+                        placeholder="Ej: mquispedg"
+                        value={manageUserUsername}
+                        onChange={(e) => setManageUserUsername(e.target.value.toLowerCase().replace(/\s+/g, ''))}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Contraseña:</label>
+                      <input
+                        type="text"
+                        required
+                        className="input"
+                        placeholder="Mínimo 4 caracteres"
+                        value={manageUserPassword}
+                        onChange={(e) => setManageUserPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Rol de Acceso:</label>
+                      <select
+                        className="input"
+                        value={manageUserRole}
+                        onChange={(e) => setManageUserRole(e.target.value)}
+                        style={{ padding: '8px' }}
+                      >
+                        <option value="Barista">Barista</option>
+                        <option value="Cocina">Cocina</option>
+                        <option value="Servicio">Servicio</option>
+                        <option value="Administrador">Administrador</option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Gerente">Gerente General</option>
+                        <option value="Técnico">Técnico de Sistemas</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Sede Asignada:</label>
+                      <select
+                        className="input"
+                        value={manageUserStore}
+                        onChange={(e) => setManageUserStore(e.target.value)}
+                        style={{ padding: '8px' }}
+                      >
+                        <option value="Barranco">Barranco</option>
+                        <option value="Miraflores">Miraflores</option>
+                        <option value="San Isidro">San Isidro</option>
+                        <option value="Todas">Todas (Multitienda)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>ID Biométrico (Huella / Lector):</label>
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder="Ej: 898681 (Opcional)"
+                      value={manageUserBiometricId}
+                      onChange={(e) => setManageUserBiometricId(e.target.value.replace(/\D/g, ''))}
+                    />
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ marginTop: '10px', padding: '10px' }}>
+                    ➕ Registrar y Guardar en la Nube
+                  </button>
+                </form>
+              </div>
+
+              {/* Right Column: User list with CRUD options */}
+              <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--border)' }}>
+                <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>👥 Listado General de Cuentas de Acceso</h4>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '550px', overflowY: 'auto', paddingRight: '5px' }}>
+                  {teamMembers.map(m => (
+                    <div
+                      key={m.username}
+                      style={{
+                        padding: '12px 15px',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        backgroundColor: 'var(--bg-main)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '12.5px',
+                        gap: '10px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-main)' }}>{m.name}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          Usuario: <strong>{m.username}</strong> | Clave: <strong>{m.password || 'demo123'}</strong>
+                        </span>
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '3px' }}>
+                          <span style={{ backgroundColor: 'var(--primary)', color: '#fff', fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                            {m.role.toUpperCase()}
+                          </span>
+                          <span style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '9px', padding: '2px 6px', borderRadius: '4px' }}>
+                            📍 Sede: {m.store}
+                          </span>
+                          {m.biometricId && (
+                            <span style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)', border: '1px solid var(--success)', fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px' }}>
+                              🧬 Huella ID: {m.biometricId}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-end' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newPass = prompt(`Modificar contraseña de ${m.username}:`, m.password || 'demo123');
+                            if (newPass !== null && newPass.trim() !== '') {
+                              onUpdateCollaborator(m.username, { password: newPass.trim() });
+                              alert('Contraseña modificada con éxito.');
+                            }
+                          }}
+                          className="btn"
+                          style={{
+                            padding: '3px 8px',
+                            fontSize: '10px',
+                            cursor: 'pointer',
+                            backgroundColor: 'var(--bg-card)',
+                            color: 'var(--text-main)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          🔑 Cambiar Clave
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newBio = prompt(`Modificar ID Biométrico para ${m.name}:`, m.biometricId || '');
+                            if (newBio !== null) {
+                              onUpdateCollaborator(m.username, { biometricId: newBio.trim() || null });
+                              alert('ID Biométrico actualizado.');
+                            }
+                          }}
+                          className="btn"
+                          style={{
+                            padding: '3px 8px',
+                            fontSize: '10px',
+                            cursor: 'pointer',
+                            backgroundColor: 'var(--bg-card)',
+                            color: 'var(--text-main)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          🧬 Asignar Huella
+                        </button>
+
+                        {m.username !== 'tecnicodg' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`¿Estás seguro de ELIMINAR permanentemente la cuenta de ${m.name} (${m.username})?`)) {
+                                onRejectCollaborator(m.username);
+                                alert('Usuario eliminado.');
+                              }
+                            }}
+                            style={{
+                              border: 'none',
+                              background: 'none',
+                              color: 'var(--error)',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              textDecoration: 'underline',
+                              marginTop: '2px'
+                            }}
+                          >
+                            Eliminar Cuenta
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* SUBTAB 2: DEVICES */}
+        {techTabSub === 'devices' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '25px', alignItems: 'start' }}>
               
@@ -2182,7 +2452,7 @@ export default function SupervisorDashboard({
                     ⚡ Consola Simuladora de Transmisión de Hardware
                   </h4>
                   <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                    Simula la recepción de un pulso de asistencia física desde la lectora biométrica conectada. Sirve para certificar que el log entra a la base de datos y actualiza la intranet.
+                    Simula la reception de un pulso de asistencia física desde la lectora biométrica conectada. Sirve para certificar que el log entra a la base de datos y actualiza la intranet.
                   </p>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -2287,7 +2557,9 @@ export default function SupervisorDashboard({
 
             </div>
           </div>
-        ) : (
+        )}
+
+        {techTabSub === 'docs' && (
           /* Technical Manual / Docs Tab */
           <div className="card animate-scale-in" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', border: '1px solid var(--border)' }}>
             <h3 style={{ margin: 0, color: 'var(--secondary)', fontSize: '16px' }}>📘 Guía de Cableado e Integración de Hardware</h3>
