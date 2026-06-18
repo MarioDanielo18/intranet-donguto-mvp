@@ -512,15 +512,15 @@ export default function App() {
 
   // Biometric states
   const INITIAL_BIOMETRIC_DEVICES = [
-    { id: 'DEV-001', name: 'ZKTeco K40 - Sede Barranco', model: 'ZKTeco K40', ip: '192.168.1.150', port: '4370', store: 'Barranco', status: 'Online' },
+    { id: 'DEV-001', name: 'ZKTeco M1 - Sede Barranco', model: 'ZKTeco M1', ip: '192.168.1.150', port: '4370', store: 'Barranco', status: 'Online' },
     { id: 'DEV-002', name: 'ZKTeco K40 - Sede Miraflores', model: 'ZKTeco K40', ip: '192.168.1.151', port: '4370', store: 'Miraflores', status: 'Online' },
     { id: 'DEV-003', name: 'ZKTeco MB20 - Sede San Isidro', model: 'ZKTeco MB20', ip: '192.168.1.152', port: '4370', store: 'San Isidro', status: 'Offline' }
   ];
 
   const INITIAL_BIOMETRIC_LOGS = [
-    { id: 'BLOG-001', date: '2026-06-12T07:01:00Z', name: 'Mateo Quispe López', username: 'qlopezdg', role: 'Barista', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
-    { id: 'BLOG-002', date: '2026-06-12T07:07:00Z', name: 'Gabriela Alva Ruiz', username: 'aruizdg', role: 'Cocina', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
-    { id: 'BLOG-003', date: '2026-06-12T07:51:00Z', name: 'Diana Valdivia Rojas', username: 'vrojasdg', role: 'Administrador', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco K40 - Sede Barranco', status: 'Success' },
+    { id: 'BLOG-001', date: '2026-06-12T07:01:00Z', name: 'Mateo Quispe López', username: 'qlopezdg', role: 'Barista', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede Barranco', status: 'Success' },
+    { id: 'BLOG-002', date: '2026-06-12T07:07:00Z', name: 'Gabriela Alva Ruiz', username: 'aruizdg', role: 'Cocina', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede Barranco', status: 'Success' },
+    { id: 'BLOG-003', date: '2026-06-12T07:51:00Z', name: 'Diana Valdivia Rojas', username: 'vrojasdg', role: 'Administrador', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede Barranco', status: 'Success' },
     { id: 'BLOG-004', date: '2026-06-12T07:55:00Z', name: 'Pedro Supervisor Gómez', username: 'sgomezdg', role: 'Supervisor', store: 'Todas', deviceId: 'DEV-002', deviceName: 'ZKTeco K40 - Sede Miraflores', status: 'Success' }
   ];
 
