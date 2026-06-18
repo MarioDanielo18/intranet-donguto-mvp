@@ -17,12 +17,16 @@ export default async function handler(req, res) {
   const appSecret = process.env.ZKLINK_APP_SECRET;
   const tenantId = process.env.ZKLINK_TENANT_ID; // optional depending on ZLink API
 
-  // If credentials are not set in Vercel, return mock status
+  // Initialize global memory storage for real-time punches (shared with /api/iclock)
+  global.latestPunches = global.latestPunches || [];
+
+  // If credentials are not set in Vercel, return direct ADMS punches from global memory
   if (!appKey || !appSecret) {
+    const directPunches = [...global.latestPunches];
     return res.status(200).json({
-      status: 'demo',
-      message: 'ZKBio Zlink API credentials not configured in Vercel Environment Variables. Please set ZKLINK_APP_KEY and ZKLINK_APP_SECRET.',
-      punches: []
+      status: 'success',
+      message: 'Direct ZKTeco ADMS real-time punches synced.',
+      punches: directPunches
     });
   }
 
