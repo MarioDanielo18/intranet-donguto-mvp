@@ -292,6 +292,7 @@ const INITIAL_MOCK_TEAM = [
     name: 'Mario Quispe',
     role: 'Gerente',
     store: 'Todas',
+    biometricId: '898681',
     trainingProgress: {},
     arrivalLogs: []
   },
@@ -547,8 +548,9 @@ export default function App() {
     localStorage.setItem('donguto-biometric-devices', JSON.stringify(updatedDevices));
   };
 
-  const handleBiometricScan = (username, deviceId) => {
-    const employee = teamMembers.find(m => m.username === username);
+  const handleBiometricScan = (usernameOrId, deviceId) => {
+    const searchVal = String(usernameOrId).trim();
+    const employee = teamMembers.find(m => String(m.username) === searchVal || String(m.biometricId) === searchVal);
     if (!employee) return { success: false, message: 'Colaborador no encontrado' };
 
     const device = biometricDevices.find(d => d.id === deviceId);
@@ -591,13 +593,13 @@ export default function App() {
 
     const delayMin = Math.max(0, currentMins - expectedMins);
 
-    handleClockIn(username, todayStr, timeStr, expectedTimeStr, delayMin);
+    handleClockIn(employee.username, todayStr, timeStr, expectedTimeStr, delayMin);
 
     const newLog = {
       id: `BLOG-${Date.now().toString().slice(-4)}`,
       date: now.toISOString(),
       name: employee.name,
-      username: username,
+      username: employee.username,
       role: employee.role,
       store: store,
       deviceId: deviceId,
@@ -624,6 +626,64 @@ export default function App() {
       delete window.triggerBiometricPunch;
     };
   }, [teamMembers, biometricDevices]);
+
+  useEffect(() => {
+    let active = true;
+    const processedPunchIds = new Set(biometricLogs.map(log => log.id || log.punch_id).filter(Boolean));
+    let lastProcessedLocalId = null;
+
+    const checkLocalPunches = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/latest-punch', {
+          mode: 'cors',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data && data.punch_id && data.punch_id !== lastProcessedLocalId) {
+          lastProcessedLocalId = data.punch_id;
+          const res = handleBiometricScan(data.biometric_id || data.username, data.device_id || 'DEV-001');
+          console.log('Automated Local Biometric Punch triggered for:', data.biometric_id || data.username, 'Result:', res);
+        }
+      } catch (err) {
+        // Silent catch: local server might not be running
+      }
+    };
+
+    const checkCloudPunches = async () => {
+      try {
+        const response = await fetch('/api/sync-zk', {
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data && data.status === 'success' && data.punches) {
+          data.punches.forEach(punch => {
+            const punchId = punch.punch_id;
+            if (punchId && !processedPunchIds.has(punchId)) {
+              processedPunchIds.add(punchId);
+              const res = handleBiometricScan(punch.biometric_id || punch.username, punch.device_id || 'DEV-001');
+              console.log('Automated Cloud Biometric Punch synced for:', punch.biometric_id || punch.username, 'Result:', res);
+            }
+          });
+        }
+      } catch (err) {
+        // Silent catch: cloud API might fail or be offline
+      }
+    };
+
+    const interval = setInterval(() => {
+      if (active) {
+        checkLocalPunches();
+        checkCloudPunches();
+      }
+    }, 3000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [teamMembers, biometricDevices, biometricLogs]);
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
