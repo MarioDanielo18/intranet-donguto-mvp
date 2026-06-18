@@ -548,7 +548,7 @@ export default function App() {
     localStorage.setItem('donguto-biometric-devices', JSON.stringify(updatedDevices));
   };
 
-  const handleBiometricScan = (usernameOrId, deviceId) => {
+  const handleBiometricScan = (usernameOrId, deviceId, customTime = null, customDate = null, punchId = null) => {
     const searchVal = String(usernameOrId).trim();
     const employee = teamMembers.find(m => String(m.username) === searchVal || String(m.biometricId) === searchVal);
     if (!employee) return { success: false, message: 'Colaborador no encontrado' };
@@ -557,33 +557,47 @@ export default function App() {
     const deviceName = device ? device.name : 'Dispositivo Desconocido';
     const store = employee.store === 'Todas' ? (device ? device.store : 'Barranco') : employee.store;
 
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    
-    // Check if already clocked in today to avoid duplicates
-    const logs = employee.arrivalLogs || [];
-    const alreadyClocked = logs.some(l => l.date === todayStr);
-    if (alreadyClocked) {
-      return { success: false, message: 'Asistencia ya registrada para hoy' };
+    let punchDateStr, punchTimeStr;
+    let currentMins;
+
+    if (customTime && customDate) {
+      punchDateStr = customDate;
+      punchTimeStr = customTime;
+      
+      const [timePart, ampmPart] = customTime.split(' ');
+      let [h, m] = timePart.split(':').map(Number);
+      if (ampmPart === 'PM' && h < 12) h += 12;
+      if (ampmPart === 'AM' && h === 12) h = 0;
+      currentMins = h * 60 + m;
+    } else {
+      const now = new Date();
+      punchDateStr = now.toISOString().split('T')[0];
+      
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+      const displayMinutes = minutes.toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      punchTimeStr = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
+      
+      const [timePart, ampmPart] = punchTimeStr.split(' ');
+      let [h, m] = timePart.split(':').map(Number);
+      if (ampmPart === 'PM' && h < 12) h += 12;
+      if (ampmPart === 'AM' && h === 12) h = 0;
+      currentMins = h * 60 + m;
     }
 
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
-    const displayMinutes = minutes.toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const timeStr = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
+    // Check if already clocked in on that date to avoid duplicates
+    const logs = employee.arrivalLogs || [];
+    const alreadyClocked = logs.some(l => l.date === punchDateStr);
+    if (alreadyClocked) {
+      return { success: false, message: 'Asistencia ya registrada para esta fecha' };
+    }
 
     // Expected time based on employee role
     let expectedTimeStr = '07:00 AM';
     if (employee.role === 'Servicio') expectedTimeStr = '08:00 AM';
     else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico'].includes(employee.role)) expectedTimeStr = '08:00 AM';
-
-    const [timePart, ampmPart] = timeStr.split(' ');
-    let [h, m] = timePart.split(':').map(Number);
-    if (ampmPart === 'PM' && h < 12) h += 12;
-    if (ampmPart === 'AM' && h === 12) h = 0;
-    const currentMins = h * 60 + m;
 
     const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
     let [eh, em] = expTimePart.split(':').map(Number);
@@ -593,11 +607,26 @@ export default function App() {
 
     const delayMin = Math.max(0, currentMins - expectedMins);
 
-    handleClockIn(employee.username, todayStr, timeStr, expectedTimeStr, delayMin);
+    handleClockIn(employee.username, punchDateStr, punchTimeStr, expectedTimeStr, delayMin);
+
+    let logDate;
+    if (customTime && customDate) {
+      try {
+        const [timePart, ampmPart] = customTime.split(' ');
+        let [h, m] = timePart.split(':').map(Number);
+        if (ampmPart === 'PM' && h < 12) h += 12;
+        if (ampmPart === 'AM' && h === 12) h = 0;
+        logDate = new Date(`${customDate}T${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00`).toISOString();
+      } catch (e) {
+        logDate = new Date().toISOString();
+      }
+    } else {
+      logDate = new Date().toISOString();
+    }
 
     const newLog = {
-      id: `BLOG-${Date.now().toString().slice(-4)}`,
-      date: now.toISOString(),
+      id: punchId || `BLOG-${Date.now().toString().slice(-4)}`,
+      date: logDate,
       name: employee.name,
       username: employee.username,
       role: employee.role,
@@ -662,7 +691,13 @@ export default function App() {
             const punchId = punch.punch_id;
             if (punchId && !processedPunchIds.has(punchId)) {
               processedPunchIds.add(punchId);
-              const res = handleBiometricScan(punch.biometric_id || punch.username, punch.device_id || 'DEV-001');
+              const res = handleBiometricScan(
+                punch.biometric_id || punch.username,
+                punch.device_id || 'DEV-001',
+                punch.time,
+                punch.date,
+                punchId
+              );
               console.log('Automated Cloud Biometric Punch synced for:', punch.biometric_id || punch.username, 'Result:', res);
             }
           });
