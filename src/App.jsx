@@ -288,6 +288,14 @@ const INITIAL_MOCK_TEAM = [
     arrivalLogs: []
   },
   {
+    username: 'mquispedg',
+    name: 'Mario Quispe',
+    role: 'Gerente',
+    store: 'Todas',
+    trainingProgress: {},
+    arrivalLogs: []
+  },
+  {
     username: 'tecnicodg',
     name: 'Técnico de Sistemas',
     role: 'Técnico',
@@ -605,6 +613,17 @@ export default function App() {
 
     return { success: true, log: newLog };
   };
+
+  useEffect(() => {
+    window.triggerBiometricPunch = (username, deviceId = 'DEV-001') => {
+      const res = handleBiometricScan(username, deviceId);
+      console.log('Biometric Punch result:', res);
+      return res;
+    };
+    return () => {
+      delete window.triggerBiometricPunch;
+    };
+  }, [teamMembers, biometricDevices]);
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
@@ -1132,6 +1151,7 @@ export default function App() {
             <div className="drawer-section-title">Simulador de Roles (Pruebas)</div>
             <div className="drawer-list">
               {[
+                { username: 'mquispedg', name: 'Mario Quispe', role: 'Gerente', label: '👑 Mario Quispe (Gerente)' },
                 { username: 'qlopezdg', name: 'Mateo Quispe López', role: 'Barista', label: '☕ Barista (Barra)' },
                 { username: 'aruizdg', name: 'Gabriela Alva Ruiz', role: 'Cocina', label: '🍳 Cocina' },
                 { username: 'fpinedodg', name: 'Rodrigo Flores Pinedo', role: 'Servicio', label: '🍽️ Servicio (Salón)' },
