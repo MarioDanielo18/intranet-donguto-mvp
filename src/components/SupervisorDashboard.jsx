@@ -343,6 +343,7 @@ export default function SupervisorDashboard({
   const [newMemberNames, setNewMemberNames] = useState('');
   const [newMemberPrimerApellido, setNewMemberPrimerApellido] = useState('');
   const [newMemberSegundoApellido, setNewMemberSegundoApellido] = useState('');
+  const [newMemberBiometricId, setNewMemberBiometricId] = useState('');
   const [newMemberRole, setNewMemberRole] = useState('Barista');
   const [newMemberStore, setNewMemberStore] = useState(() => {
     return user && user.role === 'Administrador' ? user.store : 'Barranco';
@@ -522,6 +523,7 @@ export default function SupervisorDashboard({
       username: generatedUser,
       role: newMemberRole,
       store: newMemberStore,
+      biometricId: newMemberBiometricId.trim() || null,
       pendingApproval: isPending,
       addedBy: user.name,
       addedByUsername: user.username,
@@ -531,6 +533,7 @@ export default function SupervisorDashboard({
     setNewMemberNames('');
     setNewMemberPrimerApellido('');
     setNewMemberSegundoApellido('');
+    setNewMemberBiometricId('');
     
     if (isPending) {
       alert(`El colaborador ${fullName} ha sido registrado. Su aprobación está pendiente de validación por parte del Supervisor.\nUsuario de acceso generado: ${generatedUser}`);
@@ -3232,6 +3235,14 @@ main();`}
                     className="input"
                     style={{ padding: '8px 12px' }}
                   />
+                  <input
+                    type="text"
+                    placeholder="ID Biométrico / Código Huella (opcional)"
+                    value={newMemberBiometricId}
+                    onChange={(e) => setNewMemberBiometricId(e.target.value)}
+                    className="input"
+                    style={{ padding: '8px 12px' }}
+                  />
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <input
                       type="text"
@@ -3296,7 +3307,37 @@ main();`}
                   <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                       <h3 style={{ margin: 0 }}>Ficha de Colaborador: {selectedUser.name}</h3>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Rol: {selectedUser.role} | Tienda: {selectedUser.store}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        <span>Rol: {selectedUser.role} | Tienda: {selectedUser.store} | ID Biométrico:</span>
+                        <strong style={{ color: selectedUser.biometricId ? 'var(--secondary)' : 'var(--text-muted)' }}>
+                          {selectedUser.biometricId || 'No asignado'}
+                        </strong>
+                        {['Administrador', 'Supervisor', 'Gerente'].includes(user.role) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newBioId = prompt(`Ingresa el nuevo ID Biométrico para ${selectedUser.name} (debe coincidir con el ID registrado en el lector físico ZKTeco):`, selectedUser.biometricId || '');
+                              if (newBioId !== null) {
+                                onUpdateCollaborator(selectedUser.username, { biometricId: newBioId.trim() });
+                                setSelectedUser(prev => ({ ...prev, biometricId: newBioId.trim() }));
+                                alert(`ID Biométrico actualizado a: ${newBioId.trim() || 'No asignado'}`);
+                              }
+                            }}
+                            style={{
+                              border: 'none',
+                              background: 'none',
+                              color: 'var(--primary)',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              padding: '0 2px',
+                              textDecoration: 'underline',
+                              fontWeight: 700
+                            }}
+                          >
+                            Editar ID
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {/* Move/Transfer Store Selector */}
                     {['Administrador', 'Supervisor', 'Gerente'].includes(user.role) && ['Barista', 'Cocina', 'Servicio'].includes(selectedUser.role) && (
