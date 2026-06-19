@@ -64,6 +64,22 @@ const destroyModals = async (page) => {
     const passwordInput = page.locator('input[type="password"]').first();
     await passwordInput.fill(ZLINK_PASSWORD);
 
+    // Accept terms and conditions checkbox
+    const agreementCheckbox = page.locator('input[type="checkbox"], .ant-checkbox-input, .el-checkbox__original, [class*="checkbox-input"]').first();
+    try {
+      console.log("☑️ Aceptando acuerdo de usuario y políticas...");
+      await agreementCheckbox.waitFor({ state: 'attached', timeout: 5000 });
+      await agreementCheckbox.check({ force: true });
+    } catch (e) {
+      console.log("No se pudo marcar con .check(), intentando clic directo...");
+      try {
+        await agreementCheckbox.click({ force: true });
+      } catch (clickErr) {
+        // Fallback by text label
+        await page.locator('text="I have read and agree to", text="he leído y acepto", text="Acepto los términos"').first().click({ force: true }).catch(() => {});
+      }
+    }
+
     // Click submit button
     const loginButton = page.locator('button[type="submit"], button:has-text("Iniciar"), button:has-text("Login"), button:has-text("Ingresar"), .el-button--primary').first();
     await destroyModals(page);
