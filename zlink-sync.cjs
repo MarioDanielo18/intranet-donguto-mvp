@@ -66,34 +66,15 @@ const destroyModals = async (page) => {
 
     // Accept terms and conditions checkbox (specifically targeting name="agreement")
     console.log("☑️ Aceptando acuerdo de usuario y políticas (agreement)...");
-    await page.evaluate(() => {
-      const checkbox = document.querySelector('input[name="agreement"]');
-      if (checkbox) {
-        if (!checkbox.checked) {
-          checkbox.checked = true;
-          // Dispatch change and input events to trigger React/Vue binding
-          checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-          checkbox.dispatchEvent(new Event('input', { bubbles: true }));
-          
-          // Also click the wrapper label to trigger custom UI handlers
-          const wrapper = checkbox.closest('label') || checkbox.closest('.ant-checkbox') || checkbox.parentElement;
-          if (wrapper) {
-            wrapper.click();
-          }
-        }
-      } else {
-        // Fallback: search by text content
-        const elements = Array.from(document.querySelectorAll('label, span, div, p'));
-        const agreementText = elements.find(el => {
-          const text = el.textContent.toLowerCase();
-          return text.includes('i have read and agree to') || text.includes('he leído y acepto') || text.includes('agree to');
-        });
-        if (agreementText) {
-          agreementText.click();
-        }
-      }
-    });
-    await page.waitForTimeout(1500);
+    const agreementCheckboxWrapper = page.locator('.ant-checkbox-wrapper:has(input[name="agreement"]), .ant-checkbox-wrapper:has-text("agree"), label:has-text("agree")').first();
+    await agreementCheckboxWrapper.waitFor({ state: 'visible', timeout: 10000 });
+    await agreementCheckboxWrapper.click({ force: true });
+
+    // Verify checkbox status in logs
+    const isChecked = await page.locator('input[name="agreement"]').isChecked();
+    console.log("Checkbox marked status:", isChecked ? "✅ Checked" : "❌ Unchecked");
+    
+    await page.waitForTimeout(1000);
 
     // Click submit button
     const loginButton = page.locator('button[type="submit"], button:has-text("Sign In"), button:has-text("Iniciar"), button:has-text("Login"), .login-form-button').first();
