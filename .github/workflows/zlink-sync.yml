@@ -41,7 +41,7 @@ jobs:
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       run: |
-        node zlink-sync.js
+        node zlink-sync.cjs
 
     - name: Subir captura de pantalla en caso de fallo
       if: failure()
