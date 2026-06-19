@@ -257,20 +257,64 @@ const destroyModals = async (page) => {
     const exportButton = page.locator('button:has-text("Exportar"), button:has-text("Export"), .el-button:has-text("Export"), .el-button:has-text("Exportar")').first();
     await exportButton.waitFor({ state: 'visible', timeout: 20000 });
 
-    console.log("⏳ Iniciando la descarga del archivo de marcaciones...");
+    console.log("⏳ Solicitando generación del archivo de marcaciones (Export)...");
     await destroyModals(page);
+    await exportButton.click({ force: true });
+    
+    // Give the server a moment to register the task and load the File Center page
+    console.log("⏳ Esperando navegación al Centro de Archivos (File Center)...");
+    await page.waitForTimeout(5000);
+    
     let download;
     try {
+      let downloadButton = null;
+      let downloadUrl = page.url();
+      console.log("Página del Centro de Archivos:", downloadUrl);
+      
+      // We will poll the File Center table up to 12 times (60 seconds total)
+      for (let attempt = 1; attempt <= 12; attempt++) {
+        console.log(`🔍 Buscando botón de descarga en File Center (Intento ${attempt}/12)...`);
+        
+        // Look for a download link/button in the table (e.g. text "Download", "Descargar", or an ant-btn with download text)
+        downloadButton = page.locator('button:has-text("Download"), button:has-text("Descargar"), a:has-text("Download"), a:has-text("Descargar"), .ant-btn:has-text("Download"), .ant-btn:has-text("Descargar")').first();
+        
+        if (await downloadButton.count() > 0 && await downloadButton.isVisible()) {
+          console.log("✅ ¡Botón de descarga encontrado!");
+          break;
+        }
+        
+        // Check current page status for logging
+        const pageText = await page.innerText('body');
+        if (pageText.includes('No data') || pageText.includes('Sin datos') || pageText.includes('No hay datos')) {
+          console.log("   ⚠️ Aún no hay datos en el listado de exportación. Esperando...");
+        } else if (pageText.includes('Generating') || pageText.includes('Generando') || pageText.includes('Processing') || pageText.includes('En proceso')) {
+          console.log("   ⏳ El archivo se está generando en el servidor. Esperando...");
+        } else {
+          console.log("   ❓ La tarea no se visualiza o el estado es desconocido. Esperando...");
+        }
+        
+        await page.waitForTimeout(5000);
+        
+        // Reload the page to refresh the File Center list
+        console.log("   🔄 Recargando la página para actualizar el Centro de Archivos...");
+        await page.reload({ waitUntil: 'networkidle' }).catch(() => {});
+      }
+
+      if (!downloadButton || await downloadButton.count() === 0) {
+        throw new Error("No se pudo generar o encontrar el archivo de descarga en el Centro de Archivos en 60 segundos.");
+      }
+
+      console.log("📥 Iniciando descarga física del archivo...");
       const downloadPromise = page.waitForEvent('download', { timeout: 45000 });
-      await exportButton.click({ force: true });
+      await downloadButton.click({ force: true });
       download = await downloadPromise;
     } catch (e) {
-      console.error("❌ Error al esperar la descarga del archivo:", e);
+      console.error("❌ Error al esperar la descarga en el Centro de Archivos:", e);
       try {
         const bodyText = await page.innerText('body');
-        console.log("\n--- CONTENIDO DE TEXTO DE LA PÁGINA AL TIEMPO DE LA DESCARGA ---");
+        console.log("\n--- CONTENIDO DE TEXTO DE LA PÁGINA AL TIEMPO DE LA FALLA ---");
         console.log(bodyText.slice(0, 3000));
-        console.log("-----------------------------------------------------------------\n");
+        console.log("---------------------------------------------------------------\n");
       } catch (innerErr) {}
       
       try {
@@ -278,9 +322,9 @@ const destroyModals = async (page) => {
           const modals = Array.from(document.querySelectorAll('.ant-modal, .el-dialog, [class*="modal"], [class*="dialog"], [class*="popup"], [class*="message"], .ant-notification, .el-notification'));
           return modals.map(m => `<div class="${m.className}">${(m.innerText || m.textContent || '').trim()}</div>`).join('\n');
         });
-        console.log("\n--- MODALES / DIÁLOGOS / DIÁLOGOS DE CONFIRMACIÓN DETECTADOS ---");
+        console.log("\n--- MODALES / DIÁLOGOS DETECTADOS ---");
         console.log(modalsHtml || "Ningún modal detectado.");
-        console.log("---------------------------------------------------------------\n");
+        console.log("-------------------------------------\n");
       } catch (innerErr) {}
 
       try {
