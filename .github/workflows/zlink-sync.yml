@@ -1,9 +1,6 @@
 name: ZKBio Zlink Attendance Sync
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     # Corre todos los días en los siguientes horarios (UTC):
     # 12:00 UTC = 07:00 AM Perú
