@@ -252,6 +252,24 @@ const destroyModals = async (page) => {
     console.log("⏳ Cargando vista de informe de Eventos...");
     await page.waitForTimeout(8000); // Wait for the table and filters to load
 
+    // Print diagnostic of reports view page before searching for export button
+    try {
+      const reportText = await page.innerText('body');
+      console.log("\n--- CONTENIDO DE TEXTO DE LA VISTA DE REPORTES ANTES DE EXPORTAR ---");
+      console.log(reportText.slice(0, 3000));
+      console.log("--------------------------------------------------------------------\n");
+    } catch (innerErr) {}
+
+    try {
+      const allButtons = await page.evaluate(() => {
+        const btns = Array.from(document.querySelectorAll('button, a.el-button, a.ant-btn'));
+        return btns.map(b => `<button class="${b.className}">${(b.innerText || b.textContent || '').trim()}</button>`).join('\n');
+      });
+      console.log("\n--- BOTONES DISPONIBLES EN LA VISTA DE REPORTES ---");
+      console.log(allButtons || "Ningún botón detectado.");
+      console.log("--------------------------------------------------\n");
+    } catch (innerErr) {}
+
     // Click on search or calculate if required
     console.log("📥 Buscando botón de exportación...");
     const exportButton = page.locator('button:has-text("Exportar"), button:has-text("Export"), .el-button:has-text("Export"), .el-button:has-text("Exportar")').first();
