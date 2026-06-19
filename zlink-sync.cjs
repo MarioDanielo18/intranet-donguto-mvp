@@ -71,8 +71,23 @@ const destroyModals = async (page) => {
     await loginButton.click({ force: true });
 
     console.log("⏳ Esperando redirección tras inicio de sesión...");
-    // Wait for the URL to change to indicate successful login
-    await page.waitForURL(/.*zlink\.minervaiot\.com.*/, { timeout: 30000 });
+    // Wait for the URL to change to indicate successful login (must NOT be /login or /user/login)
+    await page.waitForURL(url => {
+      const u = url.href.toLowerCase();
+      return u.includes('zlink.minervaiot.com') && !u.endsWith('/login') && !u.includes('/user/login');
+    }, { timeout: 30000 }).catch(async (e) => {
+      console.error("❌ Error de inicio de sesión: No se redirigió fuera de la página de login.");
+      
+      // Look for error alerts on the page
+      try {
+        const pageText = await page.innerText('body');
+        console.log("\n--- CONTENIDO DE LA PÁGINA DE ERROR ---");
+        console.log(pageText.slice(0, 1500));
+        console.log("----------------------------------------\n");
+      } catch (innerErr) {}
+      
+      throw new Error("Inicio de sesión fallido. Verifica tus secretos ZLINK_EMAIL y ZLINK_PASSWORD.");
+    });
     await page.waitForTimeout(5000); // Give the dashboard some time to load cookies and session
 
     console.log("📊 Navegando directamente a la pantalla de Informes...");
