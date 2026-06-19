@@ -64,31 +64,78 @@ const destroyModals = async (page) => {
     const passwordInput = page.locator('input[type="password"]').first();
     await passwordInput.fill(ZLINK_PASSWORD);
 
+    console.log("⏳ Esperando que la página esté estable e interactiva...");
+    await page.waitForTimeout(2500);
+
     // Accept terms and conditions checkbox (specifically targeting name="agreement")
     console.log("☑️ Aceptando acuerdo de usuario y políticas (agreement)...");
-    const checkboxSquare = page.locator('.ant-checkbox-wrapper:has(input[name="agreement"]) .ant-checkbox-inner').first();
-    const checkboxLabel = page.locator('.ant-checkbox-wrapper:has(input[name="agreement"]) .ant-checkbox-label').first();
     const inputLocator = page.locator('input[name="agreement"]').first();
+    const checkboxWrapper = page.locator('.ant-checkbox-wrapper:has(input[name="agreement"])').first();
+    const checkboxSquare = page.locator('.ant-checkbox-wrapper:has(input[name="agreement"]) .ant-checkbox-inner').first();
 
-    await checkboxSquare.waitFor({ state: 'attached', timeout: 10000 });
+    await inputLocator.waitFor({ state: 'attached', timeout: 20000 });
     
-    let isChecked = await inputLocator.isChecked();
-    if (!isChecked) {
-      console.log("🖱️ Clickeando el cuadro del checkbox (.ant-checkbox-inner)...");
-      await checkboxSquare.click({ force: true });
+    let isChecked = false;
+    for (let attempt = 1; attempt <= 5; attempt++) {
       isChecked = await inputLocator.isChecked();
-    }
-    
-    if (!isChecked) {
-      console.log("🖱️ Clickeando la etiqueta de texto (.ant-checkbox-label)...");
-      await checkboxLabel.click({ force: true });
+      if (isChecked) {
+        console.log(`✅ El checkbox ya está marcado (Intento ${attempt}).`);
+        break;
+      }
+      
+      console.log(`☑️ Intentando marcar checkbox (Intento ${attempt}/5)...`);
+      
+      // Attempt 1: Standard Playwright click on wrapper (letting Playwright handle scrolling/stability)
+      console.log("   👉 Intentando click en el wrapper label...");
+      await checkboxWrapper.click({ timeout: 5000 }).catch(() => {});
       isChecked = await inputLocator.isChecked();
-    }
-    
-    if (!isChecked) {
-      console.log("🖱️ Clickeando el input directamente...");
-      await inputLocator.click({ force: true });
+      if (isChecked) break;
+
+      // Attempt 2: Click on the inner styled checkbox square
+      console.log("   👉 Intentando click en el cuadro del checkbox (.ant-checkbox-inner)...");
+      await checkboxSquare.click({ timeout: 5000 }).catch(() => {});
       isChecked = await inputLocator.isChecked();
+      if (isChecked) break;
+
+      // Attempt 3: Native check via Playwright
+      console.log("   👉 Intentando .check() de Playwright...");
+      await inputLocator.check({ force: true, timeout: 5000 }).catch(() => {});
+      isChecked = await inputLocator.isChecked();
+      if (isChecked) break;
+
+      // Attempt 4: Programmatic click via DOM API inside page context using React-compatible setter
+      console.log("   👉 Intentando cambio programático y click en el contexto de la página (React-friendly)...");
+      await page.evaluate(() => {
+        try {
+          const input = document.querySelector('input[name="agreement"]');
+          if (input) {
+            // If React tracks property updates, use prototype setter
+            const checkedDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked');
+            if (checkedDescriptor && checkedDescriptor.set) {
+              checkedDescriptor.set.call(input, true);
+            } else {
+              input.checked = true;
+            }
+            // Dispatch events to let React state listeners know
+            input.dispatchEvent(new Event('click', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // Also click the wrapper label directly in DOM
+            const wrapper = input.closest('label') || input.closest('.ant-checkbox-wrapper');
+            if (wrapper) {
+              wrapper.click();
+            }
+          }
+        } catch (e) {
+          console.error("Error en page.evaluate checkbox set:", e);
+        }
+      }).catch(() => {});
+      
+      isChecked = await inputLocator.isChecked();
+      if (isChecked) break;
+      
+      // Wait a bit before next attempt
+      await page.waitForTimeout(1500);
     }
 
     console.log("Checkbox marked status:", isChecked ? "✅ Checked" : "❌ Unchecked");
