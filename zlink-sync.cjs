@@ -64,21 +64,39 @@ const destroyModals = async (page) => {
     const passwordInput = page.locator('input[type="password"]').first();
     await passwordInput.fill(ZLINK_PASSWORD);
 
-    // Accept terms and conditions checkbox
-    const agreementCheckbox = page.locator('input[type="checkbox"], .ant-checkbox-input, .el-checkbox__original, [class*="checkbox-input"]').first();
-    try {
-      console.log("☑️ Aceptando acuerdo de usuario y políticas...");
-      await agreementCheckbox.waitFor({ state: 'attached', timeout: 5000 });
-      await agreementCheckbox.check({ force: true });
-    } catch (e) {
-      console.log("No se pudo marcar con .check(), intentando clic directo...");
-      try {
-        await agreementCheckbox.click({ force: true });
-      } catch (clickErr) {
-        // Fallback by text label
-        await page.locator('text="I have read and agree to", text="he leído y acepto", text="Acepto los términos"').first().click({ force: true }).catch(() => {});
+    // Accept terms and conditions checkbox (evaluated in browser context to resolve styled wrappers)
+    console.log("☑️ Aceptando acuerdo de usuario y políticas...");
+    await page.evaluate(() => {
+      const checkbox = document.querySelector('input[type="checkbox"], .ant-checkbox-input, .el-checkbox__original, [class*="checkbox-input"]');
+      if (checkbox) {
+        if (!checkbox.checked) {
+          const wrapper = checkbox.closest('label') || checkbox.closest('.ant-checkbox') || checkbox.closest('.el-checkbox') || checkbox.parentElement;
+          if (wrapper) {
+            wrapper.click();
+            console.log("Click realizado en el wrapper del checkbox.");
+          } else {
+            checkbox.click();
+            console.log("Click realizado directamente en el checkbox input.");
+          }
+        } else {
+          console.log("El checkbox ya estaba marcado.");
+        }
+      } else {
+        // Fallback: search by text content
+        const elements = Array.from(document.querySelectorAll('label, span, div, p'));
+        const agreementText = elements.find(el => {
+          const text = el.textContent.toLowerCase();
+          return text.includes('i have read and agree to') || text.includes('he leído y acepto') || text.includes('agree to');
+        });
+        if (agreementText) {
+          agreementText.click();
+          console.log("Click realizado en el texto de acuerdo encontrado.");
+        } else {
+          console.log("No se encontró ningún elemento de acuerdo de usuario.");
+        }
       }
-    }
+    });
+    await page.waitForTimeout(1000);
 
     // Click submit button
     const loginButton = page.locator('button[type="submit"], button:has-text("Iniciar"), button:has-text("Login"), button:has-text("Ingresar"), .el-button--primary').first();
