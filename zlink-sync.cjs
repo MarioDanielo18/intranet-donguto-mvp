@@ -187,69 +187,14 @@ const destroyModals = async (page) => {
     });
     await page.waitForTimeout(5000); // Give the dashboard some time to load cookies and session
 
-    console.log("📊 Navegando directamente a la pantalla de Informes...");
-    await page.goto('https://zlink.minervaiot.com/zkbio_att/attendance/report', { waitUntil: 'networkidle', timeout: 60000 });
-    await page.waitForTimeout(5000);
-
-    // Check if we are on the reports page, otherwise screenshot
+    console.log("📊 Navegando directamente a la pantalla de Informe Resumen de Empleado (Employee Summary)...");
+    await page.goto('https://zlink.minervaiot.com/zkbio_att/attendance/report/employee_summary', { waitUntil: 'networkidle', timeout: 60000 });
+    
+    // Check if we are on the correct page, otherwise screenshot
     const currentUrl = page.url();
     console.log("Página actual:", currentUrl);
 
-    console.log("🔍 Buscando tarjeta de informe...");
-    let eventosCard = null;
-    const mainContent = page.locator('main, .ant-layout-content, .main-content, #content, [class*="content"]').first();
-    
-    // Check if mainContent exists and contains matching elements
-    let hasMainContent = false;
-    try {
-      if (await mainContent.count() > 0) {
-        const testLocator = mainContent.locator('div, span, p, a, button')
-          .filter({ hasText: /^(Transaction|Transactions|Eventos|Events)$/i })
-          .filter({ visible: true });
-        if (await testLocator.count() > 0) {
-          console.log("🔍 Tarjeta encontrada dentro del contenedor principal.");
-          eventosCard = testLocator.first();
-          hasMainContent = true;
-        }
-      }
-    } catch (e) {
-      console.warn("Advertencia al buscar en mainContent:", e);
-    }
-
-    if (!hasMainContent) {
-      console.log("🔍 Contenedor principal no disponible o vacío. Buscando en toda la página (fallback)...");
-      eventosCard = page.locator('div, span, p, a, button')
-        .filter({ hasText: /^(Transaction|Transactions|Eventos|Events)$/i })
-        .filter({ visible: true })
-        .first();
-    }
-
-    await eventosCard.waitFor({ state: 'visible', timeout: 20000 }).catch(async (e) => {
-      console.error("❌ Error al esperar la tarjeta de Eventos:", e);
-      try {
-        const bodyText = await page.innerText('body');
-        console.log("\n--- CONTENIDO DE TEXTO DE LA PÁGINA DE INFORMES ---");
-        console.log(bodyText.slice(0, 3000));
-        console.log("---------------------------------------------------\n");
-      } catch (innerErr) {}
-      
-      try {
-        const htmlContent = await page.evaluate(() => {
-          const elements = Array.from(document.querySelectorAll('a, button, [class*="card"], [class*="menu"], h1, h2, h3, h4, h5, div[class*="item"]'));
-          return elements.map(el => `<${el.tagName.toLowerCase()} class="${el.className}">${(el.innerText || el.textContent || '').trim().slice(0, 100)}</${el.tagName.toLowerCase()}>`).join('\n');
-        });
-        console.log("\n--- ELEMENTOS INTERACTIVOS Y MENÚS EN LA PÁGINA ---");
-        console.log(htmlContent.slice(0, 3000));
-        console.log("-------------------------------------------\n");
-      } catch (innerErr) {}
-      
-      throw e;
-    });
-    await destroyModals(page);
-    console.log("🖱️ Abriendo informe de Eventos...");
-    await eventosCard.click({ force: true });
-
-    console.log("⏳ Cargando vista de informe de Eventos...");
+    console.log("⏳ Cargando vista de informe de Resumen de Empleado...");
     await page.waitForTimeout(8000); // Wait for the table and filters to load
 
     // Print diagnostic of reports view page before searching for export button
@@ -392,7 +337,7 @@ const destroyModals = async (page) => {
       process.exit(0);
     }
 
-    // Smart Column mapping
+    // Smart Column mapping for both Employee Summary (multiple time columns per row) and Raw Events (single time column)
     const keys = Object.keys(rows[0]);
     const findKey = (patterns) => {
       return keys.find(k => {
@@ -402,11 +347,19 @@ const destroyModals = async (page) => {
     };
 
     const idKey = findKey(['dni', 'biometric_id', 'personal_id', 'user_id', 'no.', 'no', 'código', 'codigo', 'code', 'id', 'documento', 'número de personal', 'numero de personal', 'colaborador', 'usuario']);
-    const dateTimeKey = findKey(['fecha/hora', 'fechayhora', 'timestamp', 'punch_time', 'punchtime', 'time', 'datetime', 'date_time', 'marcación', 'marcacion', 'fecha y hora', 'reloj', 'registro']);
     const dateKey = findKey(['fecha', 'date', 'día', 'dia']);
-    const timeKey = findKey(['hora', 'time', 'tiempo']);
+    
+    // Check-in / first punch column patterns
+    const checkInTimeKey = findKey(['first_punch', 'first punch', 'clock-in', 'clock in', 'check-in', 'check in', 'entrada', 'hora de entrada', 'hora_entrada', 'checkin']);
+    
+    // Check-out / last punch column patterns
+    const checkOutTimeKey = findKey(['last_punch', 'last punch', 'clock-out', 'clock out', 'check-out', 'check out', 'salida', 'hora de salida', 'hora_salida', 'checkout']);
 
-    console.log("⚙️ Mapeo de columnas detectado:", { idKey, dateTimeKey, dateKey, timeKey });
+    // Single dateTime or time key (fallback for raw events)
+    const dateTimeKey = findKey(['fecha/hora', 'fechayhora', 'timestamp', 'punch_time', 'punchtime', 'time', 'datetime', 'date_time', 'marcación', 'marcacion', 'fecha y hora', 'reloj', 'registro']);
+    const fallbackTimeKey = findKey(['hora', 'time', 'tiempo']);
+
+    console.log("⚙️ Mapeo de columnas detectado:", { idKey, dateKey, checkInTimeKey, checkOutTimeKey, dateTimeKey, fallbackTimeKey });
 
     if (!idKey) {
       throw new Error("No se pudo identificar la columna de DNI/Código en el archivo descargado. Encabezados: " + keys.join(', '));
@@ -425,6 +378,50 @@ const destroyModals = async (page) => {
       return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
     };
 
+    const cleanDatePart = (dVal) => {
+      if (!dVal) return null;
+      let datePart = '';
+      if (typeof dVal === 'number') {
+        const parsedD = parseExcelSerialDate(dVal);
+        datePart = parsedD.toISOString().split('T')[0];
+      } else {
+        datePart = String(dVal).trim();
+      }
+
+      if (datePart.includes('/')) {
+        const parts = datePart.split('/');
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            datePart = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+          } else {
+            datePart = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+        }
+      }
+      return datePart;
+    };
+
+    const cleanTimePart = (tVal) => {
+      if (!tVal) return null;
+      let timePart = '';
+      if (typeof tVal === 'number') {
+        const parsedT = parseExcelSerialDate(tVal);
+        timePart = parsedT.toTimeString().split(' ')[0];
+      } else {
+        timePart = String(tVal).trim();
+      }
+
+      // Skip invalid time strings (like '--:--' or '-' or empty)
+      if (timePart.includes('--') || timePart === '-' || !timePart.match(/\d/)) {
+        return null;
+      }
+
+      if (timePart.split(':').length === 2) {
+        timePart = `${timePart}:00`;
+      }
+      return timePart;
+    };
+
     const punchesToSave = [];
     rows.forEach((row, idx) => {
       const bioIdRaw = row[idKey];
@@ -432,67 +429,55 @@ const destroyModals = async (page) => {
       const biometricId = String(bioIdRaw).trim();
       if (!biometricId) return;
 
-      let punchTimestamp = null;
+      const datePart = dateKey ? cleanDatePart(row[dateKey]) : null;
 
-      if (dateTimeKey && row[dateTimeKey]) {
-        const val = row[dateTimeKey];
-        if (typeof val === 'number') {
-          punchTimestamp = parseExcelSerialDate(val);
+      // Helper to add a punch record
+      const addPunch = (timeVal) => {
+        if (timeVal === undefined || timeVal === null) return;
+        let punchTimestamp = null;
+
+        if (datePart) {
+          const timePart = cleanTimePart(timeVal);
+          if (timePart) {
+            punchTimestamp = new Date(`${datePart}T${timePart}`);
+          }
         } else {
-          punchTimestamp = new Date(val);
-        }
-      } else {
-        const dVal = row[dateKey];
-        const tVal = row[timeKey];
-        if (dVal && tVal) {
-          let datePart = '';
-          let timePart = '';
-
-          if (typeof dVal === 'number') {
-            const parsedD = parseExcelSerialDate(dVal);
-            datePart = parsedD.toISOString().split('T')[0];
+          // If no separate date column, parse timeVal as full date/time
+          if (typeof timeVal === 'number') {
+            punchTimestamp = parseExcelSerialDate(timeVal);
           } else {
-            datePart = String(dVal).trim();
+            punchTimestamp = new Date(timeVal);
           }
-
-          if (typeof tVal === 'number') {
-            const parsedT = parseExcelSerialDate(tVal);
-            timePart = parsedT.toTimeString().split(' ')[0];
-          } else {
-            timePart = String(tVal).trim();
-          }
-
-          if (datePart.includes('/')) {
-            const parts = datePart.split('/');
-            if (parts.length === 3) {
-              if (parts[0].length === 4) {
-                datePart = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-              } else {
-                datePart = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-              }
-            }
-          }
-
-          if (timePart.split(':').length === 2) {
-            timePart = `${timePart}:00`;
-          }
-
-          punchTimestamp = new Date(`${datePart}T${timePart}`);
         }
+
+        if (!punchTimestamp || isNaN(punchTimestamp.getTime())) return;
+
+        const timestampIso = punchTimestamp.toISOString();
+        const punchId = `AUTO-${biometricId}-${punchTimestamp.getTime()}`;
+
+        // Avoid adding exact duplicate punch in same run
+        if (!punchesToSave.some(p => p.punch_id === punchId)) {
+          punchesToSave.push({
+            punch_id: punchId,
+            biometric_id: biometricId,
+            timestamp: timestampIso,
+            device_id: 'ZLINK-AUTO-SYNC',
+            device_name: 'ZKBio Zlink Auto-Sync'
+          });
+        }
+      };
+
+      // Scenario A: Employee Summary (check-in and check-out in same row)
+      if (checkInTimeKey || checkOutTimeKey) {
+        if (checkInTimeKey) addPunch(row[checkInTimeKey]);
+        if (checkOutTimeKey) addPunch(row[checkOutTimeKey]);
+      } 
+      // Scenario B: Raw Punch Events (single time value)
+      else if (dateTimeKey) {
+        addPunch(row[dateTimeKey]);
+      } else if (fallbackTimeKey) {
+        addPunch(row[fallbackTimeKey]);
       }
-
-      if (!punchTimestamp || isNaN(punchTimestamp.getTime())) return;
-
-      const timestampIso = punchTimestamp.toISOString();
-      const punchId = `AUTO-${biometricId}-${punchTimestamp.getTime()}`;
-
-      punchesToSave.push({
-        punch_id: punchId,
-        biometric_id: biometricId,
-        timestamp: timestampIso,
-        device_id: 'ZLINK-AUTO-SYNC',
-        device_name: 'ZKBio Zlink Auto-Sync'
-      });
     });
 
     console.log(`📝 Total marcaciones válidas procesadas: ${punchesToSave.length}`);
