@@ -195,8 +195,35 @@ const destroyModals = async (page) => {
     const currentUrl = page.url();
     console.log("Página actual:", currentUrl);
 
-    console.log("🔍 Buscando tarjeta de informe 'Eventos' / 'Transaction' / 'Events'...");
-    const eventosCard = page.locator('text="Eventos", text="Transaction", text="Transactions", text="Events", .el-card:has-text("Eventos"), .el-card:has-text("Transaction"), .el-card:has-text("Transactions"), div:has-text("Eventos"), div:has-text("Transaction"), div:has-text("Transactions")').first();
+    console.log("🔍 Buscando tarjeta de informe...");
+    let eventosCard = null;
+    const mainContent = page.locator('main, .ant-layout-content, .main-content, #content, [class*="content"]').first();
+    
+    // Check if mainContent exists and contains matching elements
+    let hasMainContent = false;
+    try {
+      if (await mainContent.count() > 0) {
+        const testLocator = mainContent.locator('div, span, p, a, button')
+          .filter({ hasText: /^(Transaction|Transactions|Eventos|Events)$/i })
+          .filter({ visible: true });
+        if (await testLocator.count() > 0) {
+          console.log("🔍 Tarjeta encontrada dentro del contenedor principal.");
+          eventosCard = testLocator.first();
+          hasMainContent = true;
+        }
+      }
+    } catch (e) {
+      console.warn("Advertencia al buscar en mainContent:", e);
+    }
+
+    if (!hasMainContent) {
+      console.log("🔍 Contenedor principal no disponible o vacío. Buscando en toda la página (fallback)...");
+      eventosCard = page.locator('div, span, p, a, button')
+        .filter({ hasText: /^(Transaction|Transactions|Eventos|Events)$/i })
+        .filter({ visible: true })
+        .first();
+    }
+
     await eventosCard.waitFor({ state: 'visible', timeout: 20000 }).catch(async (e) => {
       console.error("❌ Error al esperar la tarjeta de Eventos:", e);
       try {
