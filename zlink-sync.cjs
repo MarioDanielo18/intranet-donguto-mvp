@@ -17,6 +17,29 @@ if (!ZLINK_EMAIL || !ZLINK_PASSWORD || !SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Helper to destroy any popup modals blocking clicks
+const destroyModals = async (page) => {
+  try {
+    await page.evaluate(() => {
+      const selectors = [
+        '.ant-modal-root', '.ant-modal-wrap', '.ant-modal-mask', '.ant-modal',
+        '.modal-backdrop', '.modal', '.fade', '.show',
+        '[class*="modal"]', '[class*="popup"]', '[class*="dialog"]', '[class*="mask"]'
+      ];
+      selectors.forEach(selector => {
+        try {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => el.remove());
+        } catch (e) {}
+      });
+      document.body.style.pointerEvents = 'auto';
+      document.body.style.overflow = 'auto';
+    });
+  } catch (e) {
+    console.warn("⚠️ Advertencia: No se pudieron eliminar los modales:", e);
+  }
+};
+
 (async () => {
   console.log("🚀 Iniciando navegador virtual Chromium...");
   const browser = await chromium.launch({ headless: true });
@@ -43,7 +66,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // Click submit button
     const loginButton = page.locator('button[type="submit"], button:has-text("Iniciar"), button:has-text("Login"), button:has-text("Ingresar"), .el-button--primary').first();
-    await loginButton.click();
+    await destroyModals(page);
+    console.log("🖱️ Presionando botón de inicio de sesión...");
+    await loginButton.click({ force: true });
 
     console.log("⏳ Esperando redirección tras inicio de sesión...");
     // Wait for the URL to change to indicate successful login
@@ -59,25 +84,25 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     console.log("Página actual:", currentUrl);
 
     console.log("🔍 Buscando tarjeta de informe 'Eventos'...");
-    // Find Eventos link or card
-    // ZKBio Zlink uses custom cards. Let's find by text or selector
     const eventosCard = page.locator('text="Eventos", .el-card:has-text("Eventos"), div:has-text("Eventos")').first();
     await eventosCard.waitFor({ state: 'visible', timeout: 20000 });
-    await eventosCard.click();
+    await destroyModals(page);
+    console.log("🖱️ Abriendo informe de Eventos...");
+    await eventosCard.click({ force: true });
 
     console.log("⏳ Cargando vista de informe de Eventos...");
     await page.waitForTimeout(8000); // Wait for the table and filters to load
 
-    // Click on search or calculate if required (usually Zlink loads today or current week automatically)
-    // Now locate the Export button
+    // Click on search or calculate if required
     console.log("📥 Buscando botón de exportación...");
     const exportButton = page.locator('button:has-text("Exportar"), button:has-text("Export"), .el-button:has-text("Export"), .el-button:has-text("Exportar")').first();
     await exportButton.waitFor({ state: 'visible', timeout: 20000 });
 
     console.log("⏳ Iniciando la descarga del archivo de marcaciones...");
+    await destroyModals(page);
     const [ download ] = await Promise.all([
       page.waitForEvent('download', { timeout: 45000 }),
-      exportButton.click()
+      exportButton.click({ force: true })
     ]);
 
     const downloadPath = path.join(__dirname, 'temp_events.xlsx');
