@@ -64,10 +64,10 @@ const destroyModals = async (page) => {
     const passwordInput = page.locator('input[type="password"]').first();
     await passwordInput.fill(ZLINK_PASSWORD);
 
-    // Accept terms and conditions checkbox (evaluated in browser context to resolve styled wrappers)
-    console.log("☑️ Aceptando acuerdo de usuario y políticas...");
+    // Accept terms and conditions checkbox (specifically targeting name="agreement")
+    console.log("☑️ Aceptando acuerdo de usuario y políticas (agreement)...");
     await page.evaluate(() => {
-      const checkbox = document.querySelector('input[type="checkbox"], .ant-checkbox-input, .el-checkbox__original, [class*="checkbox-input"]');
+      const checkbox = document.querySelector('input[name="agreement"]');
       if (checkbox) {
         if (!checkbox.checked) {
           checkbox.checked = true;
@@ -76,7 +76,7 @@ const destroyModals = async (page) => {
           checkbox.dispatchEvent(new Event('input', { bubbles: true }));
           
           // Also click the wrapper label to trigger custom UI handlers
-          const wrapper = checkbox.closest('label') || checkbox.closest('.ant-checkbox') || checkbox.closest('.el-checkbox') || checkbox.parentElement;
+          const wrapper = checkbox.closest('label') || checkbox.closest('.ant-checkbox') || checkbox.parentElement;
           if (wrapper) {
             wrapper.click();
           }
@@ -96,7 +96,7 @@ const destroyModals = async (page) => {
     await page.waitForTimeout(1500);
 
     // Click submit button
-    const loginButton = page.locator('button[type="submit"], button:has-text("Iniciar"), button:has-text("Login"), button:has-text("Ingresar"), .el-button--primary').first();
+    const loginButton = page.locator('button[type="submit"], button:has-text("Sign In"), button:has-text("Iniciar"), button:has-text("Login"), .login-form-button').first();
     await destroyModals(page);
     console.log("🖱️ Presionando botón de inicio de sesión...");
     await loginButton.click({ force: true });
