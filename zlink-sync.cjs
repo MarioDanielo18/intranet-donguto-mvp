@@ -195,8 +195,8 @@ const destroyModals = async (page) => {
     const currentUrl = page.url();
     console.log("Página actual:", currentUrl);
 
-    console.log("🔍 Buscando tarjeta de informe 'Eventos' / 'Events'...");
-    const eventosCard = page.locator('text="Eventos", text="Events", .el-card:has-text("Eventos"), .el-card:has-text("Events"), div:has-text("Eventos"), div:has-text("Events")').first();
+    console.log("🔍 Buscando tarjeta de informe 'Eventos' / 'Transaction' / 'Events'...");
+    const eventosCard = page.locator('text="Eventos", text="Transaction", text="Transactions", text="Events", .el-card:has-text("Eventos"), .el-card:has-text("Transaction"), .el-card:has-text("Transactions"), div:has-text("Eventos"), div:has-text("Transaction"), div:has-text("Transactions")').first();
     await eventosCard.waitFor({ state: 'visible', timeout: 20000 }).catch(async (e) => {
       console.error("❌ Error al esperar la tarjeta de Eventos:", e);
       try {
