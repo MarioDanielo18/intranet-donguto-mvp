@@ -18,12 +18,12 @@ export default async function handler(req, res) {
     try {
       const supabase = createClient(supabaseUrl, supabaseKey);
       
-      // Query the latest 100 attendance punches
+      // Query the latest 1000 attendance punches to cover the active month's history
       const { data: records, error } = await supabase
         .from('asistencia_biometrica')
         .select('*')
         .order('timestamp', { ascending: false })
-        .limit(100);
+        .limit(1000);
 
       if (error) throw error;
 

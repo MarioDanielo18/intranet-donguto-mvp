@@ -1,0 +1,52 @@
+name: ZKBio Zlink Attendance Sync
+
+on:
+  schedule:
+    # Corre todos los días en los siguientes horarios (UTC):
+    # 12:00 UTC = 07:00 AM Perú
+    # 15:00 UTC = 10:00 AM Perú
+    # 18:00 UTC = 01:00 PM Perú
+    # 21:00 UTC = 04:00 PM Perú
+    # 00:00 UTC = 07:00 PM Perú
+    # 02:00 UTC = 09:00 PM Perú
+    # 04:00 UTC = 11:00 PM Perú
+    - cron: '0 12,15,18,21,0,2,4 * * *'
+  workflow_dispatch: # Permite disparar la sincronización manualmente desde la web de GitHub
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout del repositorio
+      uses: actions/checkout@v4
+
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Instalar dependencias
+      run: |
+        npm install playwright xlsx @supabase/supabase-js
+
+    - name: Instalar Navegador Chromium de Playwright
+      run: |
+        npx playwright install chromium
+
+    - name: Ejecutar script de Sincronización
+      env:
+        ZLINK_EMAIL: ${{ secrets.ZLINK_EMAIL }}
+        ZLINK_PASSWORD: ${{ secrets.ZLINK_PASSWORD }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      run: |
+        node zlink-sync.js
+
+    - name: Subir captura de pantalla en caso de fallo
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: captura-error-zlink
+        path: error_screenshot.png
+        retention-days: 7

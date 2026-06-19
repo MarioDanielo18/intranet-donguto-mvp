@@ -36,6 +36,10 @@ export default async function handler(req, res) {
           username: u.username,
           password: u.password, // return password for Técnico management panel
           name: u.name,
+          apellidos: u.apellidos || '',
+          dni: u.dni || '',
+          email: u.email || '',
+          telefono: u.telefono || '',
           role: u.role,
           store: u.store,
           biometricId: u.biometric_id || null
@@ -83,6 +87,10 @@ export default async function handler(req, res) {
             username: username.toLowerCase().trim(),
             password: password.trim(),
             name: name.trim(),
+            apellidos: body.apellidos ? body.apellidos.trim() : null,
+            dni: body.dni ? body.dni.trim() : null,
+            email: body.email ? body.email.trim() : null,
+            telefono: body.telefono ? body.telefono.trim() : null,
             role: role,
             store: store,
             biometric_id: biometricId || null
@@ -101,6 +109,10 @@ export default async function handler(req, res) {
         const updateFields = {};
         if (password !== undefined) updateFields.password = password.trim();
         if (name !== undefined) updateFields.name = name.trim();
+        if (body.apellidos !== undefined) updateFields.apellidos = body.apellidos ? body.apellidos.trim() : null;
+        if (body.dni !== undefined) updateFields.dni = body.dni ? body.dni.trim() : null;
+        if (body.email !== undefined) updateFields.email = body.email ? body.email.trim() : null;
+        if (body.telefono !== undefined) updateFields.telefono = body.telefono ? body.telefono.trim() : null;
         if (role !== undefined) updateFields.role = role;
         if (store !== undefined) updateFields.store = store;
         if (biometricId !== undefined) updateFields.biometric_id = biometricId || null;

@@ -69,6 +69,10 @@ export default async function handler(req, res) {
       user: {
         username: user.username,
         name: user.name,
+        apellidos: user.apellidos || '',
+        dni: user.dni || '',
+        email: user.email || '',
+        telefono: user.telefono || '',
         role: user.role,
         store: user.store,
         biometricId: user.biometric_id || null

@@ -83,6 +83,24 @@ export function generateUsername(primerApellido, segundoApellido) {
   return `${firstLetter}${secondSurname}dg`;
 }
 
+export function generateUsernameFromName(nombres, apellidos) {
+  if (!nombres || !apellidos) return '';
+  
+  const cleanString = (str) => {
+    return str
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z]/g, "");
+  };
+
+  const firstLetter = cleanString(nombres).charAt(0);
+  const firstSurname = cleanString(apellidos.split(' ')[0]);
+  
+  return `${firstLetter}${firstSurname}dg`;
+}
+
 export default function SupervisorDashboard({
   user,
   checklists,
@@ -115,7 +133,8 @@ export default function SupervisorDashboard({
   // Biometric states for Técnico
   const [techDevices, setTechDevices] = useState(biometricDevices || []);
   const [newDevName, setNewDevName] = useState('');
-  const [newDevModel, setNewDevModel] = useState('ZKTeco K40');
+  const [newDevModel, setNewDevModel] = useState('ZKTeco M1');
+  const [newDevSn, setNewDevSn] = useState('');
   const [newDevIp, setNewDevIp] = useState('192.168.1.');
   const [newDevPort, setNewDevPort] = useState('4370');
   const [newDevStore, setNewDevStore] = useState('Barranco');
@@ -144,7 +163,10 @@ export default function SupervisorDashboard({
 
   const handleAddDevSubmit = (e) => {
     e.preventDefault();
-    if (!newDevName.trim() || !newDevIp.trim()) return;
+    if (!newDevName.trim() || !newDevIp.trim() || !newDevSn.trim()) {
+      alert('Por favor, completa todos los campos requeridos (incluyendo el número de serie).');
+      return;
+    }
 
     const ipPattern = /^([0-9]{1,3}\.){3}[0-9]{1,3}$/;
     if (!ipPattern.test(newDevIp.trim())) {
@@ -159,6 +181,7 @@ export default function SupervisorDashboard({
       ip: newDevIp.trim(),
       port: newDevPort.trim(),
       store: newDevStore,
+      sn: newDevSn.trim(),
       status: 'Online'
     };
 
@@ -168,6 +191,7 @@ export default function SupervisorDashboard({
       onUpdateDevices(updated);
     }
     setNewDevName('');
+    setNewDevSn('');
     setNewDevIp('192.168.1.');
     setNewDevPort('4370');
     alert(`Dispositivo "${newDev.name}" registrado con éxito.`);
@@ -264,7 +288,10 @@ export default function SupervisorDashboard({
   
   // States for system technician user management panel
   const [manageUserNames, setManageUserNames] = useState('');
-  const [manageUserUsername, setManageUserUsername] = useState('');
+  const [manageUserApellidos, setManageUserApellidos] = useState('');
+  const [manageUserDni, setManageUserDni] = useState('');
+  const [manageUserEmail, setManageUserEmail] = useState('');
+  const [manageUserTelefono, setManageUserTelefono] = useState('');
   const [manageUserPassword, setManageUserPassword] = useState('');
   const [manageUserRole, setManageUserRole] = useState('Barista');
   const [manageUserStore, setManageUserStore] = useState('Barranco');
@@ -349,13 +376,442 @@ export default function SupervisorDashboard({
 
   // States for adding team member
   const [newMemberNames, setNewMemberNames] = useState('');
-  const [newMemberPrimerApellido, setNewMemberPrimerApellido] = useState('');
-  const [newMemberSegundoApellido, setNewMemberSegundoApellido] = useState('');
+  const [newMemberApellidos, setNewMemberApellidos] = useState('');
+  const [newMemberDni, setNewMemberDni] = useState('');
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [newMemberTelefono, setNewMemberTelefono] = useState('');
+  const [newMemberPassword, setNewMemberPassword] = useState('');
   const [newMemberBiometricId, setNewMemberBiometricId] = useState('');
   const [newMemberRole, setNewMemberRole] = useState('Barista');
-  const [newMemberStore, setNewMemberStore] = useState(() => {
-    return user && user.role === 'Administrador' ? user.store : 'Barranco';
-  });
+  const [newMemberStore, setNewMemberStore] = useState('Barranco');
+
+  // Biometric registration states
+  const [isBioModalOpen, setIsBioModalOpen] = useState(false);
+  const [bioStep, setBioStep] = useState(1); // 1: Select finger/device, 2: Active device/waiting, 3: Success
+  const [bioProgress, setBioProgress] = useState(0);
+  const [bioScanning, setBioScanning] = useState(false);
+  const [currentDniTarget, setCurrentDniTarget] = useState(''); // to know which DNI is enrolling
+  const [currentFormTarget, setCurrentFormTarget] = useState('team'); // 'team' or 'tech'
+
+  // Real ZKTeco ADMS Enrollment states
+  const [selectedBioDeviceSn, setSelectedBioDeviceSn] = useState('');
+  const [selectedBioFingerId, setSelectedBioFingerId] = useState(6); // Default: Right Index (6)
+  const [enrollCmdId, setEnrollCmdId] = useState('');
+  const [enrollStatusText, setEnrollStatusText] = useState('');
+  const [enrollError, setEnrollError] = useState('');
+
+  // ZKBio Zlink File Import states
+  const [importingFile, setImportingFile] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importSuccess, setImportSuccess] = useState('');
+  const [parsedPunchesCount, setParsedPunchesCount] = useState(0);
+  const [parsedPunches, setParsedPunches] = useState([]);
+
+  const FINGERS_LIST = [
+    { id: 6, name: 'Índice Derecho (Recomendado)' },
+    { id: 7, name: 'Medio Derecho' },
+    { id: 8, name: 'Anular Derecho' },
+    { id: 9, name: 'Meñique Derecho' },
+    { id: 5, name: 'Pulgar Derecho' },
+    { id: 3, name: 'Índice Izquierdo' },
+    { id: 2, name: 'Medio Izquierdo' },
+    { id: 1, name: 'Anular Izquierdo' },
+    { id: 0, name: 'Meñique Izquierdo' },
+    { id: 4, name: 'Pulgar Izquierdo' }
+  ];
+
+  // Polling helper
+  const startPollingEnrollStatus = (commandId) => {
+    const startTime = Date.now();
+    const interval = setInterval(async () => {
+      // Timeout after 90 seconds
+      if (Date.now() - startTime > 90000) {
+        clearInterval(interval);
+        setBioScanning(false);
+        setEnrollError('El tiempo de espera ha expirado (90s). Por favor, asegúrese de que el lector ZKTeco esté encendido y conectado a internet.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/enroll?action=status&commandId=${commandId}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          if (data.commandStatus === 'PENDING') {
+            setEnrollStatusText('Esperando conexión del lector... (asegúrese de que el lector ZKTeco esté encendido)');
+          } else if (data.commandStatus === 'SENT') {
+            setEnrollStatusText('🟢 ¡Lector Activado! Coloque su dedo en el lector biométrico. Realice los 3 intentos que le indica la pantalla del dispositivo.');
+          } else if (data.commandStatus === 'COMPLETED') {
+            clearInterval(interval);
+            setBioScanning(false);
+            setBioStep(3); // Success
+            setEnrollStatusText('¡Registro Biométrico Exitoso!');
+          } else if (data.commandStatus === 'FAILED') {
+            clearInterval(interval);
+            setBioScanning(false);
+            setEnrollError('El dispositivo reportó un fallo en el enrolamiento. Por favor, verifique el dedo e inténtelo de nuevo.');
+          }
+        } else {
+          throw new Error(data.error || 'Error al consultar el estado.');
+        }
+      } catch (err) {
+        console.error('Error polling enroll status:', err);
+      }
+    }, 2000);
+
+    // Store interval ID in a global or state to clear it on modal close
+    window.activeBioPollingInterval = interval;
+  };
+
+  // Helper to dynamically load SheetJS (XLSX) from CDN
+  const loadXLSXLib = () => {
+    return new Promise((resolve, reject) => {
+      if (window.XLSX) return resolve(window.XLSX);
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      script.async = true;
+      script.onload = () => {
+        if (window.XLSX) resolve(window.XLSX);
+        else reject(new Error('SheetJS XLSX cargada pero no disponible en el objeto global window.'));
+      };
+      script.onerror = () => reject(new Error('Error al descargar la librería SheetJS desde el CDN. Revisa tu conexión a internet.'));
+      document.head.appendChild(script);
+    });
+  };
+
+  // Convert Excel serial dates to standard JavaScript Date objects
+  const parseExcelSerialDate = (serial) => {
+    const utc_days = Math.floor(serial - 25569);
+    const utc_value = utc_days * 86400;
+    const date_info = new Date(utc_value * 1000);
+
+    const fractional_day = serial - Math.floor(serial) + 0.0000001; // small offset to prevent rounding errors
+    let total_seconds = Math.floor(86400 * fractional_day);
+
+    const seconds = total_seconds % 60;
+    total_seconds -= seconds;
+
+    const hours = Math.floor(total_seconds / 3600);
+    const minutes = Math.floor(total_seconds / 60) % 60;
+
+    return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
+  };
+
+  // Parse JSON rows into attendance punches with smart mapping
+  const parseZlinkRows = (rows) => {
+    if (!Array.isArray(rows) || rows.length === 0) return [];
+    
+    const firstRow = rows[0];
+    const keys = Object.keys(firstRow);
+    
+    const findKey = (patterns) => {
+      return keys.find(k => {
+        const lowerK = String(k).toLowerCase().trim();
+        return patterns.some(p => lowerK.includes(p));
+      });
+    };
+
+    // Smart identification of columns
+    const idKey = findKey(['dni', 'biometric_id', 'personal_id', 'user_id', 'no.', 'no', 'código', 'codigo', 'code', 'id', 'documento', 'número de personal', 'numero de personal', 'colaborador', 'usuario']);
+    const dateTimeKey = findKey(['fecha/hora', 'fechayhora', 'timestamp', 'punch_time', 'punchtime', 'time', 'datetime', 'date_time', 'marcación', 'marcacion', 'fecha y hora', 'reloj', 'registro']);
+    const dateKey = findKey(['fecha', 'date', 'día', 'dia']);
+    const timeKey = findKey(['hora', 'time', 'tiempo']);
+
+    console.log('[Import Parser] Mapeo de columnas:', { idKey, dateTimeKey, dateKey, timeKey });
+
+    if (!idKey) {
+      throw new Error('No se pudo encontrar la columna de identificación del empleado (ej. DNI, ID, Código, No. o Personal ID). Revisa los encabezados de tu archivo.');
+    }
+
+    if (!dateTimeKey && (!dateKey || !timeKey)) {
+      throw new Error('No se pudieron encontrar columnas de Fecha/Hora válidas. El archivo debe contener una columna combinada (Fecha/Hora) o columnas separadas (Fecha y Hora).');
+    }
+
+    const parsed = [];
+    rows.forEach((row, idx) => {
+      const bioIdRaw = row[idKey];
+      if (bioIdRaw === undefined || bioIdRaw === null) return;
+      const biometricId = String(bioIdRaw).trim();
+      if (!biometricId) return;
+
+      let punchTimestamp = null;
+
+      if (dateTimeKey && row[dateTimeKey]) {
+        const val = row[dateTimeKey];
+        if (typeof val === 'number') {
+          punchTimestamp = parseExcelSerialDate(val);
+        } else {
+          punchTimestamp = new Date(val);
+        }
+      } else {
+        const dVal = row[dateKey];
+        const tVal = row[timeKey];
+        if (dVal && tVal) {
+          let datePart = '';
+          let timePart = '';
+
+          if (typeof dVal === 'number') {
+            const parsedD = parseExcelSerialDate(dVal);
+            datePart = parsedD.toISOString().split('T')[0];
+          } else {
+            datePart = String(dVal).trim();
+          }
+
+          if (typeof tVal === 'number') {
+            const parsedT = parseExcelSerialDate(tVal);
+            timePart = parsedT.toTimeString().split(' ')[0];
+          } else {
+            timePart = String(tVal).trim();
+          }
+          
+          // Reformat date if needed (e.g. DD/MM/YYYY to YYYY-MM-DD)
+          if (datePart.includes('/')) {
+            const parts = datePart.split('/');
+            if (parts.length === 3) {
+              if (parts[0].length === 4) {
+                datePart = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+              } else {
+                datePart = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+              }
+            }
+          }
+
+          // Force HH:MM:SS format
+          if (timePart.split(':').length === 2) {
+            timePart = `${timePart}:00`;
+          }
+
+          punchTimestamp = new Date(`${datePart}T${timePart}`);
+        }
+      }
+
+      if (!punchTimestamp || isNaN(punchTimestamp.getTime())) {
+        console.warn(`[Import Parser] Fila ${idx + 2} omitida por formato de fecha/hora inválido:`, row);
+        return;
+      }
+
+      parsed.push({
+        biometric_id: biometricId,
+        timestamp: punchTimestamp.toISOString()
+      });
+    });
+
+    return parsed;
+  };
+
+  const handleZlinkFileImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImportError('');
+    setImportSuccess('');
+    setParsedPunches([]);
+    setParsedPunchesCount(0);
+    setImportingFile(true);
+
+    try {
+      const fileName = file.name.toLowerCase();
+      const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+      const isCsv = fileName.endsWith('.csv');
+
+      if (!isExcel && !isCsv) {
+        throw new Error('Formato de archivo no soportado. Por favor sube un archivo Excel (.xlsx, .xls) o CSV (.csv).');
+      }
+
+      let rows = [];
+
+      if (isExcel) {
+        const XLSX = await loadXLSXLib();
+        const reader = new FileReader();
+        
+        const data = await new Promise((resolve, reject) => {
+          reader.onload = (evt) => resolve(evt.target.result);
+          reader.onerror = (err) => reject(err);
+          reader.readAsArrayBuffer(file);
+        });
+
+        const workbook = XLSX.read(data, { type: 'buffer' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        rows = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+
+      } else {
+        // Parse CSV
+        const reader = new FileReader();
+        const text = await new Promise((resolve, reject) => {
+          reader.onload = (evt) => resolve(evt.target.result);
+          reader.onerror = (err) => reject(err);
+          reader.readAsText(file, 'utf-8');
+        });
+
+        const lines = text.split(/\r?\n/).filter(line => line.trim());
+        if (lines.length === 0) throw new Error('El archivo CSV está vacío.');
+
+        // Identify separator
+        const headerLine = lines[0];
+        let separator = ',';
+        const commas = (headerLine.match(/,/g) || []).length;
+        const semicolons = (headerLine.match(/;/g) || []).length;
+        const tabs = (headerLine.match(/\t/g) || []).length;
+
+        if (semicolons > commas && semicolons > tabs) separator = ';';
+        else if (tabs > commas && tabs > semicolons) separator = '\t';
+
+        const parseCsvLine = (line) => {
+          const result = [];
+          let current = '';
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === separator && !inQuotes) {
+              result.push(current.trim());
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          result.push(current.trim());
+          return result;
+        };
+
+        const headers = parseCsvLine(headerLine);
+        rows = lines.slice(1).map(line => {
+          const values = parseCsvLine(line);
+          const obj = {};
+          headers.forEach((header, index) => {
+            obj[header] = values[index] !== undefined ? values[index] : null;
+          });
+          return obj;
+        });
+      }
+
+      console.log('[Import] Filas leídas:', rows.length);
+      const parsed = parseZlinkRows(rows);
+      console.log('[Import] Marcaciones válidas encontradas:', parsed.length);
+
+      if (parsed.length === 0) {
+        throw new Error('No se encontraron marcaciones válidas en el archivo. Verifica los DNI/Códigos y el formato de fecha/hora.');
+      }
+
+      setParsedPunches(parsed);
+      setParsedPunchesCount(parsed.length);
+      setImportSuccess(`🟢 Archivo procesado correctamente.\nSe detectaron ${parsed.length} marcaciones válidas listas para importar.\n\nPor favor, presiona el botón "Confirmar e Importar" para cargarlos en la nube.`);
+
+    } catch (err) {
+      console.error('[Import Error]:', err);
+      setImportError(err.message || 'Error desconocido al procesar el archivo.');
+    } finally {
+      setImportingFile(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (parsedPunches.length === 0) return;
+
+    setImportingFile(true);
+    setImportError('');
+    setImportSuccess('');
+
+    const selectedDevice = techDevices.find(d => d.sn === selectedBioDeviceSn) || {
+      sn: 'ZLINK-IMPORT',
+      name: 'ZKBio Zlink Portal'
+    };
+
+    const punchesToUpload = parsedPunches.map(p => {
+      return {
+        ...p,
+        device_id: selectedDevice.sn || 'ZLINK-IMPORT',
+        device_name: selectedDevice.name
+      };
+    });
+
+    try {
+      const res = await fetch('/api/enroll', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'import',
+          punches: punchesToUpload
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Fallo en la comunicación con el servidor.');
+
+      setImportSuccess(`🟢 ¡Éxito de Importación!\nSe registraron ${punchesToUpload.length} marcaciones correctamente en Supabase.\nEl sistema actualizará las estadísticas de ingreso y tardanza en unos segundos de forma automática.`);
+      setParsedPunches([]);
+      setParsedPunchesCount(0);
+      
+    } catch (err) {
+      console.error('[Confirm Import Error]:', err);
+      setImportError(err.message || 'Error al guardar las marcaciones en el servidor.');
+    } finally {
+      setImportingFile(false);
+    }
+  };
+
+  const handleStartRealEnroll = async () => {
+    if (!selectedBioDeviceSn) {
+      alert('Por favor, selecciona un dispositivo biométrico con Número de Serie.');
+      return;
+    }
+    
+    setBioScanning(true);
+    setEnrollError('');
+    setEnrollStatusText('Enviando orden de enrolamiento al servidor...');
+    setBioStep(2); // Step 2: Waiting/Scanning
+
+    try {
+      const response = await fetch('/api/enroll', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'create',
+          dni: currentDniTarget,
+          fingerId: Number(selectedBioFingerId),
+          deviceSn: selectedBioDeviceSn
+        })
+      });
+
+      const data = await response.json();
+      if (data.status === 'success' && data.commandId) {
+        setEnrollCmdId(data.commandId);
+        setEnrollStatusText('Orden registrada. Esperando que el dispositivo ZKTeco reciba la orden...');
+        startPollingEnrollStatus(data.commandId);
+      } else {
+        throw new Error(data.error || 'No se pudo crear la orden de enrolamiento.');
+      }
+    } catch (err) {
+      setBioScanning(false);
+      setEnrollError(err.message);
+      setEnrollStatusText('');
+    }
+  };
+
+  const generateSecurePassword = () => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz';
+    const upperChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    const special = '!@#$%&*';
+    
+    let pass = '';
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    pass += upperChars.charAt(Math.floor(Math.random() * upperChars.length));
+    pass += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    pass += special.charAt(Math.floor(Math.random() * special.length));
+    
+    const all = chars + upperChars + numbers + special;
+    for (let i = 0; i < 4; i++) {
+      pass += all.charAt(Math.floor(Math.random() * all.length));
+    }
+    return pass.split('').sort(() => 0.5 - Math.random()).join('');
+  };
 
   // New states for Monitoreo Avanzado
   const [filterArea, setFilterArea] = useState('GENERAL');
@@ -511,43 +967,50 @@ export default function SupervisorDashboard({
 
   const handleAddMember = (e) => {
     e.preventDefault();
-    if (!newMemberNames.trim() || !newMemberPrimerApellido.trim() || !newMemberSegundoApellido.trim()) {
-      alert('Por favor, completa todos los campos del nombre y apellidos.');
+    if (!newMemberNames.trim() || !newMemberApellidos.trim() || !newMemberDni.trim() || !newMemberPassword.trim()) {
+      alert('Por favor, completa Nombres, Apellidos, DNI y Contraseña.');
       return;
     }
     
-    const fullName = `${newMemberNames.trim()} ${newMemberPrimerApellido.trim()} ${newMemberSegundoApellido.trim()}`;
-    const generatedUser = generateUsername(newMemberPrimerApellido, newMemberSegundoApellido);
+    const fullName = `${newMemberNames.trim()} ${newMemberApellidos.trim()}`;
+    const generatedUser = generateUsernameFromName(newMemberNames, newMemberApellidos);
     
     if (!generatedUser) {
       alert('Error al generar el nombre de usuario.');
       return;
     }
     
-    const isPending = user.role === 'Administrador';
-    
+    if (teamMembers.some(m => m.username === generatedUser)) {
+      alert(`El usuario generado "${generatedUser}" ya existe.`);
+      return;
+    }
+
     onAddTeamMember({
       name: fullName,
       username: generatedUser,
+      password: newMemberPassword.trim(),
+      apellidos: newMemberApellidos.trim(),
+      dni: newMemberDni.trim(),
+      email: newMemberEmail.trim() || null,
+      telefono: newMemberTelefono.trim() || null,
       role: newMemberRole,
       store: newMemberStore,
       biometricId: newMemberBiometricId.trim() || null,
-      pendingApproval: isPending,
+      pendingApproval: false,
       addedBy: user.name,
       addedByUsername: user.username,
       dateAdded: new Date().toISOString()
     });
 
     setNewMemberNames('');
-    setNewMemberPrimerApellido('');
-    setNewMemberSegundoApellido('');
+    setNewMemberApellidos('');
+    setNewMemberDni('');
+    setNewMemberEmail('');
+    setNewMemberTelefono('');
+    setNewMemberPassword('');
     setNewMemberBiometricId('');
     
-    if (isPending) {
-      alert(`El colaborador ${fullName} ha sido registrado. Su aprobación está pendiente de validación por parte del Supervisor.\nUsuario de acceso generado: ${generatedUser}`);
-    } else {
-      alert(`Colaborador ${fullName} agregado con éxito.\nUsuario de acceso generado: ${generatedUser}`);
-    }
+    alert(`Colaborador ${fullName} agregado con éxito.\nUsuario generado: ${generatedUser}`);
   };
 
   const renderCalendarioView = () => {
@@ -2051,68 +2514,106 @@ export default function SupervisorDashboard({
                 
                 <form onSubmit={(e) => {
                   e.preventDefault();
-                  if (!manageUserNames.trim() || !manageUserUsername.trim() || !manageUserPassword.trim()) {
-                    alert('Por favor, completa Nombre completo, Usuario y Contraseña.');
+                  if (!manageUserNames.trim() || !manageUserApellidos.trim() || !manageUserDni.trim() || !manageUserPassword.trim()) {
+                    alert('Por favor, completa Nombres, Apellidos, DNI y Contraseña.');
                     return;
                   }
                   
-                  if (teamMembers.some(m => m.username === manageUserUsername.toLowerCase().trim())) {
-                    alert('Este nombre de usuario ya está registrado.');
+                  const fullName = `${manageUserNames.trim()} ${manageUserApellidos.trim()}`;
+                  const generatedUser = generateUsernameFromName(manageUserNames, manageUserApellidos);
+                  
+                  if (teamMembers.some(m => m.username === generatedUser)) {
+                    alert(`El usuario generado "${generatedUser}" ya existe.`);
                     return;
                   }
 
                   onAddTeamMember({
-                    name: manageUserNames.trim(),
-                    username: manageUserUsername.toLowerCase().trim(),
+                    name: fullName,
+                    username: generatedUser,
                     password: manageUserPassword.trim(),
+                    apellidos: manageUserApellidos.trim(),
+                    dni: manageUserDni.trim(),
+                    email: manageUserEmail.trim() || null,
+                    telefono: manageUserTelefono.trim() || null,
                     role: manageUserRole,
                     store: manageUserStore,
-                    biometricId: manageUserBiometricId.trim() || null
+                    biometricId: manageUserBiometricId.trim() || null,
+                    pendingApproval: false,
+                    addedBy: user.name,
+                    addedByUsername: user.username,
+                    dateAdded: new Date().toISOString()
                   });
 
-                  alert(`Usuario ${manageUserUsername.toLowerCase().trim()} creado con éxito.`);
+                  alert(`Usuario ${generatedUser} creado con éxito.`);
                   
                   setManageUserNames('');
-                  setManageUserUsername('');
+                  setManageUserApellidos('');
+                  setManageUserDni('');
+                  setManageUserEmail('');
+                  setManageUserTelefono('');
                   setManageUserPassword('');
                   setManageUserBiometricId('');
                 }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Nombre Completo:</label>
-                    <input
-                      type="text"
-                      required
-                      className="input"
-                      placeholder="Ej: Mateo Quispe"
-                      value={manageUserNames}
-                      onChange={(e) => setManageUserNames(e.target.value)}
-                    />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Nombres:</label>
+                      <input
+                        type="text"
+                        required
+                        className="input"
+                        placeholder="Ej: Mateo"
+                        value={manageUserNames}
+                        onChange={(e) => setManageUserNames(e.target.value)}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Apellidos:</label>
+                      <input
+                        type="text"
+                        required
+                        className="input"
+                        placeholder="Ej: Quispe López"
+                        value={manageUserApellidos}
+                        onChange={(e) => setManageUserApellidos(e.target.value)}
+                      />
+                    </div>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Usuario (Username):</label>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>DNI:</label>
                       <input
                         type="text"
                         required
+                        maxLength={8}
                         className="input"
-                        placeholder="Ej: mquispedg"
-                        value={manageUserUsername}
-                        onChange={(e) => setManageUserUsername(e.target.value.toLowerCase().replace(/\s+/g, ''))}
+                        placeholder="8 dígitos"
+                        value={manageUserDni}
+                        onChange={(e) => setManageUserDni(e.target.value.replace(/\D/g, ''))}
                       />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Contraseña:</label>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Teléfono:</label>
                       <input
                         type="text"
-                        required
                         className="input"
-                        placeholder="Mínimo 4 caracteres"
-                        value={manageUserPassword}
-                        onChange={(e) => setManageUserPassword(e.target.value)}
+                        placeholder="Opcional"
+                        value={manageUserTelefono}
+                        onChange={(e) => setManageUserTelefono(e.target.value.replace(/\D/g, ''))}
                       />
                     </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Correo Electrónico:</label>
+                    <input
+                      type="email"
+                      className="input"
+                      placeholder="ejemplo@donguto.com"
+                      value={manageUserEmail}
+                      onChange={(e) => setManageUserEmail(e.target.value)}
+                    />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -2150,17 +2651,78 @@ export default function SupervisorDashboard({
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>ID Biométrico (Huella / Lector):</label>
-                    <input
-                      type="text"
-                      className="input"
-                      placeholder="Ej: 898681 (Opcional)"
-                      value={manageUserBiometricId}
-                      onChange={(e) => setManageUserBiometricId(e.target.value.replace(/\D/g, ''))}
-                    />
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Contraseña:</label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input
+                        type="text"
+                        required
+                        className="input"
+                        placeholder="Contraseña"
+                        value={manageUserPassword}
+                        onChange={(e) => setManageUserPassword(e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const pass = generateSecurePassword();
+                          setManageUserPassword(pass);
+                        }}
+                        className="btn btn-secondary"
+                        style={{ padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap' }}
+                      >
+                        ⚡ Generar
+                      </button>
+                    </div>
                   </div>
 
-                  <button type="submit" className="btn btn-primary" style={{ marginTop: '10px', padding: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '5px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!manageUserDni.trim() || manageUserDni.trim().length < 8) {
+                          alert('Por favor, ingresa un DNI válido de 8 dígitos antes de activar el lector biométrico.');
+                          return;
+                        }
+                        setCurrentDniTarget(manageUserDni.trim());
+                        setCurrentFormTarget('tech');
+                        setBioStep(1);
+                        setBioProgress(0);
+
+                        const devicesWithSn = techDevices.filter(d => d.sn);
+                        if (devicesWithSn.length > 0) {
+                          setSelectedBioDeviceSn(devicesWithSn[0].sn);
+                        } else {
+                          setSelectedBioDeviceSn('');
+                        }
+                        setSelectedBioFingerId(6);
+                        setEnrollError('');
+                        setEnrollStatusText('');
+                        setBioScanning(false);
+
+                        setIsBioModalOpen(true);
+                      }}
+                      className="btn"
+                      style={{
+                        padding: '10px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        backgroundColor: manageUserBiometricId ? 'var(--success-light)' : 'rgba(239, 68, 68, 0.1)',
+                        color: manageUserBiometricId ? 'var(--success)' : 'var(--error)',
+                        border: manageUserBiometricId ? '1px solid var(--success)' : '1px solid var(--error)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      {manageUserBiometricId ? '🟢 Huella Enrolada (ID: ' + manageUserBiometricId + ')' : '🧬 Activar Lector Biométrico (3 Intentos)'}
+                    </button>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ marginTop: '10px', padding: '10px', fontWeight: 'bold' }}>
                     ➕ Registrar y Guardar en la Nube
                   </button>
                 </form>
@@ -2319,7 +2881,7 @@ export default function SupervisorDashboard({
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <strong style={{ color: 'var(--text-main)' }}>{dev.name}</strong>
                             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                              IP: {dev.ip}:{dev.port} | Modelo: {dev.model}
+                              IP: {dev.ip}:{dev.port} | Modelo: {dev.model}{dev.sn ? ` | SN: ${dev.sn}` : ''}
                             </span>
                             <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>
                               Sede Asignada: {dev.store}
@@ -2380,6 +2942,18 @@ export default function SupervisorDashboard({
                     />
                   </div>
 
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Número de Serie (SN) para ADMS Cloud:</label>
+                    <input
+                      type="text"
+                      required
+                      className="input"
+                      placeholder="Ej: jchpxowbxxfrivrloqkg o el SN físico de su equipo"
+                      value={newDevSn}
+                      onChange={(e) => setNewDevSn(e.target.value)}
+                    />
+                  </div>
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Modelo:</label>
@@ -2389,6 +2963,7 @@ export default function SupervisorDashboard({
                         onChange={(e) => setNewDevModel(e.target.value)}
                         style={{ padding: '8px' }}
                       >
+                        <option value="ZKTeco M1">ZKTeco M1 (ADMS Cloud)</option>
                         <option value="ZKTeco K40">ZKTeco K40</option>
                         <option value="ZKTeco LX50">ZKTeco LX50</option>
                         <option value="ZKTeco MB20">ZKTeco MB20</option>
@@ -2440,6 +3015,110 @@ export default function SupervisorDashboard({
                     🔌 Enlazar Lector a Intranet
                   </button>
                 </form>
+
+                {/* ZKBio Zlink File Import Card */}
+                <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--border)' }}>
+                  <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    📥 Importar Asistencias de ZKBio Zlink
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                    Sube el reporte consolidado en formato Excel (.xlsx, .xls) o CSV exportado desde Minerva IoT / ZKBio Zlink. El sistema sincronizará las marcaciones automáticamente.
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Asociar al Lector/Sede:</label>
+                    <select
+                      value={selectedBioDeviceSn}
+                      onChange={(e) => setSelectedBioDeviceSn(e.target.value)}
+                      className="input"
+                      style={{ padding: '8px' }}
+                    >
+                      <option value="">-- Usar Lector por Defecto (ZKBio Zlink) --</option>
+                      {techDevices.filter(d => d.sn).map(d => (
+                        <option key={d.id} value={d.sn}>
+                          {d.name} (SN: {d.sn} - {d.store})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{
+                    border: '2px dashed var(--border)',
+                    borderRadius: '6px',
+                    padding: '20px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    backgroundColor: 'var(--bg-main)',
+                    position: 'relative',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={() => document.getElementById('zlink-file-input').click()}
+                  >
+                    <input
+                      type="file"
+                      id="zlink-file-input"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleZlinkFileImport}
+                      style={{ display: 'none' }}
+                    />
+                    <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>📁</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: 700 }}>
+                      Haga clic para buscar el archivo
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                      Soporta .xlsx, .xls y .csv
+                    </span>
+                  </div>
+
+                  {importingFile && (
+                    <div style={{ fontSize: '12px', color: 'var(--primary)', textAlign: 'center', fontWeight: 'bold' }}>
+                      ⏳ Procesando archivo, por favor espere...
+                    </div>
+                  )}
+
+                  {importError && (
+                    <div style={{
+                      padding: '10px',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid var(--error)',
+                      color: 'var(--error)',
+                      fontSize: '11.5px',
+                      fontWeight: 'bold',
+                      textAlign: 'center'
+                    }}>
+                      🔴 {importError}
+                    </div>
+                  )}
+
+                  {importSuccess && (
+                    <div style={{
+                      padding: '10px',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid var(--success)',
+                      color: 'var(--success)',
+                      fontSize: '11.5px',
+                      fontWeight: 'bold',
+                      textAlign: 'left',
+                      whiteSpace: 'pre-line'
+                    }}>
+                      {importSuccess}
+                    </div>
+                  )}
+
+                  {parsedPunchesCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleConfirmImport}
+                      disabled={importingFile}
+                      className="btn btn-primary"
+                      style={{ width: '100%', padding: '10px', fontSize: '12.5px', marginTop: '5px' }}
+                    >
+                      🚀 Confirmar e Importar {parsedPunchesCount} Marcas
+                    </button>
+                  )}
+                </div>
 
               </div>
 
@@ -3495,77 +4174,183 @@ main();`}
               </div>
 
               {/* Add New Member Form */}
-              {['Gerente', 'Supervisor', 'Administrador'].includes(user.role) && (
+              {['Gerente', 'Supervisor', 'Técnico'].includes(user.role) && (
                 <form onSubmit={handleAddMember} style={{ borderTop: '1px solid var(--border)', paddingTop: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <h4 style={{ margin: 0, color: 'var(--text-main)' }}>Agregar Colaborador</h4>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Nombres"
-                    value={newMemberNames}
-                    onChange={(e) => setNewMemberNames(e.target.value)}
-                    className="input"
-                    style={{ padding: '8px 12px' }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="ID Biométrico / Código Huella (opcional)"
-                    value={newMemberBiometricId}
-                    onChange={(e) => setNewMemberBiometricId(e.target.value)}
-                    className="input"
-                    style={{ padding: '8px 12px' }}
-                  />
+                  
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Nombres:</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej: Mateo"
+                        value={newMemberNames}
+                        onChange={(e) => setNewMemberNames(e.target.value)}
+                        className="input"
+                        style={{ padding: '8px 12px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Apellidos:</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej: Quispe López"
+                        value={newMemberApellidos}
+                        onChange={(e) => setNewMemberApellidos(e.target.value)}
+                        className="input"
+                        style={{ padding: '8px 12px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>DNI (Será su ID Biométrico):</label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={8}
+                        placeholder="8 dígitos"
+                        value={newMemberDni}
+                        onChange={(e) => setNewMemberDni(e.target.value.replace(/\D/g, ''))}
+                        className="input"
+                        style={{ padding: '8px 12px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Teléfono:</label>
+                      <input
+                        type="text"
+                        placeholder="Opcional"
+                        value={newMemberTelefono}
+                        onChange={(e) => setNewMemberTelefono(e.target.value.replace(/\D/g, ''))}
+                        className="input"
+                        style={{ padding: '8px 12px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Correo Electrónico:</label>
                     <input
-                      type="text"
-                      required
-                      placeholder="Primer Apellido"
-                      value={newMemberPrimerApellido}
-                      onChange={(e) => setNewMemberPrimerApellido(e.target.value)}
-                      className="input"
-                      style={{ padding: '8px 12px' }}
-                    />
-                    <input
-                      type="text"
-                      required
-                      placeholder="Segundo Apellido"
-                      value={newMemberSegundoApellido}
-                      onChange={(e) => setNewMemberSegundoApellido(e.target.value)}
+                      type="email"
+                      placeholder="ejemplo@donguto.com"
+                      value={newMemberEmail}
+                      onChange={(e) => setNewMemberEmail(e.target.value)}
                       className="input"
                       style={{ padding: '8px 12px' }}
                     />
                   </div>
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <select
-                      value={newMemberRole}
-                      onChange={(e) => setNewMemberRole(e.target.value)}
-                      className="input"
-                      style={{ padding: '8px 12px' }}
-                    >
-                      <option value="Barista">Barista</option>
-                      <option value="Cocina">Cocina</option>
-                      <option value="Servicio">Servicio</option>
-                      {user.role !== 'Administrador' && (
-                        <>
-                          <option value="Administrador">Administrador</option>
-                          <option value="Supervisor">Supervisor</option>
-                        </>
-                      )}
-                    </select>
-                    <select
-                      value={newMemberStore}
-                      onChange={(e) => setNewMemberStore(e.target.value)}
-                      disabled={user.role === 'Administrador'}
-                      className="input"
-                      style={{ padding: '8px 12px', opacity: user.role === 'Administrador' ? 0.7 : 1 }}
-                    >
-                      <option value="Barranco">Barranco</option>
-                      <option value="Miraflores">Miraflores</option>
-                      <option value="San Isidro">San Isidro</option>
-                      {user.role !== 'Administrador' && <option value="Todas">Todas</option>}
-                    </select>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Área / Rol:</label>
+                      <select
+                        value={newMemberRole}
+                        onChange={(e) => setNewMemberRole(e.target.value)}
+                        className="input"
+                        style={{ padding: '8px 12px' }}
+                      >
+                        <option value="Barista">Barista</option>
+                        <option value="Cocina">Cocina</option>
+                        <option value="Servicio">Servicio</option>
+                        <option value="Administrador">Administrador</option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Gerente">Gerente General</option>
+                        <option value="Técnico">Técnico de Sistemas</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Sede:</label>
+                      <select
+                        value={newMemberStore}
+                        onChange={(e) => setNewMemberStore(e.target.value)}
+                        className="input"
+                        style={{ padding: '8px 12px' }}
+                      >
+                        <option value="Barranco">Barranco</option>
+                        <option value="Miraflores">Miraflores</option>
+                        <option value="San Isidro">San Isidro</option>
+                        <option value="Todas">Todas</option>
+                      </select>
+                    </div>
                   </div>
-                  <button type="submit" className="btn btn-primary" style={{ padding: '8px', fontSize: '13px' }}>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Contraseña:</label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contraseña"
+                        value={newMemberPassword}
+                        onChange={(e) => setNewMemberPassword(e.target.value)}
+                        className="input"
+                        style={{ padding: '8px 12px', flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const pass = generateSecurePassword();
+                          setNewMemberPassword(pass);
+                        }}
+                        className="btn btn-secondary"
+                        style={{ padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap' }}
+                      >
+                        ⚡ Generar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '5px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newMemberDni.trim() || newMemberDni.trim().length < 8) {
+                          alert('Por favor, ingresa un DNI válido de 8 dígitos antes de activar el lector biométrico.');
+                          return;
+                        }
+                        setCurrentDniTarget(newMemberDni.trim());
+                        setCurrentFormTarget('team');
+                        setBioStep(1);
+                        setBioProgress(0);
+
+                        const devicesWithSn = techDevices.filter(d => d.sn);
+                        if (devicesWithSn.length > 0) {
+                          setSelectedBioDeviceSn(devicesWithSn[0].sn);
+                        } else {
+                          setSelectedBioDeviceSn('');
+                        }
+                        setSelectedBioFingerId(6);
+                        setEnrollError('');
+                        setEnrollStatusText('');
+                        setBioScanning(false);
+
+                        setIsBioModalOpen(true);
+                      }}
+                      className="btn"
+                      style={{
+                        padding: '10px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        backgroundColor: newMemberBiometricId ? 'var(--success-light)' : 'rgba(239, 68, 68, 0.1)',
+                        color: newMemberBiometricId ? 'var(--success)' : 'var(--error)',
+                        border: newMemberBiometricId ? '1px solid var(--success)' : '1px solid var(--error)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      {newMemberBiometricId ? '🟢 Huella Enrolada (ID: ' + newMemberBiometricId + ')' : '🧬 Activar Lector Biométrico (3 Intentos)'}
+                    </button>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ padding: '10px', fontSize: '13px', fontWeight: 'bold', marginTop: '5px' }}>
                     Crear Colaborador
                   </button>
                 </form>
@@ -4073,6 +4858,342 @@ main();`}
             <button onClick={() => setPreviewPhoto(null)} className="btn btn-secondary" style={{ alignSelf: 'flex-end', padding: '6px 16px', fontSize: '12px' }}>
               Cerrar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Biometric Enrolment Wizard Modal */}
+      {isBioModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100,
+          backdropFilter: 'blur(8px)',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#111827',
+            color: '#f3f4f6',
+            border: '1px solid #374151',
+            padding: '28px',
+            borderRadius: '12px',
+            maxWidth: '450px',
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '20px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            textAlign: 'center'
+          }}>
+            <style>{`
+              @keyframes scanLaser {
+                0% { top: 0%; }
+                50% { top: 100%; }
+                100% { top: 0%; }
+              }
+              @keyframes pulse {
+                0% { transform: scale(0.95); opacity: 0.5; }
+                50% { transform: scale(1.05); opacity: 0.8; }
+                100% { transform: scale(0.95); opacity: 0.5; }
+              }
+            `}</style>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', borderBottom: '1px solid #374151', paddingBottom: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🧬 Enrolamiento de Huella - ZKTeco M1
+              </h3>
+              <button
+                onClick={() => {
+                  if (bioStep === 2 && !confirm('¿Estás seguro de cancelar el enrolamiento biométrico en curso?')) return;
+                  if (window.activeBioPollingInterval) {
+                    clearInterval(window.activeBioPollingInterval);
+                  }
+                  setIsBioModalOpen(false);
+                  setBioScanning(false);
+                }}
+                style={{ border: 'none', backgroundColor: 'transparent', fontSize: '18px', cursor: 'pointer', color: '#9ca3af', fontWeight: 'bold' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Visual Scan Step Indicator */}
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', margin: '10px 0' }}>
+              {[1, 2, 3].map(stepNum => {
+                const isActive = bioStep >= stepNum;
+                const isCompleted = bioStep > stepNum;
+                return (
+                  <div key={stepNum} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: isCompleted ? '#10b981' : (isActive ? '#3b82f6' : '#374151'),
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      border: isActive ? '2px solid #60a5fa' : '2px solid transparent',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      {isCompleted ? '✓' : stepNum}
+                    </div>
+                    <span style={{ fontSize: '9px', color: isActive ? '#f3f4f6' : '#9ca3af' }}>
+                      {stepNum === 1 ? 'Configurar' : stepNum === 2 ? 'Escanear' : 'Completado'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Animated Scanner Graphic */}
+            <div style={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(59, 130, 246, 0.08)',
+              border: bioStep === 3 ? '3px solid #10b981' : (bioScanning ? '3px solid #f59e0b' : '3px solid #3b82f6'),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: bioStep === 3 ? '0 0 20px rgba(16, 185, 129, 0.3)' : '0 0 15px rgba(59, 130, 246, 0.15)',
+              margin: '15px 0'
+            }}>
+              {bioScanning && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  borderRadius: '50%',
+                  border: '2px solid #f59e0b',
+                  animation: 'pulse 1.2s infinite'
+                }} />
+              )}
+              
+              {bioScanning && (
+                <div style={{
+                  position: 'absolute',
+                  width: '100%',
+                  height: '3px',
+                  backgroundColor: '#f59e0b',
+                  boxShadow: '0 0 8px #f59e0b',
+                  top: '0%',
+                  animation: 'scanLaser 1.5s infinite linear'
+                }} />
+              )}
+
+              <svg
+                width="64"
+                height="64"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={bioStep === 3 ? '#10b981' : (bioScanning ? '#f59e0b' : '#3b82f6')}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ opacity: bioScanning ? 0.6 : 1, transition: 'all 0.3s ease' }}
+              >
+                <path d="M2 12a10 10 0 0 1 13-9.5" />
+                <path d="M5 19.5A9 9 0 0 1 18.5 7" />
+                <path d="M8 22.5A8 8 0 0 1 22 12" />
+                <path d="M12 15a3 3 0 0 1-3-3" />
+                <path d="M15 15a4 4 0 0 0-3-4" />
+                <path d="M18 15a5 5 0 0 0-4-5" />
+                <path d="M21 15a6 6 0 0 0-5-6" />
+                <path d="M12 18v2" />
+              </svg>
+            </div>
+
+            {/* Content Switcher depending on BioStep */}
+            <div style={{ width: '100%', minHeight: '120px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {enrollError && (
+                <div style={{
+                  padding: '10px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid var(--error)',
+                  borderRadius: '6px',
+                  color: '#fca5a5',
+                  fontSize: '12px',
+                  textAlign: 'left'
+                }}>
+                  <strong>⚠️ Error:</strong> {enrollError}
+                </div>
+              )}
+
+              {bioStep === 1 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left' }}>
+                  <div style={{ fontSize: '13px', borderBottom: '1px solid #374151', paddingBottom: '8px', marginBottom: '4px' }}>
+                    <span>Enrolar colaborador con DNI: </span>
+                    <strong style={{ color: '#10b981', fontSize: '14px' }}>{currentDniTarget}</strong>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af' }}>1. Seleccionar Lector Físico Destino:</label>
+                    {techDevices.filter(d => d.sn).length === 0 ? (
+                      <div style={{ fontSize: '11px', color: '#f87171' }}>
+                        No hay lectores configurados con Número de Serie (SN). Primero registre un dispositivo con SN en la pestaña de administración.
+                      </div>
+                    ) : (
+                      <select
+                        className="input"
+                        value={selectedBioDeviceSn}
+                        onChange={(e) => setSelectedBioDeviceSn(e.target.value)}
+                        style={{ padding: '8px', backgroundColor: '#1f2937', color: '#fff', border: '1px solid #4b5563', borderRadius: '4px', width: '100%' }}
+                      >
+                        {techDevices.filter(d => d.sn).map(dev => (
+                          <option key={dev.id} value={dev.sn}>
+                            {dev.name} (SN: {dev.sn})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af' }}>2. Seleccionar Dedo a Enrolar:</label>
+                    <select
+                      className="input"
+                      value={selectedBioFingerId}
+                      onChange={(e) => setSelectedBioFingerId(Number(e.target.value))}
+                      style={{ padding: '8px', backgroundColor: '#1f2937', color: '#fff', border: '1px solid #4b5563', borderRadius: '4px', width: '100%' }}
+                    >
+                      {FINGERS_LIST.map(finger => (
+                        <option key={finger.id} value={finger.id}>
+                          {finger.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {bioStep === 2 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <strong style={{ fontSize: '14px', color: '#f59e0b' }}>
+                    Escaneando en Dispositivo
+                  </strong>
+                  <p style={{ fontSize: '12.5px', color: '#9ca3af', margin: 0, lineHeight: '1.4' }}>
+                    Dedo indicado: <strong style={{ color: '#fff' }}>
+                      {FINGERS_LIST.find(f => f.id === selectedBioFingerId)?.name}
+                    </strong>
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#e5e7eb', backgroundColor: '#1f2937', padding: '12px', borderRadius: '6px', border: '1px solid #374151', minHeight: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {enrollStatusText}
+                  </p>
+                  <div style={{ fontSize: '11px', color: '#9ca3af', fontStyle: 'italic' }}>
+                    (El lector ZKTeco K40/M1 parpadeará pidiéndole al colaborador colocar su dedo 3 veces)
+                  </div>
+                </div>
+              )}
+
+              {bioStep === 3 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <strong style={{ fontSize: '15px', color: '#10b981' }}>¡Enrolamiento Exitoso!</strong>
+                  <p style={{ fontSize: '12.5px', color: '#9ca3af', margin: 0 }}>
+                    La huella del dedo <strong>{FINGERS_LIST.find(f => f.id === selectedBioFingerId)?.name}</strong> se ha guardado en el dispositivo y enlazado al DNI <strong>{currentDniTarget}</strong>.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ width: '100%', marginTop: '10px' }}>
+              {bioStep === 1 && (
+                <button
+                  type="button"
+                  disabled={techDevices.filter(d => d.sn).length === 0}
+                  onClick={handleStartRealEnroll}
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    backgroundColor: techDevices.filter(d => d.sn).length === 0 ? '#374151' : '#3b82f6',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: techDevices.filter(d => d.sn).length === 0 ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  🚀 Iniciar Captura Real en Lector
+                </button>
+              )}
+
+              {bioStep === 2 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.activeBioPollingInterval) {
+                      clearInterval(window.activeBioPollingInterval);
+                    }
+                    setBioScanning(false);
+                    setBioStep(1);
+                    setEnrollError('');
+                    setEnrollStatusText('');
+                  }}
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    backgroundColor: '#dc2626',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Cancelar Captura / Reintentar
+                </button>
+              )}
+
+              {bioStep === 3 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentFormTarget === 'team') {
+                      setNewMemberBiometricId(currentDniTarget);
+                    } else {
+                      setManageUserBiometricId(currentDniTarget);
+                    }
+                    setIsBioModalOpen(false);
+                  }}
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    backgroundColor: '#10b981',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Finalizar Enrolamiento
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

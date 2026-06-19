@@ -561,9 +561,9 @@ export default function App() {
 
   // Biometric states
   const INITIAL_BIOMETRIC_DEVICES = [
-    { id: 'DEV-001', name: 'ZKTeco M1 - Sede Barranco', model: 'ZKTeco M1', ip: '192.168.1.150', port: '4370', store: 'Barranco', status: 'Online' },
-    { id: 'DEV-002', name: 'ZKTeco K40 - Sede Miraflores', model: 'ZKTeco K40', ip: '192.168.1.151', port: '4370', store: 'Miraflores', status: 'Online' },
-    { id: 'DEV-003', name: 'ZKTeco MB20 - Sede San Isidro', model: 'ZKTeco MB20', ip: '192.168.1.152', port: '4370', store: 'San Isidro', status: 'Offline' }
+    { id: 'DEV-001', name: 'ZKTeco M1 - Sede Barranco', model: 'ZKTeco M1', ip: '192.168.1.150', port: '4370', store: 'Barranco', sn: 'jchpxowbxxfrivrloqkg', status: 'Online' },
+    { id: 'DEV-002', name: 'ZKTeco K40 - Sede Miraflores', model: 'ZKTeco K40', ip: '192.168.1.151', port: '4370', store: 'Miraflores', sn: 'ZK-K40-MIRAF', status: 'Online' },
+    { id: 'DEV-003', name: 'ZKTeco MB20 - Sede San Isidro', model: 'ZKTeco MB20', ip: '192.168.1.152', port: '4370', store: 'San Isidro', sn: 'ZK-MB20-SANIS', status: 'Offline' }
   ];
 
   const INITIAL_BIOMETRIC_LOGS = [

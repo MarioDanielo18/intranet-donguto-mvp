@@ -22,16 +22,56 @@ export default async function handler(req, res) {
   }
 
   const { query, method } = req;
+  const urlPath = req.url || '';
   const sn = query.SN || ''; // Device Serial Number
   const table = query.table || ''; // e.g., ATTLOG
 
-  console.log(`[iClock ADMS] Request received. Method: ${method}, Path: ${req.url}, SN: ${sn}`);
+  console.log(`[iClock ADMS] Request received. Method: ${method}, Path: ${urlPath}, SN: ${sn}`);
 
-  // 1. HANDSHAKE / OPTIONS QUERY (GET /iclock/cdata)
+  // =======================================================
+  // 1. GET REQUESTS (Handshake & Command Polling)
+  // =======================================================
   if (method === 'GET') {
     res.setHeader('Content-Type', 'text/plain');
-    
-    // Return standard iClock device configuration options to authenticate the device
+
+    // A. COMMAND POLL: Device asks for commands (?SN=xxx)
+    if (urlPath.includes('/getrequest')) {
+      if (!supabase || !sn) {
+        return res.status(200).send('OK\n');
+      }
+
+      try {
+        // Find the oldest pending command for this device SN
+        const { data: cmd, error } = await supabase
+          .from('comandos_biometricos')
+          .select('*')
+          .eq('device_sn', sn)
+          .eq('status', 'PENDING')
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (cmd) {
+          // Update status to SENT so the device can process it
+          await supabase
+            .from('comandos_biometricos')
+            .update({ status: 'SENT', updated_at: new Date().toISOString() })
+            .eq('id', cmd.id);
+
+          console.log(`[iClock ADMS] Sent command ${cmd.command_id} to device ${sn}: ${cmd.command_text}`);
+          // ADMS command format: C:command_id:command_text
+          return res.status(200).send(`C:${cmd.command_id}:${cmd.command_text}\n`);
+        }
+      } catch (err) {
+        console.error('[iClock ADMS] Command poll database error:', err);
+      }
+
+      return res.status(200).send('OK\n');
+    }
+
+    // B. HANDSHAKE / OPTIONS: Default handshake configuration
     const configResponse = 
       `RegistryCode=${sn || 'DON-GUTO-M1'}\n` +
       `Delay=10\n` +
@@ -42,9 +82,53 @@ export default async function handler(req, res) {
     return res.status(200).send(configResponse);
   }
 
-  // 2. DATA PUSH / UPLOAD (POST /iclock/cdata)
+  // =======================================================
+  // 2. POST REQUESTS (Logs Push & Command Results)
+  // =======================================================
   if (method === 'POST') {
-    // Read raw text body from ZKTeco device
+    // A. COMMAND RESULT: Device returns execution result
+    if (urlPath.includes('/devicecmd')) {
+      let body = '';
+      req.on('data', chunk => {
+        body += chunk.toString();
+      });
+
+      await new Promise(resolve => req.on('end', resolve));
+      console.log(`[iClock ADMS] Command result received from SN ${sn}:\n`, body);
+
+      res.setHeader('Content-Type', 'text/plain');
+      if (!supabase) {
+        return res.status(200).send('OK\n');
+      }
+
+      try {
+        // Parse ID=xxx&Return=0 format
+        const normalized = body.trim().replace(/\r/g, '').replace(/\n/g, '&');
+        const params = new URLSearchParams(normalized);
+        const commandId = params.get('ID');
+        const returnCode = params.get('Return');
+
+        if (commandId) {
+          const status = returnCode === '0' ? 'COMPLETED' : 'FAILED';
+          await supabase
+            .from('comandos_biometricos')
+            .update({ 
+              status: status, 
+              response_text: body, 
+              updated_at: new Date().toISOString() 
+            })
+            .eq('command_id', commandId);
+          
+          console.log(`[iClock ADMS] Updated command ${commandId} to status ${status}`);
+        }
+      } catch (err) {
+        console.error('[iClock ADMS] Command result parse error:', err);
+      }
+
+      return res.status(200).send('OK\n');
+    }
+
+    // B. ATTENDANCE DATA UPLOAD: Device pushes punches (ATTLOG)
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
@@ -53,7 +137,6 @@ export default async function handler(req, res) {
     await new Promise(resolve => req.on('end', resolve));
     console.log(`[iClock ADMS] Raw Data received from SN ${sn}:\n`, body);
 
-    // Parse the body if it is an attendance log upload (ATTLOG)
     if (table.toUpperCase() === 'ATTLOG' || body.includes('ATTLOG') || body.includes('\t')) {
       const lines = body.split('\n');
       
@@ -61,7 +144,6 @@ export default async function handler(req, res) {
         const cleanLine = line.trim();
         if (!cleanLine || cleanLine.startsWith('PIN') || cleanLine.startsWith('ATTLOG')) return;
 
-        // ZK iClock tab-delimited or space-delimited log formats:
         // Format: [BiometricID/PIN]  [Timestamp YYYY-MM-DD HH:MM:SS]  [Status]  [Workcode] ...
         const parts = cleanLine.split(/\s+/);
         if (parts.length >= 2) {
@@ -80,12 +162,11 @@ export default async function handler(req, res) {
             device_name: `ZKTeco M1 (SN: ${sn})`
           };
 
-          // Insert into global memory for real-time client sync
+          // Insert into global memory for real-time client sync fallback
           global.latestPunches.push(punch);
 
-          // Persist to Supabase if config exists
+          // Persist to Supabase
           if (supabase) {
-            // Convert timestamp "YYYY-MM-DD HH:MM:SS" to ISO
             let isoTimestamp;
             try {
               isoTimestamp = new Date(timestamp.replace(' ', 'T') + 'Z').toISOString();
@@ -109,18 +190,15 @@ export default async function handler(req, res) {
         }
       });
 
-      // Keep array size bounded to prevent memory leaks in the Node runtime container
       if (global.latestPunches.length > 200) {
         global.latestPunches = global.latestPunches.slice(-100);
       }
     }
 
-    // Acknowledge receipt of data to ZKTeco device (must return plain text "OK")
     res.setHeader('Content-Type', 'text/plain');
     return res.status(200).send('OK\n');
   }
 
-  // Fallback
   res.setHeader('Content-Type', 'text/plain');
   return res.status(200).send('OK\n');
 }
