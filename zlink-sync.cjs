@@ -70,16 +70,16 @@ const destroyModals = async (page) => {
       const checkbox = document.querySelector('input[type="checkbox"], .ant-checkbox-input, .el-checkbox__original, [class*="checkbox-input"]');
       if (checkbox) {
         if (!checkbox.checked) {
+          checkbox.checked = true;
+          // Dispatch change and input events to trigger React/Vue binding
+          checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+          checkbox.dispatchEvent(new Event('input', { bubbles: true }));
+          
+          // Also click the wrapper label to trigger custom UI handlers
           const wrapper = checkbox.closest('label') || checkbox.closest('.ant-checkbox') || checkbox.closest('.el-checkbox') || checkbox.parentElement;
           if (wrapper) {
             wrapper.click();
-            console.log("Click realizado en el wrapper del checkbox.");
-          } else {
-            checkbox.click();
-            console.log("Click realizado directamente en el checkbox input.");
           }
-        } else {
-          console.log("El checkbox ya estaba marcado.");
         }
       } else {
         // Fallback: search by text content
@@ -90,13 +90,10 @@ const destroyModals = async (page) => {
         });
         if (agreementText) {
           agreementText.click();
-          console.log("Click realizado en el texto de acuerdo encontrado.");
-        } else {
-          console.log("No se encontró ningún elemento de acuerdo de usuario.");
         }
       }
     });
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1500);
 
     // Click submit button
     const loginButton = page.locator('button[type="submit"], button:has-text("Iniciar"), button:has-text("Login"), button:has-text("Ingresar"), .el-button--primary').first();
@@ -118,6 +115,17 @@ const destroyModals = async (page) => {
         console.log("\n--- CONTENIDO DE LA PÁGINA DE ERROR ---");
         console.log(pageText.slice(0, 1500));
         console.log("----------------------------------------\n");
+      } catch (innerErr) {}
+
+      // Dump raw HTML of the login form
+      try {
+        const formHtml = await page.evaluate(() => {
+          const form = document.querySelector('form') || document.querySelector('.login-form') || document.querySelector('[class*="login"]') || document.body;
+          return form.outerHTML;
+        });
+        console.log("\n--- HTML DEL FORMULARIO DE INGRESO ---");
+        console.log(formHtml.slice(0, 5000));
+        console.log("---------------------------------------\n");
       } catch (innerErr) {}
       
       throw new Error("Inicio de sesión fallido. Verifica tus secretos ZLINK_EMAIL y ZLINK_PASSWORD.");
