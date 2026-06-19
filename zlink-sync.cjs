@@ -229,9 +229,104 @@ const destroyModals = async (page) => {
     }
 
     console.log("📥 Buscando botón de exportación...");
-    const exportButton = page.locator('button:has-text("Exportar"), button:has-text("Export"), .el-button:has-text("Export"), .el-button:has-text("Exportar")').first();
-    await exportButton.waitFor({ state: 'visible', timeout: 20000 });
+    
+    // Log detailed attributes of all buttons on the page for debugging
+    try {
+      const allButtonsDetails = await page.evaluate(() => {
+        const btns = Array.from(document.querySelectorAll('button, a.el-button, a.ant-btn'));
+        return btns.map((b, idx) => {
+          return `Button #${idx}: class="${b.className}" text="${(b.innerText || b.textContent || '').trim()}" outerHTML="${b.outerHTML.slice(0, 300)}"`;
+        }).join('\n');
+      });
+      console.log("\n--- DETALLE COMPLETO DE BOTONES EN LA VISTA DE REPORTES ---");
+      console.log(allButtonsDetails || "Ningún botón detectado.");
+      console.log("----------------------------------------------------------\n");
+    } catch (innerErr) {
+      console.warn("⚠️ No se pudo obtener el detalle de los botones:", innerErr);
+    }
 
+    // Find and score export button candidates
+    const exportButtonSelector = await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button, a.ant-btn, .ant-btn, .el-button'));
+      
+      // Filter out buttons related to export history
+      const candidates = buttons.filter(b => {
+        const text = (b.innerText || b.textContent || '').trim().toLowerCase();
+        if (text.includes('history') || text.includes('historial')) {
+          return false;
+        }
+        return true;
+      });
+
+      let bestCandidate = null;
+      let highestScore = -1;
+
+      candidates.forEach(b => {
+        let score = 0;
+        const html = b.outerHTML.toLowerCase();
+        const text = (b.innerText || b.textContent || '').trim().toLowerCase();
+        const title = (b.getAttribute('title') || '').toLowerCase();
+        const ariaLabel = (b.getAttribute('aria-label') || '').toLowerCase();
+        const className = b.className.toLowerCase();
+
+        // 1. Text checks (exact or contains export/exportar/descargar/download)
+        if (text === 'export' || text === 'exportar' || text === 'download' || text === 'descargar') {
+          score += 100;
+        } else if (text.includes('export') || text.includes('exportar') || text.includes('download') || text.includes('descargar')) {
+          score += 50;
+        }
+
+        // 2. Title attribute checks
+        if (title === 'export' || title === 'exportar' || title === 'download' || title === 'descargar') {
+          score += 80;
+        } else if (title.includes('export') || title.includes('exportar') || title.includes('download') || title.includes('descargar')) {
+          score += 40;
+        }
+
+        // 3. Aria-label attribute checks
+        if (ariaLabel === 'export' || ariaLabel === 'exportar' || ariaLabel === 'download' || ariaLabel === 'descargar') {
+          score += 80;
+        } else if (ariaLabel.includes('export') || ariaLabel.includes('exportar') || ariaLabel.includes('download') || ariaLabel.includes('descargar')) {
+          score += 40;
+        }
+
+        // 4. Icon checks (children SVG or classes)
+        if (b.querySelector('.anticon-download') || b.querySelector('.anticon-export') || b.querySelector('.anticon-cloud-download')) {
+          score += 60;
+        }
+        if (html.includes('download') || html.includes('export')) {
+          score += 20;
+        }
+
+        // 5. If it's an icon-only button and we have export text in the tooltip
+        if (className.includes('icon-only') || className.includes('icon')) {
+          score += 5;
+        }
+
+        if (score > highestScore && score > 0) {
+          highestScore = score;
+          bestCandidate = b;
+        }
+      });
+
+      if (bestCandidate) {
+        bestCandidate.setAttribute('data-target-export-button', 'true');
+        return '[data-target-export-button="true"]';
+      }
+      return null;
+    });
+
+    let exportButton;
+    if (exportButtonSelector) {
+      console.log(`✅ Botón de exportación encontrado por heurística usando el selector: ${exportButtonSelector}`);
+      exportButton = page.locator(exportButtonSelector).first();
+    } else {
+      console.log("⚠️ La heurística de búsqueda no arrojó resultados. Usando fallback...");
+      // Fallback: Try targeting standard text-based but exclude history
+      exportButton = page.locator('button:has-text("Export"):not(:has-text("History")), button:has-text("Exportar"):not(:has-text("Historial"))').first();
+    }
+
+    await exportButton.waitFor({ state: 'visible', timeout: 20000 });
     console.log("⏳ Solicitando generación del archivo de marcaciones (Export)...");
     await destroyModals(page);
     await exportButton.click({ force: true });
