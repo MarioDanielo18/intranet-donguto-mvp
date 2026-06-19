@@ -270,7 +270,19 @@ const destroyModals = async (page) => {
       console.log("--------------------------------------------------\n");
     } catch (innerErr) {}
 
-    // Click on search or calculate if required
+    // Click on search or calculate if required to load the report data
+    console.log("🔍 Buscando botón de consulta (Inquiry / Search / Consultar) para cargar datos...");
+    const queryButton = page.locator('button.ant-btn-primary, button:has-text("Inquiry"), button:has-text("Search"), button:has-text("Query"), button:has-text("Consultar"), button:has-text("Buscar"), button:has-text("Calcular"), button:has-text("Calculate")').first();
+    
+    if (await queryButton.count() > 0 && await queryButton.isVisible()) {
+      console.log("🖱️ Haciendo clic en el botón de consulta...");
+      await queryButton.click({ force: true });
+      console.log("⏳ Esperando que carguen los datos del reporte...");
+      await page.waitForTimeout(8000); // Wait for the table to populate
+    } else {
+      console.log("⚠️ No se encontró o no está visible el botón de consulta. Continuando...");
+    }
+
     console.log("📥 Buscando botón de exportación...");
     const exportButton = page.locator('button:has-text("Exportar"), button:has-text("Export"), .el-button:has-text("Export"), .el-button:has-text("Exportar")').first();
     await exportButton.waitFor({ state: 'visible', timeout: 20000 });
