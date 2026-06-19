@@ -259,10 +259,42 @@ const destroyModals = async (page) => {
 
     console.log("⏳ Iniciando la descarga del archivo de marcaciones...");
     await destroyModals(page);
-    const [ download ] = await Promise.all([
-      page.waitForEvent('download', { timeout: 45000 }),
-      exportButton.click({ force: true })
-    ]);
+    let download;
+    try {
+      const downloadPromise = page.waitForEvent('download', { timeout: 45000 });
+      await exportButton.click({ force: true });
+      download = await downloadPromise;
+    } catch (e) {
+      console.error("❌ Error al esperar la descarga del archivo:", e);
+      try {
+        const bodyText = await page.innerText('body');
+        console.log("\n--- CONTENIDO DE TEXTO DE LA PÁGINA AL TIEMPO DE LA DESCARGA ---");
+        console.log(bodyText.slice(0, 3000));
+        console.log("-----------------------------------------------------------------\n");
+      } catch (innerErr) {}
+      
+      try {
+        const modalsHtml = await page.evaluate(() => {
+          const modals = Array.from(document.querySelectorAll('.ant-modal, .el-dialog, [class*="modal"], [class*="dialog"], [class*="popup"], [class*="message"], .ant-notification, .el-notification'));
+          return modals.map(m => `<div class="${m.className}">${(m.innerText || m.textContent || '').trim()}</div>`).join('\n');
+        });
+        console.log("\n--- MODALES / DIÁLOGOS / DIÁLOGOS DE CONFIRMACIÓN DETECTADOS ---");
+        console.log(modalsHtml || "Ningún modal detectado.");
+        console.log("---------------------------------------------------------------\n");
+      } catch (innerErr) {}
+
+      try {
+        const allButtons = await page.evaluate(() => {
+          const btns = Array.from(document.querySelectorAll('button, a.el-button, a.ant-btn'));
+          return btns.map(b => `<button class="${b.className}">${(b.innerText || b.textContent || '').trim()}</button>`).join('\n');
+        });
+        console.log("\n--- BOTONES DISPONIBLES EN LA PÁGINA ---");
+        console.log(allButtons || "Ningún botón detectado.");
+        console.log("----------------------------------------\n");
+      } catch (innerErr) {}
+      
+      throw e;
+    }
 
     const downloadPath = path.join(__dirname, 'temp_events.xlsx');
     await download.saveAs(downloadPath);
