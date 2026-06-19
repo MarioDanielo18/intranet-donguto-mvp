@@ -197,7 +197,27 @@ const destroyModals = async (page) => {
 
     console.log("🔍 Buscando tarjeta de informe 'Eventos' / 'Events'...");
     const eventosCard = page.locator('text="Eventos", text="Events", .el-card:has-text("Eventos"), .el-card:has-text("Events"), div:has-text("Eventos"), div:has-text("Events")').first();
-    await eventosCard.waitFor({ state: 'visible', timeout: 20000 });
+    await eventosCard.waitFor({ state: 'visible', timeout: 20000 }).catch(async (e) => {
+      console.error("❌ Error al esperar la tarjeta de Eventos:", e);
+      try {
+        const bodyText = await page.innerText('body');
+        console.log("\n--- CONTENIDO DE TEXTO DE LA PÁGINA DE INFORMES ---");
+        console.log(bodyText.slice(0, 3000));
+        console.log("---------------------------------------------------\n");
+      } catch (innerErr) {}
+      
+      try {
+        const htmlContent = await page.evaluate(() => {
+          const elements = Array.from(document.querySelectorAll('a, button, [class*="card"], [class*="menu"], h1, h2, h3, h4, h5, div[class*="item"]'));
+          return elements.map(el => `<${el.tagName.toLowerCase()} class="${el.className}">${(el.innerText || el.textContent || '').trim().slice(0, 100)}</${el.tagName.toLowerCase()}>`).join('\n');
+        });
+        console.log("\n--- ELEMENTOS INTERACTIVOS Y MENÚS EN LA PÁGINA ---");
+        console.log(htmlContent.slice(0, 3000));
+        console.log("-------------------------------------------\n");
+      } catch (innerErr) {}
+      
+      throw e;
+    });
     await destroyModals(page);
     console.log("🖱️ Abriendo informe de Eventos...");
     await eventosCard.click({ force: true });
