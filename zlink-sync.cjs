@@ -66,14 +66,32 @@ const destroyModals = async (page) => {
 
     // Accept terms and conditions checkbox (specifically targeting name="agreement")
     console.log("☑️ Aceptando acuerdo de usuario y políticas (agreement)...");
-    const agreementCheckboxWrapper = page.locator('.ant-checkbox-wrapper:has(input[name="agreement"]), .ant-checkbox-wrapper:has-text("agree"), label:has-text("agree")').first();
-    await agreementCheckboxWrapper.waitFor({ state: 'visible', timeout: 10000 });
-    await agreementCheckboxWrapper.click({ force: true });
+    const checkboxSquare = page.locator('.ant-checkbox-wrapper:has(input[name="agreement"]) .ant-checkbox-inner').first();
+    const checkboxLabel = page.locator('.ant-checkbox-wrapper:has(input[name="agreement"]) .ant-checkbox-label').first();
+    const inputLocator = page.locator('input[name="agreement"]').first();
 
-    // Verify checkbox status in logs
-    const isChecked = await page.locator('input[name="agreement"]').isChecked();
-    console.log("Checkbox marked status:", isChecked ? "✅ Checked" : "❌ Unchecked");
+    await checkboxSquare.waitFor({ state: 'attached', timeout: 10000 });
     
+    let isChecked = await inputLocator.isChecked();
+    if (!isChecked) {
+      console.log("🖱️ Clickeando el cuadro del checkbox (.ant-checkbox-inner)...");
+      await checkboxSquare.click({ force: true });
+      isChecked = await inputLocator.isChecked();
+    }
+    
+    if (!isChecked) {
+      console.log("🖱️ Clickeando la etiqueta de texto (.ant-checkbox-label)...");
+      await checkboxLabel.click({ force: true });
+      isChecked = await inputLocator.isChecked();
+    }
+    
+    if (!isChecked) {
+      console.log("🖱️ Clickeando el input directamente...");
+      await inputLocator.click({ force: true });
+      isChecked = await inputLocator.isChecked();
+    }
+
+    console.log("Checkbox marked status:", isChecked ? "✅ Checked" : "❌ Unchecked");
     await page.waitForTimeout(1000);
 
     // Click submit button
