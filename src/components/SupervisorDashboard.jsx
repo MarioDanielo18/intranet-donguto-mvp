@@ -3177,6 +3177,21 @@ export default function SupervisorDashboard({
                     📡 Enviar Marcación (Simular ZK Hardware Push)
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('¿Estás seguro de que deseas limpiar la memoria local de asistencia? Esto obligará al navegador a recargar y sincronizar datos limpios desde Supabase.')) {
+                        localStorage.removeItem('donguto-team');
+                        localStorage.removeItem('donguto-biometric-logs');
+                        window.location.reload();
+                      }
+                    }}
+                    className="btn"
+                    style={{ width: '100%', padding: '8px', fontSize: '11.5px', marginTop: '10px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
+                  >
+                    🧹 Limpiar Caché de Asistencia Local
+                  </button>
+
                   {simResult && (
                     <div style={{
                       padding: '10px',
