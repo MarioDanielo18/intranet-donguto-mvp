@@ -503,19 +503,24 @@ export default function SupervisorDashboard({
     const firstRow = rows[0];
     const keys = Object.keys(firstRow);
     
-    const findKey = (patterns) => {
+    const findKey = (patterns, excludePatterns = []) => {
       return keys.find(k => {
         const lowerK = String(k).toLowerCase().trim();
-        return patterns.some(p => lowerK.includes(p));
+        const matchesPattern = patterns.some(p => lowerK.includes(p));
+        const matchesExclude = excludePatterns.some(p => lowerK.includes(p));
+        return matchesPattern && !matchesExclude;
       });
     };
 
-    // Smart identification of columns
+    // Smart identification of columns with exclusion rules to prevent collisions
     const idKey = findKey(['dni', 'biometric_id', 'personal_id', 'user_id', 'no.', 'no', 'código', 'codigo', 'code', 'id', 'documento', 'número de personal', 'numero de personal', 'colaborador', 'usuario']);
-    const dateTimeKey = findKey(['fecha/hora', 'fechayhora', 'timestamp', 'punch_time', 'punchtime', 'time', 'datetime', 'date_time', 'marcación', 'marcacion', 'fecha y hora', 'reloj', 'registro']);
-    const dateKey = findKey(['fecha', 'date', 'día', 'dia']);
-    const timeKey = findKey(['hora', 'time', 'tiempo']);
-    const punchListKey = findKey(['registros de perforación', 'registros de perforacion', 'perforaciones', 'punch_list', 'lista_marcaciones', 'marcajes', 'perforación', 'perforacion']);
+    const punchListKey = findKey(['registros de perforación', 'registros de perforacion', 'punch_list', 'lista_marcaciones', 'marcajes']);
+    const dateTimeKey = findKey(
+      ['fecha/hora', 'fechayhora', 'timestamp', 'punch_time', 'punchtime', 'time', 'datetime', 'date_time', 'marcación', 'marcacion', 'fecha y hora', 'reloj', 'registro'],
+      ['registros de perforación', 'registros de perforacion', 'número de', 'numero de', 'cantidad de']
+    );
+    const dateKey = findKey(['fecha', 'date', 'día', 'dia'], ['fecha/hora', 'fechayhora', 'fecha y hora']);
+    const timeKey = findKey(['hora', 'time', 'tiempo'], ['fecha/hora', 'fechayhora', 'fecha y hora', 'registros de perforación', 'registros de perforacion']);
 
     console.log('[Import Parser] Mapeo de columnas:', { idKey, dateTimeKey, dateKey, timeKey, punchListKey });
 
@@ -558,8 +563,18 @@ export default function SupervisorDashboard({
           }
         }
 
-        if (listVal) {
-          const times = String(listVal).split(/[,;]/);
+        if (listVal !== undefined && listVal !== null) {
+          let times = [];
+          if (typeof listVal === 'number') {
+            // Single punch in Excel interpreted as serial time
+            const parsedT = parseExcelSerialDate(listVal);
+            const pad = (num) => String(num).padStart(2, '0');
+            const timeStr = `${pad(parsedT.getHours())}:${pad(parsedT.getMinutes())}`;
+            times = [timeStr];
+          } else {
+            times = String(listVal).split(/[,;]/);
+          }
+
           times.forEach(t => {
             let timePart = t.trim();
             if (!timePart) return;
