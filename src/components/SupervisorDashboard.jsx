@@ -407,6 +407,15 @@ export default function SupervisorDashboard({
   const [parsedPunchesCount, setParsedPunchesCount] = useState(0);
   const [parsedPunches, setParsedPunches] = useState([]);
 
+  // Manager's Consolidated Attendance Table states
+  const [managerSearchCollab, setManagerSearchCollab] = useState('');
+  const [managerStoreFilter, setManagerStoreFilter] = useState('Todas');
+  const [managerRoleFilter, setManagerRoleFilter] = useState('Todos');
+  const [managerDateFilter, setManagerDateFilter] = useState('');
+  const [managerStatusFilter, setManagerStatusFilter] = useState('Todos'); // 'Todos' | 'Puntual' | 'Tardanza'
+  const [managerCurrentPage, setManagerCurrentPage] = useState(1);
+  const [managerRowsPerPage, setManagerRowsPerPage] = useState(10);
+
   const FINGERS_LIST = [
     { id: 6, name: 'Índice Derecho (Recomendado)' },
     { id: 7, name: 'Medio Derecho' },
@@ -1753,6 +1762,54 @@ export default function SupervisorDashboard({
   };
 
   const renderManagerialDashboard = () => {
+    const getManagerConsolidatedLogs = () => {
+      const allLogs = [];
+      approvedMembers.forEach(member => {
+        const logs = member.arrivalLogs || [];
+        logs.forEach(log => {
+          allLogs.push({
+            ...log,
+            employeeName: member.name,
+            employeeRole: member.role,
+            employeeStore: member.store,
+            biometricId: member.biometricId || member.biometric_id || log.biometricId
+          });
+        });
+      });
+
+      // Sort: newest date first, then by earliest arrival time of that day
+      allLogs.sort((a, b) => {
+        if (a.date !== b.date) {
+          return b.date.localeCompare(a.date);
+        }
+        return a.time.localeCompare(b.time);
+      });
+
+      // Apply filters
+      return allLogs.filter(log => {
+        const matchesSearch = !managerSearchCollab.trim() || 
+          log.employeeName.toLowerCase().includes(managerSearchCollab.toLowerCase());
+        
+        const matchesStore = managerStoreFilter === 'Todas' || 
+          log.employeeStore === managerStoreFilter;
+          
+        const matchesRole = managerRoleFilter === 'Todos' || 
+          log.employeeRole === managerRoleFilter;
+          
+        const matchesDate = !managerDateFilter || 
+          log.date === managerDateFilter;
+          
+        let matchesStatus = true;
+        if (managerStatusFilter === 'Puntual') {
+          matchesStatus = (log.delayMin || 0) === 0;
+        } else if (managerStatusFilter === 'Tardanza') {
+          matchesStatus = (log.delayMin || 0) > 0;
+        }
+        
+        return matchesSearch && matchesStore && matchesRole && matchesDate && matchesStatus;
+      });
+    };
+
     const statsByStore = getStorePunctualityStats();
     const tiendaTardona = statsByStore.length > 0 ? statsByStore[0].store : 'N/A';
     const tardonaMinutes = statsByStore.length > 0 ? statsByStore[0].avgDelay.toFixed(1) : '0';
@@ -1945,6 +2002,239 @@ export default function SupervisorDashboard({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* REGISTRO CONSOLIDADO DE ASISTENCIA BIOMÉTRICA CON FILTROS */}
+        <div className="card animate-scale-in" style={{ padding: '24px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid var(--border)', paddingBottom: '15px' }}>
+            <div>
+              <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
+                📋 Registro Consolidado de Asistencia Biométrica
+              </h3>
+              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                Historial completo de marcaciones registradas por huella dactilar (primer y último registro del día).
+              </p>
+            </div>
+            <div style={{ fontSize: '11px', fontWeight: 800, backgroundColor: 'var(--primary-light)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '12px', border: '1px solid var(--primary)' }}>
+              ⚡ {getManagerConsolidatedLogs().length} Registros Encontrados
+            </div>
+          </div>
+
+          {/* FILTERS */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+            gap: '12px',
+            backgroundColor: 'var(--bg-main)',
+            padding: '15px',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>👤 Buscar Colaborador:</label>
+              <input
+                type="text"
+                placeholder="Nombre..."
+                value={managerSearchCollab}
+                onChange={(e) => {
+                  setManagerSearchCollab(e.target.value);
+                  setManagerCurrentPage(1);
+                }}
+                className="input"
+                style={{ padding: '6px 10px', fontSize: '12px', height: '32px' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>🏢 Sede / Tienda:</label>
+              <select
+                value={managerStoreFilter}
+                onChange={(e) => {
+                  setManagerStoreFilter(e.target.value);
+                  setManagerCurrentPage(1);
+                }}
+                className="input"
+                style={{ padding: '4px 8px', fontSize: '12px', height: '32px', cursor: 'pointer' }}
+              >
+                <option value="Todas">🏢 Todas las sedes</option>
+                <option value="Barranco">Sede Barranco</option>
+                <option value="Miraflores">Sede Miraflores</option>
+                <option value="San Isidro">Sede San Isidro</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>🤵 Cargo / Rol:</label>
+              <select
+                value={managerRoleFilter}
+                onChange={(e) => {
+                  setManagerRoleFilter(e.target.value);
+                  setManagerCurrentPage(1);
+                }}
+                className="input"
+                style={{ padding: '4px 8px', fontSize: '12px', height: '32px', cursor: 'pointer' }}
+              >
+                <option value="Todos">👥 Todos los roles</option>
+                <option value="Barista">☕ Barista</option>
+                <option value="Cocina">🍳 Cocina</option>
+                <option value="Servicio">🤵 Servicio (Salón)</option>
+                <option value="Administrador">👑 Administrador</option>
+                <option value="Gerente">📊 Gerente</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>📅 Filtrar por Fecha:</label>
+              <input
+                type="date"
+                value={managerDateFilter}
+                onChange={(e) => {
+                  setManagerDateFilter(e.target.value);
+                  setManagerCurrentPage(1);
+                }}
+                className="input"
+                style={{ padding: '4px 8px', fontSize: '12px', height: '32px', cursor: 'pointer' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>⏰ Puntualidad:</label>
+              <select
+                value={managerStatusFilter}
+                onChange={(e) => {
+                  setManagerStatusFilter(e.target.value);
+                  setManagerCurrentPage(1);
+                }}
+                className="input"
+                style={{ padding: '4px 8px', fontSize: '12px', height: '32px', cursor: 'pointer' }}
+              >
+                <option value="Todos">⏰ Todos los estados</option>
+                <option value="Puntual">🟢 Puntual</option>
+                <option value="Tardanza">🔴 Con Retraso</option>
+              </select>
+            </div>
+          </div>
+
+          {/* TABLE */}
+          {(() => {
+            const filteredLogs = getManagerConsolidatedLogs();
+            const totalRecords = filteredLogs.length;
+            const totalPages = Math.ceil(totalRecords / managerRowsPerPage) || 1;
+            const startIndex = (managerCurrentPage - 1) * managerRowsPerPage;
+            const pageRecords = filteredLogs.slice(startIndex, startIndex + managerRowsPerPage);
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                  <table style={{ width: '100%', fontSize: '12.5px', borderCollapse: 'collapse', textAlign: 'left', minWidth: '950px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: 'var(--bg-main)', borderBottom: '2px solid var(--border)', color: 'var(--text-muted)' }}>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Colaborador</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Sede</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Rol</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Fecha</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Programado</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Entrada</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Salida</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Tardanza</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'center' }}>Total</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Marcaciones Registradas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageRecords.length > 0 ? (
+                        pageRecords.map((log, idx) => {
+                          const delayVal = log.delayMin || 0;
+                          return (
+                            <tr key={idx} style={{ borderBottom: '1px solid var(--border)', transition: 'background-color 0.2s ease' }}>
+                              <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--text-main)' }}>{log.employeeName}</td>
+                              <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{log.employeeStore}</td>
+                              <td style={{ padding: '10px 12px' }}>
+                                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                                  {log.employeeRole}
+                                </span>
+                              </td>
+                              <td style={{ padding: '10px 12px', fontWeight: 600 }}>{log.date}</td>
+                              <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
+                              <td style={{ padding: '10px 12px', color: 'var(--success)', fontWeight: 600 }}>{log.time}</td>
+                              <td style={{ padding: '10px 12px' }}>{log.checkOutTime || '--'}</td>
+                              <td style={{ padding: '10px 12px' }}>
+                                <span style={{
+                                  fontWeight: 800,
+                                  fontSize: '11px',
+                                  color: delayVal > 15 ? 'var(--error)' : delayVal > 0 ? 'var(--warning)' : 'var(--success)'
+                                }}>
+                                  {delayVal > 0 ? `+${delayVal} min` : 'Puntual'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>{log.totalPunches || 1}</td>
+                              <td style={{ padding: '10px 12px', fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'monospace' }}>
+                                {log.allPunches || log.time}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan="10" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                            No se encontraron marcaciones que coincidan con los filtros seleccionados.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* PAGINATION */}
+                {totalRecords > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', paddingTop: '5px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      Mostrando <strong>{startIndex + 1}</strong> - <strong>{Math.min(startIndex + managerRowsPerPage, totalRecords)}</strong> de <strong>{totalRecords}</strong> registros
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        onClick={() => setManagerCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={managerCurrentPage === 1}
+                        className="btn"
+                        style={{ padding: '4px 10px', fontSize: '11px', border: '1px solid var(--border)', cursor: 'pointer', borderRadius: '4px', backgroundColor: 'var(--bg-card)', color: managerCurrentPage === 1 ? 'var(--text-muted)' : 'var(--text-main)' }}
+                      >
+                        ◀ Ant.
+                      </button>
+                      
+                      <span style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: 700 }}>
+                        {managerCurrentPage} / {totalPages}
+                      </span>
+                      
+                      <button
+                        onClick={() => setManagerCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={managerCurrentPage === totalPages}
+                        className="btn"
+                        style={{ padding: '4px 10px', fontSize: '11px', border: '1px solid var(--border)', cursor: 'pointer', borderRadius: '4px', backgroundColor: 'var(--bg-card)', color: managerCurrentPage === totalPages ? 'var(--text-muted)' : 'var(--text-main)' }}
+                      >
+                        Sig. ▶
+                      </button>
+
+                      <select
+                        value={managerRowsPerPage}
+                        onChange={(e) => {
+                          setManagerRowsPerPage(Number(e.target.value));
+                          setManagerCurrentPage(1);
+                        }}
+                        className="input"
+                        style={{ padding: '2px 4px', fontSize: '11px', height: '24px', width: '50px', cursor: 'pointer', marginLeft: '5px' }}
+                      >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     );
