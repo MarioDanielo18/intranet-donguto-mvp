@@ -515,15 +515,16 @@ export default function SupervisorDashboard({
     const dateTimeKey = findKey(['fecha/hora', 'fechayhora', 'timestamp', 'punch_time', 'punchtime', 'time', 'datetime', 'date_time', 'marcación', 'marcacion', 'fecha y hora', 'reloj', 'registro']);
     const dateKey = findKey(['fecha', 'date', 'día', 'dia']);
     const timeKey = findKey(['hora', 'time', 'tiempo']);
+    const punchListKey = findKey(['registros de perforación', 'registros de perforacion', 'perforaciones', 'punch_list', 'lista_marcaciones', 'marcajes', 'perforación', 'perforacion']);
 
-    console.log('[Import Parser] Mapeo de columnas:', { idKey, dateTimeKey, dateKey, timeKey });
+    console.log('[Import Parser] Mapeo de columnas:', { idKey, dateTimeKey, dateKey, timeKey, punchListKey });
 
     if (!idKey) {
       throw new Error('No se pudo encontrar la columna de identificación del empleado (ej. DNI, ID, Código, No. o Personal ID). Revisa los encabezados de tu archivo.');
     }
 
-    if (!dateTimeKey && (!dateKey || !timeKey)) {
-      throw new Error('No se pudieron encontrar columnas de Fecha/Hora válidas. El archivo debe contener una columna combinada (Fecha/Hora) o columnas separadas (Fecha y Hora).');
+    if (!dateTimeKey && (!dateKey || (!timeKey && !punchListKey))) {
+      throw new Error('No se pudieron encontrar columnas de Fecha/Hora válidas. El archivo debe contener una columna combinada (Fecha/Hora) o columnas separadas (Fecha y Hora / Lista de perforaciones).');
     }
 
     const parsed = [];
@@ -532,6 +533,50 @@ export default function SupervisorDashboard({
       if (bioIdRaw === undefined || bioIdRaw === null) return;
       const biometricId = String(bioIdRaw).trim();
       if (!biometricId) return;
+
+      // Handle grouped punch list format (e.g. "17:12, 17:19, 18:10")
+      if (dateKey && row[dateKey] && punchListKey && row[punchListKey] !== undefined && row[punchListKey] !== null) {
+        const dVal = row[dateKey];
+        const listVal = row[punchListKey];
+        
+        let datePart = '';
+        if (typeof dVal === 'number') {
+          const parsedD = parseExcelSerialDate(dVal);
+          datePart = parsedD.toISOString().split('T')[0];
+        } else {
+          datePart = String(dVal).trim();
+        }
+        
+        if (datePart.includes('/')) {
+          const parts = datePart.split('/');
+          if (parts.length === 3) {
+            if (parts[0].length === 4) {
+              datePart = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+            } else {
+              datePart = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+          }
+        }
+
+        if (listVal) {
+          const times = String(listVal).split(/[,;]/);
+          times.forEach(t => {
+            let timePart = t.trim();
+            if (!timePart) return;
+            if (timePart.split(':').length === 2) {
+              timePart = `${timePart}:00`;
+            }
+            const punchTimestamp = new Date(`${datePart}T${timePart}`);
+            if (punchTimestamp && !isNaN(punchTimestamp.getTime())) {
+              parsed.push({
+                biometric_id: biometricId,
+                timestamp: punchTimestamp.toISOString()
+              });
+            }
+          });
+        }
+        return;
+      }
 
       let punchTimestamp = null;
 
