@@ -734,11 +734,33 @@ export default function App() {
             const punchId = punch.punch_id;
             if (punchId && !processedPunchIds.has(punchId)) {
               processedPunchIds.add(punchId);
+              
+              let finalTime = punch.time;
+              let finalDate = punch.date;
+              
+              if (punch.timestamp) {
+                // Parse UTC timestamp in user's browser local time
+                const pTime = new Date(punch.timestamp);
+                if (pTime && !isNaN(pTime.getTime())) {
+                  const hours = pTime.getHours();
+                  const minutes = pTime.getMinutes();
+                  const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+                  const displayMinutes = minutes.toString().padStart(2, '0');
+                  const ampm = hours >= 12 ? 'PM' : 'AM';
+                  finalTime = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
+                  
+                  const year = pTime.getFullYear();
+                  const month = String(pTime.getMonth() + 1).padStart(2, '0');
+                  const day = String(pTime.getDate()).padStart(2, '0');
+                  finalDate = `${year}-${month}-${day}`;
+                }
+              }
+              
               const res = handleBiometricScan(
                 punch.biometric_id || punch.username,
                 punch.device_id || 'DEV-001',
-                punch.time,
-                punch.date,
+                finalTime,
+                finalDate,
                 punchId
               );
               console.log('Automated Cloud Biometric Punch synced for:', punch.biometric_id || punch.username, 'Result:', res);

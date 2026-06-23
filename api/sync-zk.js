@@ -45,6 +45,7 @@ export default async function handler(req, res) {
           biometric_id: String(r.biometric_id),
           time: timeStr,
           date: dateStr,
+          timestamp: r.timestamp,
           device_id: r.device_id || 'DEV-001',
           device_name: r.device_name || 'ZKTeco M1'
         };
@@ -83,11 +84,20 @@ export default async function handler(req, res) {
       const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
       const timeStr = `${displayHours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
 
+      // Construct a valid ISO string from the local timestamp
+      let localIso = '';
+      try {
+        localIso = new Date(`${dateStr}T${timePart}`).toISOString();
+      } catch (err) {
+        localIso = new Date().toISOString();
+      }
+
       return {
         punch_id: p.punch_id,
         biometric_id: p.biometric_id,
         time: timeStr,
         date: dateStr,
+        timestamp: localIso,
         device_id: p.device_id,
         device_name: p.device_name
       };
@@ -167,6 +177,7 @@ export default async function handler(req, res) {
         username: r.username || '',
         time: timeStr,
         date: r.punch_time.split('T')[0],
+        timestamp: r.punch_time,
         device_id: r.device_id || 'DEV-001',
         device_name: r.device_name || 'ZKTeco M1'
       };
