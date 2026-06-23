@@ -187,8 +187,8 @@ const destroyModals = async (page) => {
     });
     await page.waitForTimeout(5000); // Give the dashboard some time to load cookies and session
 
-    console.log("📊 Navegando directamente a la pantalla de Informe Resumen de Empleado (Employee Summary)...");
-    await page.goto('https://zlink.minervaiot.com/zkbio_att/attendance/report/employee_summary', { waitUntil: 'networkidle', timeout: 60000 });
+    console.log("📊 Navegando directamente a la pantalla de Informe Marcajes Totales (punch_times)...");
+    await page.goto('https://zlink.minervaiot.com/zkbio_att/attendance/report/punch_times', { waitUntil: 'networkidle', timeout: 60000 });
     
     // Check if we are on the correct page, otherwise screenshot
     const currentUrl = page.url();
@@ -331,9 +331,26 @@ const destroyModals = async (page) => {
     await destroyModals(page);
     await exportButton.click({ force: true });
     
-    // Give the server a moment to register the task and load the File Center page
-    console.log("⏳ Esperando navegación al Centro de Archivos (File Center)...");
-    await page.waitForTimeout(5000);
+    console.log("⏳ Esperando respuesta de exportación...");
+    await page.waitForTimeout(3000);
+
+    // Check if the "same report already exists" modal is present
+    try {
+      const modalOkButton = page.locator('button:has-text("Ir a Descargar"), button:has-text("Descargar"), button:has-text("Ir")').first();
+      if (await modalOkButton.count() > 0 && await modalOkButton.isVisible()) {
+        console.log("🔔 Modal de reporte existente detectado. Haciendo clic en 'Ir a Descargar'...");
+        await modalOkButton.click({ force: true });
+        await page.waitForTimeout(3000);
+      }
+    } catch (e) {
+      console.warn("Advertencia al manejar modal de descarga:", e);
+    }
+
+    // Force navigation to the File Center if we are not already there
+    if (!page.url().includes('/filecenter')) {
+      console.log("🔄 Navegando manualmente al Centro de Archivos...");
+      await page.goto('https://zlink.minervaiot.com/zkbio_att/attendance/filecenter', { waitUntil: 'networkidle', timeout: 60000 });
+    }
     
     let download;
     try {
@@ -410,7 +427,8 @@ const destroyModals = async (page) => {
       throw e;
     }
 
-    const downloadPath = path.join(__dirname, 'temp_events.xlsx');
+    const filename = download.suggestedFilename();
+    const downloadPath = path.join(__dirname, filename);
     await download.saveAs(downloadPath);
     console.log("✅ Archivo descargado exitosamente en:", downloadPath);
 
@@ -453,8 +471,11 @@ const destroyModals = async (page) => {
     // Single dateTime or time key (fallback for raw events)
     const dateTimeKey = findKey(['fecha/hora', 'fechayhora', 'timestamp', 'punch_time', 'punchtime', 'time', 'datetime', 'date_time', 'marcación', 'marcacion', 'fecha y hora', 'reloj', 'registro']);
     const fallbackTimeKey = findKey(['hora', 'time', 'tiempo']);
+    
+    // Column for grouped comma-separated punch times list
+    const punchListKey = findKey(['registros de perforación', 'registros de perforacion', 'perforaciones', 'punch_list', 'lista_marcaciones', 'marcajes', 'perforación', 'perforacion']);
 
-    console.log("⚙️ Mapeo de columnas detectado:", { idKey, dateKey, checkInTimeKey, checkOutTimeKey, dateTimeKey, fallbackTimeKey });
+    console.log("⚙️ Mapeo de columnas detectado:", { idKey, dateKey, checkInTimeKey, checkOutTimeKey, dateTimeKey, fallbackTimeKey, punchListKey });
 
     if (!idKey) {
       throw new Error("No se pudo identificar la columna de DNI/Código en el archivo descargado. Encabezados: " + keys.join(', '));
@@ -562,12 +583,22 @@ const destroyModals = async (page) => {
         }
       };
 
-      // Scenario A: Employee Summary (check-in and check-out in same row)
-      if (checkInTimeKey || checkOutTimeKey) {
+      // Scenario A: Grouped punch times column (comma-separated list, e.g. "17:12, 17:19")
+      if (punchListKey && row[punchListKey] !== undefined && row[punchListKey] !== null) {
+        const listVal = row[punchListKey];
+        if (listVal) {
+          const times = String(listVal).split(/[,;]/);
+          times.forEach(t => {
+            addPunch(t.trim());
+          });
+        }
+      }
+      // Scenario B: Employee Summary (check-in and check-out in same row)
+      else if (checkInTimeKey || checkOutTimeKey) {
         if (checkInTimeKey) addPunch(row[checkInTimeKey]);
         if (checkOutTimeKey) addPunch(row[checkOutTimeKey]);
       } 
-      // Scenario B: Raw Punch Events (single time value)
+      // Scenario C: Raw Punch Events (single time value)
       else if (dateTimeKey) {
         addPunch(row[dateTimeKey]);
       } else if (fallbackTimeKey) {
@@ -591,7 +622,9 @@ const destroyModals = async (page) => {
 
     // Cleanup temp file
     try {
-      fs.unlinkSync(downloadPath);
+      if (fs.existsSync(downloadPath)) {
+        fs.unlinkSync(downloadPath);
+      }
     } catch (e) {}
 
   } catch (err) {
