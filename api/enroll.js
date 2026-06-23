@@ -79,6 +79,25 @@ export default async function handler(req, res) {
 
     const { action, dni, fingerId, deviceSn, punches } = body;
 
+    if (action === 'clear_imported') {
+      try {
+        const { error } = await supabase
+          .from('asistencia_biometrica')
+          .delete()
+          .eq('device_id', 'ZLINK-IMPORT');
+
+        if (error) throw error;
+
+        return res.status(200).json({
+          status: 'success',
+          message: 'Successfully cleared all Excel-imported records from the database.'
+        });
+      } catch (err) {
+        console.error('[api/enroll clear_imported] Error:', err);
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
     if (action === 'import') {
       if (!Array.isArray(punches) || punches.length === 0) {
         return res.status(400).json({ error: 'Missing or empty punches array.' });

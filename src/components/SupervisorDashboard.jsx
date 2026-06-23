@@ -493,7 +493,15 @@ export default function SupervisorDashboard({
     const hours = Math.floor(total_seconds / 3600);
     const minutes = Math.floor(total_seconds / 60) % 60;
 
-    return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
+    // Use UTC getters for date_info to extract the correct year, month, and date from the serial value timezone-independently
+    return new Date(
+      date_info.getUTCFullYear(),
+      date_info.getUTCMonth(),
+      date_info.getUTCDate(),
+      hours,
+      minutes,
+      seconds
+    );
   };
 
   // Parse JSON rows into attendance punches with smart mapping
@@ -547,7 +555,10 @@ export default function SupervisorDashboard({
         let datePart = '';
         if (typeof dVal === 'number') {
           const parsedD = parseExcelSerialDate(dVal);
-          datePart = parsedD.toISOString().split('T')[0];
+          const yr = parsedD.getFullYear();
+          const mo = String(parsedD.getMonth() + 1).padStart(2, '0');
+          const dy = String(parsedD.getDate()).padStart(2, '0');
+          datePart = `${yr}-${mo}-${dy}`;
         } else {
           datePart = String(dVal).trim();
         }
@@ -611,14 +622,18 @@ export default function SupervisorDashboard({
 
           if (typeof dVal === 'number') {
             const parsedD = parseExcelSerialDate(dVal);
-            datePart = parsedD.toISOString().split('T')[0];
+            const yr = parsedD.getFullYear();
+            const mo = String(parsedD.getMonth() + 1).padStart(2, '0');
+            const dy = String(parsedD.getDate()).padStart(2, '0');
+            datePart = `${yr}-${mo}-${dy}`;
           } else {
             datePart = String(dVal).trim();
           }
 
           if (typeof tVal === 'number') {
             const parsedT = parseExcelSerialDate(tVal);
-            timePart = parsedT.toTimeString().split(' ')[0];
+            const pad = (num) => String(num).padStart(2, '0');
+            timePart = `${pad(parsedT.getHours())}:${pad(parsedT.getMinutes())}:${pad(parsedT.getSeconds())}`;
           } else {
             timePart = String(tVal).trim();
           }
@@ -844,6 +859,40 @@ export default function SupervisorDashboard({
     } catch (err) {
       console.error('[Confirm Import Error]:', err);
       setImportError(err.message || 'Error al guardar las marcaciones en el servidor.');
+    } finally {
+      setImportingFile(false);
+    }
+  };
+
+  const handleClearImportedPunches = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar todas las marcaciones importadas desde Excel? Esto limpiará el historial importado de Supabase.')) {
+      return;
+    }
+    setImportingFile(true);
+    setImportError('');
+    setImportSuccess('');
+    try {
+      const res = await fetch('/api/enroll', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'clear_imported'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Fallo en la comunicación con el servidor.');
+      
+      setImportSuccess('🧹 Se eliminaron correctamente todas las marcaciones importadas de la base de datos.');
+      setParsedPunches([]);
+      setParsedPunchesCount(0);
+      
+      localStorage.removeItem('donguto-biometric-logs');
+      
+    } catch (err) {
+      console.error('[Clear Imported Punches Error]:', err);
+      setImportError(err.message || 'Error al eliminar las marcaciones importadas.');
     } finally {
       setImportingFile(false);
     }
@@ -3227,6 +3276,24 @@ export default function SupervisorDashboard({
                       🚀 Confirmar e Importar {parsedPunchesCount} Marcas
                     </button>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={handleClearImportedPunches}
+                    disabled={importingFile}
+                    className="btn"
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      fontSize: '11.5px',
+                      marginTop: '5px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      color: 'var(--error)',
+                      border: '1px solid rgba(239, 68, 68, 0.2)'
+                    }}
+                  >
+                    🗑️ Borrar Historial de Excel Importado (ZLINK-IMPORT)
+                  </button>
                 </div>
 
               </div>
