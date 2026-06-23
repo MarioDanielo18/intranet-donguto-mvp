@@ -578,6 +578,8 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_BIOMETRIC_DEVICES;
   });
 
+  const [isFirstSync, setIsFirstSync] = useState(true);
+
   const [biometricLogs, setBiometricLogs] = useState(() => {
     const saved = localStorage.getItem('donguto-biometric-logs');
     return saved ? JSON.parse(saved) : INITIAL_BIOMETRIC_LOGS;
@@ -699,6 +701,107 @@ export default function App() {
     };
   }, [teamMembers, biometricDevices]);
 
+  const rebuildBiometricArrivalLogs = (punchesList) => {
+    setTeamMembers(prev => {
+      // Find all team members that have a biometric ID
+      const biometricUserIds = prev
+        .map(m => String(m.biometricId || m.biometric_id || '').trim())
+        .filter(Boolean);
+        
+      if (biometricUserIds.length === 0) return prev;
+      
+      return prev.map(m => {
+        const bioId = String(m.biometricId || m.biometric_id || '').trim();
+        if (bioId) {
+          // Rebuild arrivalLogs from scratch for this biometric user using punchesList
+          const userPunches = punchesList.filter(p => String(p.biometric_id) === bioId);
+          if (userPunches.length === 0) {
+            return { ...m, arrivalLogs: [] };
+          }
+          
+          // Group userPunches by date
+          const punchesByDate = {};
+          userPunches.forEach(p => {
+            let finalTime = p.time;
+            let finalDate = p.date;
+            
+            if (p.timestamp) {
+              const pTime = new Date(p.timestamp);
+              if (pTime && !isNaN(pTime.getTime())) {
+                const hours = pTime.getHours();
+                const minutes = pTime.getMinutes();
+                const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+                const displayMinutes = minutes.toString().padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                finalTime = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
+                
+                const year = pTime.getFullYear();
+                const month = String(pTime.getMonth() + 1).padStart(2, '0');
+                const day = String(pTime.getDate()).padStart(2, '0');
+                finalDate = `${year}-${month}-${day}`;
+              }
+            }
+            
+            if (!punchesByDate[finalDate]) {
+              punchesByDate[finalDate] = [];
+            }
+            if (!punchesByDate[finalDate].includes(finalTime)) {
+              punchesByDate[finalDate].push(finalTime);
+            }
+          });
+          
+          // Expected time based on employee role
+          let expectedTimeStr = '07:00 AM';
+          if (m.role === 'Servicio') expectedTimeStr = '08:00 AM';
+          else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico'].includes(m.role)) expectedTimeStr = '08:00 AM';
+          
+          const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
+          let [eh, em] = expTimePart.split(':').map(Number);
+          if (expAmpmPart === 'PM' && eh < 12) eh += 12;
+          if (expAmpmPart === 'AM' && eh === 12) eh = 0;
+          const expectedMins = eh * 60 + em;
+          
+          // Convert grouped punches into arrivalLogs format
+          const newLogs = Object.keys(punchesByDate).map(dateStr => {
+            const uniqueTimes = punchesByDate[dateStr];
+            uniqueTimes.sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
+            
+            const earliestTime = uniqueTimes[0];
+            const latestTime = uniqueTimes.length > 1 ? uniqueTimes[uniqueTimes.length - 1] : null;
+            
+            // Calculate delayMin using the earliest time of the day
+            const [timePart, ampmPart] = earliestTime.split(' ');
+            let [h, mPart] = timePart.split(':').map(Number);
+            if (ampmPart === 'PM' && h < 12) h += 12;
+            if (ampmPart === 'AM' && h === 12) h = 0;
+            const earliestMins = h * 60 + mPart;
+            
+            const delayMin = Math.max(0, earliestMins - expectedMins);
+            
+            return {
+              date: dateStr,
+              time: earliestTime,
+              expectedTime: expectedTimeStr,
+              delayMin: delayMin,
+              checkOutTime: latestTime,
+              totalPunches: uniqueTimes.length,
+              allPunches: uniqueTimes
+            };
+          });
+          
+          // Sort daily logs chronologically
+          newLogs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          
+          return {
+            ...m,
+            arrivalLogs: newLogs
+          };
+        }
+        return m;
+      });
+    });
+  };
+
   useEffect(() => {
     let active = true;
     const processedPunchIds = new Set(biometricLogs.map(log => log.id || log.punch_id).filter(Boolean));
@@ -730,16 +833,19 @@ export default function App() {
         if (!response.ok) return;
         const data = await response.json();
         if (data && data.status === 'success' && data.punches) {
-          data.punches.forEach(punch => {
-            const punchId = punch.punch_id;
-            if (punchId && !processedPunchIds.has(punchId)) {
-              processedPunchIds.add(punchId);
-              
+          if (isFirstSync) {
+            // Rebuild all logs from the database records on startup
+            rebuildBiometricArrivalLogs(data.punches);
+            setIsFirstSync(false);
+            
+            // Also populate biometricLogs from the cloud punches
+            const initialBioLogs = data.punches.map(punch => {
               let finalTime = punch.time;
               let finalDate = punch.date;
+              let logDateStr = new Date().toISOString();
               
               if (punch.timestamp) {
-                // Parse UTC timestamp in user's browser local time
+                logDateStr = punch.timestamp;
                 const pTime = new Date(punch.timestamp);
                 if (pTime && !isNaN(pTime.getTime())) {
                   const hours = pTime.getHours();
@@ -756,16 +862,61 @@ export default function App() {
                 }
               }
               
-              const res = handleBiometricScan(
-                punch.biometric_id || punch.username,
-                punch.device_id || 'DEV-001',
-                finalTime,
-                finalDate,
-                punchId
-              );
-              console.log('Automated Cloud Biometric Punch synced for:', punch.biometric_id || punch.username, 'Result:', res);
-            }
-          });
+              const searchVal = String(punch.biometric_id).trim();
+              const employee = teamMembers.find(m => String(m.username) === searchVal || String(m.biometricId) === searchVal);
+              
+              return {
+                id: punch.punch_id,
+                date: logDateStr,
+                name: employee ? employee.name : (punch.username || `ID ${punch.biometric_id}`),
+                username: employee ? employee.username : '',
+                role: employee ? employee.role : 'Barista',
+                store: employee ? employee.store : 'Barranco',
+                deviceId: punch.device_id || 'DEV-001',
+                deviceName: punch.device_name || 'ZKTeco M1',
+                status: 'Success'
+              };
+            });
+            setBiometricLogs(initialBioLogs);
+            localStorage.setItem('donguto-biometric-logs', JSON.stringify(initialBioLogs));
+          } else {
+            // Normal incremental check
+            data.punches.forEach(punch => {
+              const punchId = punch.punch_id;
+              if (punchId && !processedPunchIds.has(punchId)) {
+                processedPunchIds.add(punchId);
+                
+                let finalTime = punch.time;
+                let finalDate = punch.date;
+                
+                if (punch.timestamp) {
+                  const pTime = new Date(punch.timestamp);
+                  if (pTime && !isNaN(pTime.getTime())) {
+                    const hours = pTime.getHours();
+                    const minutes = pTime.getMinutes();
+                    const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+                    const displayMinutes = minutes.toString().padStart(2, '0');
+                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                    finalTime = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
+                    
+                    const year = pTime.getFullYear();
+                    const month = String(pTime.getMonth() + 1).padStart(2, '0');
+                    const day = String(pTime.getDate()).padStart(2, '0');
+                    finalDate = `${year}-${month}-${day}`;
+                  }
+                }
+                
+                const res = handleBiometricScan(
+                  punch.biometric_id || punch.username,
+                  punch.device_id || 'DEV-001',
+                  finalTime,
+                  finalDate,
+                  punchId
+                );
+                console.log('Automated Cloud Biometric Punch synced for:', punch.biometric_id || punch.username, 'Result:', res);
+              }
+            });
+          }
         }
       } catch (err) {
         // Silent catch: cloud API might fail or be offline
@@ -783,7 +934,7 @@ export default function App() {
       active = false;
       clearInterval(interval);
     };
-  }, [teamMembers, biometricDevices, biometricLogs]);
+  }, [teamMembers, biometricDevices, biometricLogs, isFirstSync]);
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
