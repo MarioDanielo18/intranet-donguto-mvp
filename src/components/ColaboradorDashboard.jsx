@@ -201,13 +201,25 @@ export default function ColaboradorDashboard({
             if (res && res.success) {
               setBioScanState('success');
               setBioFeedback(`¡Identidad Verificada! Bienvenido, ${user.name}. Asistencia registrada.`);
+              setTimeout(() => {
+                setBioScanState('idle');
+                setBioFeedback('Por favor, coloque su dedo en el lector biométrico.');
+              }, 3000);
             } else {
               setBioScanState('error');
               setBioFeedback(res ? res.message : 'Error en la verificación biométrica.');
+              setTimeout(() => {
+                setBioScanState('idle');
+                setBioFeedback('Por favor, coloque su dedo en el lector biométrico.');
+              }, 3000);
             }
           } else {
             setBioScanState('success');
             setBioFeedback('¡Identidad Verificada (Modo Demo)! Asistencia registrada.');
+            setTimeout(() => {
+              setBioScanState('idle');
+              setBioFeedback('Por favor, coloque su dedo en el lector biométrico.');
+            }, 3000);
           }
         }, 1200);
       }
@@ -1944,113 +1956,105 @@ export default function ColaboradorDashboard({
                   🕒 Registrar Entrada del Día
                 </h4>
 
-                {clockedInToday ? (
+                {clockedInToday && (
                   <div style={{
-                    padding: '20px',
+                    padding: '12px 20px',
                     borderRadius: '8px',
                     backgroundColor: 'var(--success-light)',
                     border: '1px solid var(--success)',
                     color: 'var(--success)',
+                    width: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '10px',
+                    gap: '4px',
                     textAlign: 'center'
                   }}>
-                    <span style={{ fontSize: '32px' }}>🟢</span>
-                    <strong style={{ fontSize: '15px' }}>¡ASISTENCIA REGISTRADA PARA HOY!</strong>
-                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 500 }}>
-                      Marcaste tu entrada el día de hoy a las <strong>{todaysLog?.time}</strong> (Hora esperada: {todaysLog?.expectedTime}).
-                      {todaysLog?.delayMin > 0 ? (
-                        <span style={{ display: 'block', color: 'var(--error)', marginTop: '5px', fontWeight: 700 }}>
-                          ⚠️ Registro de retraso: +{todaysLog.delayMin} minutos.
-                        </span>
-                      ) : (
-                        <span style={{ display: 'block', color: 'var(--success)', marginTop: '5px', fontWeight: 700 }}>
-                          ✓ ¡Llegada a tiempo!
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '20px', width: '100%' }}>
-                    <h5 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', fontWeight: 700 }}>
-                      ☝️ Registro Asistencia con Lector Biométrico
-                    </h5>
-                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', maxWidth: '380px' }}>
-                      Coloca tu dedo en el lector biométrico físico (ZKTeco K40) conectado en tu sede para registrar tu ingreso.
-                    </p>
-                    
-                    {/* Fingerprint scan circle */}
-                    <div 
-                      onClick={triggerFingerprintScan}
-                      style={{
-                        width: '130px',
-                        height: '130px',
-                        borderRadius: '50%',
-                        border: `4px solid ${
-                          bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--border)'
-                        }`,
-                        backgroundColor: bioScanState === 'scanning' ? 'rgba(139,26,26,0.05)' : 'var(--bg-main)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        transition: 'all 0.3s ease',
-                        marginTop: '10px',
-                        boxShadow: 'var(--shadow-md)',
-                      }}
-                    >
-                      {bioScanState === 'scanning' && (
-                        <div style={{
-                          position: 'absolute',
-                          width: '100%',
-                          height: '3px',
-                          backgroundColor: 'var(--primary)',
-                          boxShadow: '0 0 8px var(--primary)',
-                          top: `${bioProgress}%`,
-                          left: 0,
-                          transition: 'top 0.15s linear',
-                        }} />
-                      )}
-
-                      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={
-                        bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--text-muted)'
-                      } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 10a2 2 0 0 0-2 2M14 14a4 4 0 0 0-4-4M2 12a10 10 0 0 1 18 0M10 17v-1a2 2 0 1 1 4 0v1" />
-                        <path d="M12 2a10 10 0 0 0-10 10M12 22a10 10 0 0 0 10-10" />
-                        <path d="M6 12a6 6 0 0 1 12 0M8 12a4 4 0 0 1 8 0" />
-                      </svg>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={triggerFingerprintScan}
-                      disabled={bioScanState !== 'idle'}
-                      className="btn"
-                      style={{
-                        padding: '8px 22px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        backgroundColor: bioScanState === 'idle' ? 'var(--primary)' : 'var(--bg-card)',
-                        color: bioScanState === 'idle' ? '#fff' : 'var(--text-muted)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '6px',
-                        cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
-                        marginTop: '5px',
-                        boxShadow: 'var(--shadow-sm)',
-                      }}
-                    >
-                      {bioScanState === 'idle' ? '☝️ Simular Colocar Dedo' : 'Procesando Marcación...'}
-                    </button>
-
-                    <div style={{ fontSize: '12px', color: bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px', maxWidth: '340px', marginTop: '5px' }}>
-                      {bioFeedback}
+                    <strong style={{ fontSize: '13px' }}>🟢 Asistencia Activa</strong>
+                    <div style={{ fontSize: '12.5px', display: 'flex', justifyContent: 'space-between', marginTop: '4px', borderTop: '1px solid rgba(22, 163, 74, 0.2)', paddingTop: '4px' }}>
+                      <span>Entrada: <strong>{todaysLog?.time}</strong></span>
+                      <span>Salida: <strong>{todaysLog?.checkOutTime || '--'}</strong></span>
+                      <span>Marcajes: <strong>{todaysLog?.totalPunches || 1}</strong></span>
                     </div>
                   </div>
                 )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '10px', width: '100%' }}>
+                  <h5 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', fontWeight: 700 }}>
+                    ☝️ Registro Asistencia con Lector Biométrico
+                  </h5>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', maxWidth: '380px' }}>
+                    Coloca tu dedo en el lector biométrico físico (ZKTeco K40) conectado en tu sede para registrar tu ingreso o salida.
+                  </p>
+                  
+                  {/* Fingerprint scan circle */}
+                  <div 
+                    onClick={triggerFingerprintScan}
+                    style={{
+                      width: '130px',
+                      height: '130px',
+                      borderRadius: '50%',
+                      border: `4px solid ${
+                        bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--border)'
+                      }`,
+                      backgroundColor: bioScanState === 'scanning' ? 'rgba(139,26,26,0.05)' : 'var(--bg-main)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      transition: 'all 0.3s ease',
+                      marginTop: '10px',
+                      boxShadow: 'var(--shadow-md)',
+                    }}
+                  >
+                    {bioScanState === 'scanning' && (
+                      <div style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '3px',
+                        backgroundColor: 'var(--primary)',
+                        boxShadow: '0 0 8px var(--primary)',
+                        top: `${bioProgress}%`,
+                        left: 0,
+                        transition: 'top 0.15s linear',
+                      }} />
+                    )}
+
+                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={
+                      bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--text-muted)'
+                    } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 10a2 2 0 0 0-2 2M14 14a4 4 0 0 0-4-4M2 12a10 10 0 0 1 18 0M10 17v-1a2 2 0 1 1 4 0v1" />
+                      <path d="M12 2a10 10 0 0 0-10 10M12 22a10 10 0 0 0 10-10" />
+                      <path d="M6 12a6 6 0 0 1 12 0M8 12a4 4 0 0 1 8 0" />
+                    </svg>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={triggerFingerprintScan}
+                    disabled={bioScanState !== 'idle'}
+                    className="btn"
+                    style={{
+                      padding: '8px 22px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      backgroundColor: bioScanState === 'idle' ? 'var(--primary)' : 'var(--bg-card)',
+                      color: bioScanState === 'idle' ? '#fff' : 'var(--text-muted)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '6px',
+                      cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
+                      marginTop: '5px',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    {bioScanState === 'idle' ? '☝️ Simular Colocar Dedo' : bioScanState === 'scanning' ? 'Leyendo huella...' : bioScanState === 'verifying' ? 'Verificando...' : 'Procesando Marcación...'}
+                  </button>
+
+                  <div style={{ fontSize: '12px', color: bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px', maxWidth: '340px', marginTop: '5px' }}>
+                    {bioFeedback}
+                  </div>
+                </div>
               </div>
 
               {/* Attendance Logs History Table */}
@@ -2066,9 +2070,11 @@ export default function ColaboradorDashboard({
                       <thead>
                         <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)' }}>
                           <th style={{ padding: '8px 10px' }}>Fecha</th>
-                          <th style={{ padding: '8px 10px' }}>Hora de Marcación</th>
+                          <th style={{ padding: '8px 10px' }}>Hora de Entrada</th>
+                          <th style={{ padding: '8px 10px' }}>Hora de Salida</th>
                           <th style={{ padding: '8px 10px' }}>Hora Esperada</th>
                           <th style={{ padding: '8px 10px' }}>Retraso (Min)</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'center' }}>Total Marcajes</th>
                           <th style={{ padding: '8px 10px' }}>Estado</th>
                         </tr>
                       </thead>
@@ -2092,9 +2098,13 @@ export default function ColaboradorDashboard({
                             <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                               <td style={{ padding: '10px 10px', fontWeight: 600 }}>{log.date}</td>
                               <td style={{ padding: '10px 10px' }}>{log.time}</td>
+                              <td style={{ padding: '10px 10px' }}>{log.checkOutTime || '--'}</td>
                               <td style={{ padding: '10px 10px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
                               <td style={{ padding: '10px 10px', fontWeight: 700, color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
                                 {log.delayMin > 0 ? `+${log.delayMin} min` : '0 min'}
+                              </td>
+                              <td style={{ padding: '10px 10px', textAlign: 'center', fontWeight: 600 }}>
+                                {log.totalPunches || 1}
                               </td>
                               <td style={{ padding: '10px 10px' }}>
                                 <span style={{

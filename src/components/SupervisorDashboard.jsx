@@ -2388,9 +2388,17 @@ export default function SupervisorDashboard({
             if (res && res.success) {
               setMyBioState('success');
               setMyBioFeedback('¡Acceso Autorizado! Asistencia registrada con éxito.');
+              setTimeout(() => {
+                setMyBioState('idle');
+                setMyBioFeedback('Por favor, coloque su dedo en el lector biométrico.');
+              }, 3000);
             } else {
               setMyBioState('error');
               setMyBioFeedback(res ? res.message : 'Error en la verificación.');
+              setTimeout(() => {
+                setMyBioState('idle');
+                setMyBioFeedback('Por favor, coloque su dedo en el lector biométrico.');
+              }, 3000);
             }
           }, 1000);
         }
@@ -2411,9 +2419,9 @@ export default function SupervisorDashboard({
           <div className="card" style={{ padding: '25px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', border: '1px solid var(--border)' }}>
             <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>Escáner de Huella Digital Táctil</h4>
             
-            {clockedInToday ? (
+            {clockedInToday && (
               <div style={{
-                padding: '20px',
+                padding: '12px 20px',
                 borderRadius: '8px',
                 backgroundColor: 'var(--success-light)',
                 border: '1px solid var(--success)',
@@ -2422,82 +2430,82 @@ export default function SupervisorDashboard({
                 width: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
-                gap: '8px'
+                gap: '4px'
               }}>
-                <span style={{ fontSize: '32px' }}>🟢</span>
-                <strong>¡ASISTENCIA REGISTRADA!</strong>
-                <p style={{ margin: 0, fontSize: '12.5px' }}>
-                  Marcaste tu entrada hoy a las <strong>{todaysLog?.time}</strong> (Hora esperada: {todaysLog?.expectedTime}).
-                </p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', width: '100%' }}>
-                {/* Fingerprint scan circle */}
-                <div 
-                  onClick={triggerMyBioScan}
-                  style={{
-                    width: '120px',
-                    height: '120px',
-                    borderRadius: '50%',
-                    border: `4px solid ${
-                      myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : myBioState === 'scanning' ? 'var(--primary)' : 'var(--border)'
-                    }`,
-                    backgroundColor: myBioState === 'scanning' ? 'rgba(139,26,26,0.05)' : 'var(--bg-main)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: myBioState === 'idle' ? 'pointer' : 'not-allowed',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  {myBioState === 'scanning' && (
-                    <div style={{
-                      position: 'absolute',
-                      width: '100%',
-                      height: '3px',
-                      backgroundColor: 'var(--primary)',
-                      boxShadow: '0 0 8px var(--primary)',
-                      top: `${myBioProgress}%`,
-                      left: 0,
-                      transition: 'top 0.15s linear',
-                    }} />
-                  )}
-
-                  <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={
-                    myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : myBioState === 'scanning' ? 'var(--primary)' : 'var(--text-muted)'
-                  } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 10a2 2 0 0 0-2 2M14 14a4 4 0 0 0-4-4M2 12a10 10 0 0 1 18 0M10 17v-1a2 2 0 1 1 4 0v1" />
-                    <path d="M12 2a10 10 0 0 0-10 10M12 22a10 10 0 0 0 10-10" />
-                    <path d="M6 12a6 6 0 0 1 12 0M8 12a4 4 0 0 1 8 0" />
-                  </svg>
-                </div>
-
-                <button
-                  onClick={triggerMyBioScan}
-                  disabled={myBioState !== 'idle'}
-                  className="btn"
-                  style={{
-                    padding: '8px 20px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    backgroundColor: myBioState === 'idle' ? 'var(--primary)' : 'var(--bg-main)',
-                    color: myBioState === 'idle' ? '#fff' : 'var(--text-muted)',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: myBioState === 'idle' ? 'pointer' : 'not-allowed'
-                  }}
-                >
-                  {myBioState === 'idle' ? '☝️ Simular Colocar Dedo' : 'Procesando Marcación...'}
-                </button>
-
-                <div style={{ fontSize: '12px', color: myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px' }}>
-                  {myBioFeedback}
+                <strong style={{ fontSize: '13px' }}>🟢 Asistencia Activa</strong>
+                <div style={{ fontSize: '12px', display: 'flex', justifyContent: 'space-between', marginTop: '4px', borderTop: '1px solid rgba(22, 163, 74, 0.2)', paddingTop: '4px' }}>
+                  <span>Entrada: <strong>{todaysLog?.time}</strong></span>
+                  <span>Salida: <strong>{todaysLog?.checkOutTime || '--'}</strong></span>
+                  <span>Marcajes: <strong>{todaysLog?.totalPunches || 1}</strong></span>
                 </div>
               </div>
             )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', width: '100%' }}>
+              {/* Fingerprint scan circle */}
+              <div 
+                onClick={triggerMyBioScan}
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  border: `4px solid ${
+                    myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : myBioState === 'scanning' ? 'var(--primary)' : 'var(--border)'
+                  }`,
+                  backgroundColor: myBioState === 'scanning' ? 'rgba(139,26,26,0.05)' : 'var(--bg-main)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: myBioState === 'idle' ? 'pointer' : 'not-allowed',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                {myBioState === 'scanning' && (
+                  <div style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '3px',
+                    backgroundColor: 'var(--primary)',
+                    boxShadow: '0 0 8px var(--primary)',
+                    top: `${myBioProgress}%`,
+                    left: 0,
+                    transition: 'top 0.15s linear',
+                  }} />
+                )}
+
+                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={
+                  myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : myBioState === 'scanning' ? 'var(--primary)' : 'var(--text-muted)'
+                } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 10a2 2 0 0 0-2 2M14 14a4 4 0 0 0-4-4M2 12a10 10 0 0 1 18 0M10 17v-1a2 2 0 1 1 4 0v1" />
+                  <path d="M12 2a10 10 0 0 0-10 10M12 22a10 10 0 0 0 10-10" />
+                  <path d="M6 12a6 6 0 0 1 12 0M8 12a4 4 0 0 1 8 0" />
+                </svg>
+              </div>
+
+              <button
+                onClick={triggerMyBioScan}
+                disabled={myBioState !== 'idle'}
+                className="btn"
+                style={{
+                  padding: '8px 20px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  backgroundColor: myBioState === 'idle' ? 'var(--primary)' : 'var(--bg-main)',
+                  color: myBioState === 'idle' ? '#fff' : 'var(--text-muted)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: myBioState === 'idle' ? 'pointer' : 'not-allowed'
+                }}
+              >
+                {myBioState === 'idle' ? '☝️ Simular Colocar Dedo' : 'Procesando Marcación...'}
+              </button>
+
+              <div style={{ fontSize: '12px', color: myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px' }}>
+                {myBioFeedback}
+              </div>
+            </div>
           </div>
 
           {/* History Card */}
@@ -2512,8 +2520,10 @@ export default function SupervisorDashboard({
                     <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)' }}>
                       <th style={{ padding: '6px' }}>Fecha</th>
                       <th style={{ padding: '6px' }}>Hora de Entrada</th>
+                      <th style={{ padding: '6px' }}>Hora de Salida</th>
                       <th style={{ padding: '6px' }}>Hora Esperada</th>
                       <th style={{ padding: '6px' }}>Tardanza</th>
+                      <th style={{ padding: '6px', textAlign: 'center' }}>Total Marcajes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2521,9 +2531,13 @@ export default function SupervisorDashboard({
                       <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                         <td style={{ padding: '8px 6px', fontWeight: 600 }}>{log.date}</td>
                         <td style={{ padding: '8px 6px' }}>{log.time}</td>
+                        <td style={{ padding: '8px 6px' }}>{log.checkOutTime || '--'}</td>
                         <td style={{ padding: '8px 6px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
                         <td style={{ padding: '8px 6px', fontWeight: 700, color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
                           {log.delayMin > 0 ? `+${log.delayMin} min` : '0 min'}
+                        </td>
+                        <td style={{ padding: '8px 6px', textAlign: 'center', fontWeight: 600 }}>
+                          {log.totalPunches || 1}
                         </td>
                       </tr>
                     ))}
@@ -4671,7 +4685,9 @@ main();`}
                                   <th style={{ padding: '10px' }}>Fecha</th>
                                   <th style={{ padding: '10px' }}>Entrada Programada</th>
                                   <th style={{ padding: '10px' }}>Hora Llegada</th>
+                                  <th style={{ padding: '10px' }}>Hora Salida</th>
                                   <th style={{ padding: '10px' }}>Retraso</th>
+                                  <th style={{ padding: '10px', textAlign: 'center' }}>Total Marcajes</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -4681,6 +4697,7 @@ main();`}
                                       <td style={{ padding: '10px', fontWeight: 600 }}>{log.date}</td>
                                       <td style={{ padding: '10px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
                                       <td style={{ padding: '10px' }}>{log.time}</td>
+                                      <td style={{ padding: '10px' }}>{log.checkOutTime || '--'}</td>
                                       <td style={{ padding: '10px' }}>
                                         <span style={{
                                           fontWeight: 800,
@@ -4689,11 +4706,14 @@ main();`}
                                           {log.delayMin > 0 ? `+${log.delayMin} min` : 'Puntual'}
                                         </span>
                                       </td>
+                                      <td style={{ padding: '10px', textAlign: 'center', fontWeight: 600 }}>
+                                        {log.totalPunches || 1}
+                                      </td>
                                     </tr>
                                   ))
                                 ) : (
                                   <tr>
-                                    <td colSpan="4" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                    <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                                       Sin marcaciones de llegada registradas.
                                     </td>
                                   </tr>

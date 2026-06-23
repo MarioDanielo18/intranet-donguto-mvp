@@ -627,11 +627,14 @@ export default function App() {
       currentMins = h * 60 + m;
     }
 
-    // Check if already clocked in on that date to avoid duplicates
+    // Check if already clocked in on that date to avoid duplicate times (same minute)
     const logs = employee.arrivalLogs || [];
-    const alreadyClocked = logs.some(l => l.date === punchDateStr);
-    if (alreadyClocked) {
-      return { success: false, message: 'Asistencia ya registrada para esta fecha' };
+    const existingLog = logs.find(l => l.date === punchDateStr);
+    if (existingLog) {
+      const isDuplicateTime = (existingLog.allPunches || [existingLog.time]).includes(punchTimeStr) || existingLog.time === punchTimeStr || existingLog.checkOutTime === punchTimeStr;
+      if (isDuplicateTime) {
+        return { success: false, message: 'Asistencia ya registrada para esta hora' };
+      }
     }
 
     // Expected time based on employee role
@@ -813,17 +816,91 @@ export default function App() {
     );
   };
 
+  // Helper to convert time strings (AM/PM or 24h) to minutes from midnight for sorting
+  const timeToMinutes = (timeStr) => {
+    if (!timeStr) return 0;
+    const clean = timeStr.trim().toUpperCase();
+    const is12Hour = clean.endsWith('AM') || clean.endsWith('PM');
+    if (is12Hour) {
+      const parts = clean.split(' ');
+      const timePart = parts[0];
+      const ampm = parts[1];
+      let [h, m] = timePart.split(':').map(Number);
+      if (ampm === 'PM' && h < 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+      return h * 60 + (m || 0);
+    } else {
+      const [h, m] = clean.split(':').map(Number);
+      return h * 60 + (m || 0);
+    }
+  };
+
   // Clock-in attendance registration
   const handleClockIn = (username, date, time, expectedTime, delayMin) => {
     setTeamMembers(prev =>
       prev.map(m => {
         if (m.username === username) {
           const logs = m.arrivalLogs || [];
-          if (logs.some(l => l.date === date)) return m; // avoid duplicates
-          return {
-            ...m,
-            arrivalLogs: [...logs, { date, time, expectedTime, delayMin }]
-          };
+          const existingIdx = logs.findIndex(l => l.date === date);
+          
+          if (existingIdx !== -1) {
+            // Update existing daily log
+            const existingLog = logs[existingIdx];
+            const allPunches = [...(existingLog.allPunches || [existingLog.time]), time];
+            // Deduplicate punches by time string
+            const uniquePunches = Array.from(new Set(allPunches));
+            
+            // Sort punches chronologically
+            uniquePunches.sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
+            
+            const earliestTime = uniquePunches[0];
+            const latestTime = uniquePunches.length > 1 ? uniquePunches[uniquePunches.length - 1] : null;
+            
+            // Recalculate delayMin using the earliest time of the day
+            const [timePart, ampmPart] = earliestTime.split(' ');
+            let [h, mPart] = timePart.split(':').map(Number);
+            if (ampmPart === 'PM' && h < 12) h += 12;
+            if (ampmPart === 'AM' && h === 12) h = 0;
+            const earliestMins = h * 60 + mPart;
+            
+            const [expTimePart, expAmpmPart] = (existingLog.expectedTime || expectedTime).split(' ');
+            let [eh, em] = expTimePart.split(':').map(Number);
+            if (expAmpmPart === 'PM' && eh < 12) eh += 12;
+            if (expAmpmPart === 'AM' && eh === 12) eh = 0;
+            const expectedMins = eh * 60 + em;
+            
+            const newDelayMin = Math.max(0, earliestMins - expectedMins);
+            
+            const updatedLog = {
+              ...existingLog,
+              time: earliestTime,
+              checkOutTime: latestTime,
+              totalPunches: uniquePunches.length,
+              allPunches: uniquePunches,
+              delayMin: newDelayMin
+            };
+            
+            const newLogs = [...logs];
+            newLogs[existingIdx] = updatedLog;
+            return {
+              ...m,
+              arrivalLogs: newLogs
+            };
+          } else {
+            // Add new daily log
+            return {
+              ...m,
+              arrivalLogs: [...logs, {
+                date,
+                time,
+                expectedTime,
+                delayMin,
+                checkOutTime: null,
+                totalPunches: 1,
+                allPunches: [time]
+              }]
+            };
+          }
         }
         return m;
       })
