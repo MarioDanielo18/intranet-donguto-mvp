@@ -677,7 +677,33 @@ export default function SupervisorDashboard({
         const workbook = XLSX.read(data, { type: 'buffer' });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        rows = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+        
+        // Default parse
+        let tempRows = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+        
+        // Detect if we need to skip a title row (e.g. "Marcajes Totales" in Row 1)
+        const keys = tempRows.length > 0 ? Object.keys(tempRows[0]) : [];
+        const hasExpectedHeader = keys.some(k => {
+          const lk = String(k).toLowerCase();
+          return lk.includes('id') || lk.includes('dni') || lk.includes('personal') || lk.includes('código') || lk.includes('codigo') || lk.includes('colaborador');
+        });
+
+        if (!hasExpectedHeader && tempRows.length > 0) {
+          // Parse starting from Row 2 (range: 1)
+          const tempRowsAlt = XLSX.utils.sheet_to_json(worksheet, { range: 1, defval: null });
+          const keysAlt = tempRowsAlt.length > 0 ? Object.keys(tempRowsAlt[0]) : [];
+          const hasExpectedHeaderAlt = keysAlt.some(k => {
+            const lk = String(k).toLowerCase();
+            return lk.includes('id') || lk.includes('dni') || lk.includes('personal') || lk.includes('código') || lk.includes('codigo') || lk.includes('colaborador');
+          });
+          if (hasExpectedHeaderAlt) {
+            rows = tempRowsAlt;
+          } else {
+            rows = tempRows;
+          }
+        } else {
+          rows = tempRows;
+        }
 
       } else {
         // Parse CSV
@@ -691,8 +717,17 @@ export default function SupervisorDashboard({
         const lines = text.split(/\r?\n/).filter(line => line.trim());
         if (lines.length === 0) throw new Error('El archivo CSV está vacío.');
 
-        // Identify separator
-        const headerLine = lines[0];
+        // Search for the line that has 'ID de persona' or similar header keywords
+        let headerIndex = 0;
+        for (let i = 0; i < Math.min(lines.length, 5); i++) {
+          const l = lines[i].toLowerCase();
+          if (l.includes('id de persona') || l.includes('id') || l.includes('dni') || l.includes('personal') || l.includes('código') || l.includes('codigo') || l.includes('colaborador')) {
+            headerIndex = i;
+            break;
+          }
+        }
+
+        const headerLine = lines[headerIndex];
         let separator = ',';
         const commas = (headerLine.match(/,/g) || []).length;
         const semicolons = (headerLine.match(/;/g) || []).length;
@@ -721,7 +756,7 @@ export default function SupervisorDashboard({
         };
 
         const headers = parseCsvLine(headerLine);
-        rows = lines.slice(1).map(line => {
+        rows = lines.slice(headerIndex + 1).map(line => {
           const values = parseCsvLine(line);
           const obj = {};
           headers.forEach((header, index) => {
