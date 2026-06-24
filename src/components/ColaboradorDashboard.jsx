@@ -162,6 +162,90 @@ export default function ColaboradorDashboard({
   const [bioProgress, setBioProgress] = useState(0);
   const [bioDevice, setBioDevice] = useState('');
 
+  // Camera Modal States for Checklist Evidence
+  const [activeCameraTaskId, setActiveCameraTaskId] = useState(null);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [capturedPhoto, setCapturedPhoto] = useState(null);
+  const [cameraError, setCameraError] = useState(false);
+  const videoRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
+
+  // Manage camera streaming for the custom modal
+  useEffect(() => {
+    if (activeCameraTaskId && !capturedPhoto && !cameraError) {
+      let activeStream = null;
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false
+      })
+      .then((stream) => {
+        activeStream = stream;
+        setCameraStream(stream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      })
+      .catch((err) => {
+        console.error("Camera access error:", err);
+        setCameraError(true);
+      });
+
+      return () => {
+        if (activeStream) {
+          activeStream.getTracks().forEach(track => track.stop());
+        }
+      };
+    }
+  }, [activeCameraTaskId, capturedPhoto, cameraError]);
+
+  const closeCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+    }
+    setCameraStream(null);
+    setCapturedPhoto(null);
+    setCameraError(false);
+    setActiveCameraTaskId(null);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const photoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      setCapturedPhoto(photoDataUrl);
+      
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    }
+  };
+
+  const uploadCapturedPhoto = () => {
+    if (capturedPhoto && activeCameraTaskId) {
+      onSaveTask(activeCameraTaskId, true, capturedPhoto);
+      closeCamera();
+    }
+  };
+
+  const handleFallbackFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      onSaveTask(activeCameraTaskId, true, reader.result);
+      closeCamera();
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Auto-select device based on user's store
   useEffect(() => {
     if (biometricDevices && biometricDevices.length > 0) {
@@ -906,10 +990,9 @@ export default function ColaboradorDashboard({
             <div
               key={task.id}
               onClick={() => {
-                // If it requires photo and has no photo, don't check it directly. Force upload.
+                // If it requires photo and has no photo, don't check it directly. Force camera.
                 if (task.requiere_foto && !hasEvidence) {
-                  // Trigger upload by click on input
-                  document.getElementById(`file-input-${task.id}`).click();
+                  setActiveCameraTaskId(task.id);
                 } else {
                   onSaveTask(task.id, !task.completado, task.evidencia);
                 }
@@ -972,17 +1055,9 @@ export default function ColaboradorDashboard({
                   onClick={(e) => e.stopPropagation()} // prevent toggle task check on sub-click
                   style={{ marginLeft: '32px', display: 'flex', alignItems: 'center', gap: '15px' }}
                 >
-                  <input
-                    id={`file-input-${task.id}`}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => handleFileChange(e, task.id)}
-                  />
-                  
                   {!hasEvidence ? (
                     <button
-                      onClick={() => document.getElementById(`file-input-${task.id}`).click()}
+                      onClick={() => setActiveCameraTaskId(task.id)}
                       className="btn btn-secondary"
                       style={{
                         padding: '5px 12px',
@@ -990,12 +1065,17 @@ export default function ColaboradorDashboard({
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        borderStyle: 'dashed',
+                        borderStyle: 'solid',
+                        borderWidth: '1px',
                         borderColor: 'var(--primary)',
-                        color: 'var(--primary)',
+                        color: '#fff',
+                        backgroundColor: 'var(--primary)',
+                        borderRadius: '4px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
                       }}
                     >
-                      📸 Adjuntar Foto Evidencia
+                      📸 Activar Cámara para Evidencia
                     </button>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1030,7 +1110,7 @@ export default function ColaboradorDashboard({
                           ✕
                         </button>
                       </div>
-                      <span style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 600 }}>Foto adjunta con éxito</span>
+                      <span style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 600 }}>Foto tomada con éxito</span>
                     </div>
                   )}
                 </div>
@@ -2821,6 +2901,282 @@ export default function ColaboradorDashboard({
           </div>
         );
       })()}
+
+      {/* CAMERA CAPTURE MODAL */}
+      {activeCameraTaskId && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(20, 15, 14, 0.95)',
+          backdropFilter: 'blur(10px)',
+          zIndex: 99999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: 'fadeIn 0.2s ease-out',
+          color: '#fff',
+          fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '500px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '20px',
+            padding: '20px'
+          }}>
+            {/* Header */}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '15px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>📷</span>
+                <span style={{ fontWeight: 800, fontSize: '15px', color: '#fff', letterSpacing: '0.5px' }}>CÁMARA DE EVIDENCIA</span>
+              </div>
+              <button 
+                onClick={closeCamera}
+                style={{
+                  border: 'none',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+                onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Instruction */}
+            <div style={{ textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.7)', margin: '-5px 0 5px 0' }}>
+              {!capturedPhoto 
+                ? "Encuadra el checklist completado y toma la foto."
+                : "Revisa la foto. Si está nítida y legible, presiona subir."}
+            </div>
+
+            {/* Viewport Container */}
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              aspectRatio: '4/3',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              backgroundColor: '#000',
+              border: '2px solid rgba(255,255,255,0.1)'
+            }}>
+              {!cameraError && !capturedPhoto && (
+                <>
+                  <video 
+                    ref={(el) => {
+                      videoRef.current = el;
+                      if (el && cameraStream && el.srcObject !== cameraStream) {
+                        el.srcObject = cameraStream;
+                        el.play().catch(err => console.error("Error playing video:", err));
+                      }
+                    }}
+                    autoPlay 
+                    playsInline 
+                    muted 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  {/* Scanner overlay line */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '2px',
+                    background: 'linear-gradient(to right, transparent, var(--primary), transparent)',
+                    boxShadow: '0 0 8px var(--primary)',
+                    animation: 'scanLine 3s infinite linear'
+                  }} />
+                  {/* Target frame corners */}
+                  <div style={{ position: 'absolute', top: '20px', left: '20px', width: '20px', height: '20px', borderLeft: '3px solid #fff', borderTop: '3px solid #fff' }} />
+                  <div style={{ position: 'absolute', top: '20px', right: '20px', width: '20px', height: '20px', borderRight: '3px solid #fff', borderTop: '3px solid #fff' }} />
+                  <div style={{ position: 'absolute', bottom: '20px', left: '20px', width: '20px', height: '20px', borderLeft: '3px solid #fff', borderBottom: '3px solid #fff' }} />
+                  <div style={{ position: 'absolute', bottom: '20px', right: '20px', width: '20px', height: '20px', borderRight: '3px solid #fff', borderBottom: '3px solid #fff' }} />
+                </>
+              )}
+
+              {capturedPhoto && (
+                <img 
+                  src={capturedPhoto} 
+                  alt="Captured preview" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              )}
+
+              {cameraError && (
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '20px',
+                  textAlign: 'center',
+                  backgroundColor: '#1c1715',
+                  gap: '12px'
+                }}>
+                  <span style={{ fontSize: '32px' }}>⚠️</span>
+                  <span style={{ fontSize: '13px', fontWeight: 'bold' }}>No se pudo iniciar la cámara en el navegador</span>
+                  <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: 1.4 }}>
+                    Esto puede deberse a bloqueos de permisos, navegación insegura (no HTTPS) o falta de hardware.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Controls */}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '15px', padding: '10px 0' }}>
+              {!cameraError && !capturedPhoto && (
+                <button
+                  onClick={capturePhoto}
+                  style={{
+                    width: '72px',
+                    height: '72px',
+                    borderRadius: '50%',
+                    backgroundColor: '#fff',
+                    border: '6px solid rgba(255,255,255,0.3)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                    transition: 'transform 0.1s ease, background-color 0.2s',
+                    padding: 0
+                  }}
+                  onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.9)'}
+                  onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--primary)', border: '2px solid #fff' }} />
+                </button>
+              )}
+
+              {capturedPhoto && (
+                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                  <button
+                    onClick={() => setCapturedPhoto(null)}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    🔄 Tomar otra
+                  </button>
+                  <button
+                    onClick={uploadCapturedPhoto}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--success)',
+                      border: 'none',
+                      color: '#fff',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)'
+                    }}
+                  >
+                    📤 Subir Foto
+                  </button>
+                </div>
+              )}
+
+              {cameraError && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                  <input
+                    id="fallback-camera-input"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: 'none' }}
+                    onChange={handleFallbackFileChange}
+                  />
+                  <button
+                    onClick={() => document.getElementById('fallback-camera-input').click()}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--primary)',
+                      border: 'none',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    📸 Usar Cámara del Dispositivo
+                  </button>
+                  <button
+                    onClick={closeCamera}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: '#fff',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Hidden Canvas */}
+          <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+          {/* Inline styles for animation */}
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes scanLine {
+              0% { top: 0%; opacity: 0; }
+              10% { opacity: 1; }
+              90% { opacity: 1; }
+              100% { top: 100%; opacity: 0; }
+            }
+          `}} />
+        </div>
+      )}
 
     </div>
   );
