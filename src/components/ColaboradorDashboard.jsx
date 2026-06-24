@@ -36,20 +36,20 @@ const MANUALS_BY_DAY = {
     ]
   },
   D3: {
-    title: 'Estudio Autónomo de Recetas y Manuales',
+    title: 'Estudio Autónomo de Carta y Manuales Operativos',
     codigo: 'DG-MAN-D3',
     sections: [
       {
-        subtitle: '1. Receta del Espresso de la Casa (Cajamarca)',
-        content: 'La calibración diaria de nuestro espresso debe respetar los siguientes parámetros:\n• Dosis de Café Seco (In): 18.0 gramos (tolerancia de +/- 0.1g).\n• Rendimiento en Líquido (Yield / Out): 36.0g a 39.5g en taza.\n• Tiempo de Extracción: 25 a 29 segundos.\n• Ratio de Extracción: 1:2.0 a 1:2.2.'
+        subtitle: '1. Estudio de la Carta de Bebidas y Alimentos',
+        content: 'Estudio detallado de la carta oficial de Don Guto: tipos de bebidas calientes, frías, opciones de pastelería, alérgenos comunes y maridajes sugeridos para guiar al cliente en su compra.'
       },
       {
-        subtitle: '2. Estándares de Texturización de Leche',
-        content: '• Temperatura de Servicio: 60°C a 65°C. La leche nunca debe superar los 70°C, ya que se queman sus azúcares naturales (lactosa) y altera el sabor.\n• Calidad de Crema: Microespuma elástica, densa y brillante, sin burbujas visibles en superficie. Espesor de crema sugerido: 0.5 cm para Latte y 1 cm para Cappuccino.'
+        subtitle: '2. Manuales de Flujos Operativos y Servicio',
+        content: 'Memorización de los flujos de servicio: protocolo de bienvenida al cliente, toma de pedido ágil en caja, flujos de comanda a barra o cocina, entrega de bebidas en mesa, estándares de limpieza de mesas y el protocolo de despedida.'
       },
       {
-        subtitle: '3. Rotulado y Tiempos de Vida Útil',
-        content: 'Todo insumo preparado debe llevar etiqueta de rotulado con: Nombre de insumo, fecha de preparación, hora, iniciales del colaborador y fecha de vencimiento. Tiempos máximos de vida útil:\n• Jarabes Simples/Saborizados: 7 días en refrigeración.\n• Fudge y Salsa de Chocolate: 5 días en refrigeración.\n• Coulis de Fresa: 3 días en refrigeración.'
+        subtitle: '3. Políticas Internas y Estándares de Higiene',
+        content: 'Estudio del manual de políticas internas: puntualidad estricta (10 minutos antes del turno), uniforme completo en todo momento, y lavado y desinfección obligatoria de manos cada 20 minutos.'
       }
     ]
   },
@@ -68,16 +68,20 @@ const MANUALS_BY_DAY = {
     ]
   },
   D5: {
-    title: 'Día Sombra I: Soporte y Flujo de Barra',
+    title: 'Día Sombra I: Soporte de Barra y Recetas',
     codigo: 'DG-MAN-D5',
     sections: [
       {
-        subtitle: '1. El Rol de Sombra (Shadowing)',
-        content: 'Durante tu primer turno de 8 horas, tu función es observar de manera atenta y pasiva la dinámica operativa de un Barista Senior. Analiza cómo gestiona las comandas múltiples, la velocidad de preparación y la comunicación verbal y corporal con el equipo de salón y el cliente.'
+        subtitle: '1. El Rol de Sombra y Práctica de Soporte',
+        content: 'Durante tu primer turno práctico de 8 horas en tienda, tu función es observar de manera atenta y pasiva la dinámica operativa de un Barista Senior. Darás soporte clave en tareas básicas: reposición de insumos, secado de vajilla y mantenimiento del counter.'
       },
       {
-        subtitle: '2. Labores de Soporte Inmediato',
-        content: 'Aunque no operarás directamente la máquina de espresso, serás el soporte clave de la barra:\n• Abastecimiento de vasos para llevar, tapas, servilletas y cucharitas.\n• Secado y pulido minucioso del menaje de vidrio y cerámica.\n• Limpieza y desinfección constante de mesas desocupadas del salón.\n• Rotulado de insumos frescos y ordenamiento del stock en visicooler.'
+        subtitle: '2. Estudio de Recetas de Espresso y Texturización',
+        content: 'Estudio y práctica en tiempo real del recetario oficial de Don Guto:\n• Dosis de Café Seco (In): 18.0 gramos (tolerancia de +/- 0.1g).\n• Rendimiento en Líquido (Out): 36.0g a 39.5g en taza.\n• Tiempo de Extracción: 25 a 29 segundos.\n• Ratio de Extracción: 1:2.0 a 1:2.2.\n• Texturización de Leche: Temperatura de servicio de 60°C a 65°C, microespuma elástica, densa y brillante, sin burbujas visibles.'
+      },
+      {
+        subtitle: '3. Rotulado de Insumos y Tiempos de Vida Útil',
+        content: 'Práctica de rotulado con: Nombre de insumo, fecha/hora de preparación, iniciales del colaborador y fecha de vencimiento. Tiempos máximos de vida útil:\n• Jarabes Simples/Saborizados: 7 días en refrigeración.\n• Fudge y Salsa de Chocolate: 5 días en refrigeración.\n• Coulis de Fresa: 3 días en refrigeración.'
       }
     ]
   },
