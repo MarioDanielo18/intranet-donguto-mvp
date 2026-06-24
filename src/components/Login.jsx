@@ -220,6 +220,13 @@ export default function Login({ onLogin }) {
             >
               Técnico (tecnicodg)
             </button>
+            <button
+              onClick={() => { setUsername('auditordg'); setPassword('auditordg'); }}
+              className="btn btn-secondary"
+              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
+            >
+              Auditor (auditordg)
+            </button>
           </div>
         </div>
       </div>

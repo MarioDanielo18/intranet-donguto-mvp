@@ -977,9 +977,13 @@ export default function SupervisorDashboard({
     setSelectedCollaborator('TODOS');
   }, [filterArea]);
 
-  const visibleMembers = approvedMembers;
+  const visibleMembers = user.role === 'Administrador'
+    ? approvedMembers.filter(m => m.store === user.store && ['Barista', 'Cocina', 'Servicio'].includes(m.role))
+    : approvedMembers;
 
-  const visibleLogs = auditLogs;
+  const visibleLogs = user.role === 'Administrador'
+    ? auditLogs.filter(log => log.tienda === user.store)
+    : auditLogs;
 
   const MOCK_PHOTO_URL = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="100%" height="100%" fill="%238b1a1a"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="%23ffffff">Evidencia Don Guto</text></svg>';
 
@@ -2244,7 +2248,7 @@ export default function SupervisorDashboard({
 
   const renderIncidentsDashboard = () => {
     const userStore = user.store;
-    const isStoreAdmin = false; // Administrador acts as global Auditor for incidents
+    const isStoreAdmin = user.role === 'Administrador';
 
 
 
@@ -2289,13 +2293,13 @@ export default function SupervisorDashboard({
           <div>
             <h2 style={{ margin: 0, color: 'var(--primary)' }}>Bandeja de Incidencias Operativas</h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: 'var(--text-muted)' }}>
-              {user.role === 'Administrador' 
-                ? 'Gestión y auditoría de fallos, insumos y operaciones en todas las sedes (Rol: Auditor).'
+              {isStoreAdmin 
+                ? `Gestión de fallos, insumos y operaciones para la sede ${userStore}.`
                 : 'Monitoreo y resolución de reportes operativos de todas las sedes de Don Guto.'}
             </p>
           </div>
           <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: 'var(--primary-light)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '12px', border: '1px solid var(--primary)' }}>
-            💼 Rol: {user.role === 'Administrador' ? 'Administrador / Auditor' : user.role} {user.role === 'Administrador' && `(${userStore})`}
+            💼 Rol: {user.role === 'Auditor' ? 'Auditor de Operaciones' : user.role} {isStoreAdmin && `(${userStore})`}
           </span>
         </div>
 
@@ -4163,7 +4167,7 @@ main();`}
         >
           ⚠️ Bandeja de Incidencias
         </button>
-        {['Administrador', 'Supervisor', 'Gerente'].includes(user.role) && (
+        {['Administrador', 'Supervisor', 'Gerente', 'Auditor'].includes(user.role) && (
           <button
             onClick={() => setActiveTab('my_attendance')}
             style={{
@@ -4199,7 +4203,7 @@ main();`}
             🛠️ Panel Técnico
           </button>
         )}
-        {['Supervisor', 'Gerente', 'Administrador'].includes(user.role) && (
+        {['Supervisor', 'Gerente', 'Auditor'].includes(user.role) && (
           <button
             onClick={() => setActiveTab('multistore')}
             style={{
@@ -4726,7 +4730,7 @@ main();`}
         {activeTab === 'team' && (
           <div className="mobile-stack" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
             {/* Pending Approvals Section for Supervisor / Gerente */}
-            {['Supervisor', 'Gerente'].includes(user.role) && (teamMembers || []).filter(m => m.pendingApproval).length > 0 && (
+            {['Supervisor', 'Gerente', 'Auditor'].includes(user.role) && (teamMembers || []).filter(m => m.pendingApproval).length > 0 && (
               <div className="card glass animate-scale-in" style={{ flex: '1 1 100%', border: '1px solid var(--warning)', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: 'var(--bg-card)' }}>
                 <div style={{ borderBottom: '1px solid var(--warning-light)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                   <div>
@@ -4914,7 +4918,7 @@ main();`}
               </div>
 
               {/* Add New Member Form */}
-              {['Gerente', 'Supervisor', 'Técnico'].includes(user.role) && (
+              {['Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(user.role) && (
                 <form onSubmit={handleAddMember} style={{ borderTop: '1px solid var(--border)', paddingTop: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <h4 style={{ margin: 0, color: 'var(--text-main)' }}>Agregar Colaborador</h4>
                   
@@ -5109,7 +5113,7 @@ main();`}
                         <strong style={{ color: selectedUser.biometricId ? 'var(--secondary)' : 'var(--text-muted)' }}>
                           {selectedUser.biometricId || 'No asignado'}
                         </strong>
-                        {['Administrador', 'Supervisor', 'Gerente'].includes(user.role) && (
+                        {['Administrador', 'Supervisor', 'Gerente', 'Auditor'].includes(user.role) && (
                           <button
                             type="button"
                             onClick={() => {
@@ -5137,7 +5141,7 @@ main();`}
                       </div>
                     </div>
                     {/* Move/Transfer Store Selector */}
-                    {['Administrador', 'Supervisor', 'Gerente'].includes(user.role) && ['Barista', 'Cocina', 'Servicio'].includes(selectedUser.role) && (
+                    {['Administrador', 'Supervisor', 'Gerente', 'Auditor'].includes(user.role) && ['Barista', 'Cocina', 'Servicio'].includes(selectedUser.role) && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-main)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                         <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>🔄 Trasladar Sede:</span>
                         <select

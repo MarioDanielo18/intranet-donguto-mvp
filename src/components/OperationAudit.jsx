@@ -417,12 +417,16 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
           <h2 style={{ margin: 0, color: 'var(--primary)' }}>
             {user && user.role === 'Administrador' 
               ? 'Ficha de Auditoría Operacional (Auto-evaluación Preventiva)' 
-              : 'Ficha de Auditoría Gerencial (Evaluación Completa)'}
+              : user.role === 'Auditor'
+                ? 'Ficha de Auditoría Operacional (Evaluación de Auditoría)'
+                : 'Ficha de Auditoría Gerencial (Evaluación Completa)'}
           </h2>
           <p style={{ margin: '4px 0 12px 0', fontSize: '12px', color: 'var(--text-muted)', maxWidth: '500px' }}>
             {user && user.role === 'Administrador'
               ? 'Evaluación interna de estándares operativos realizada por el Administrador para controlar los procesos de sus colaboradores.'
-              : 'Auditoría oficial del Gerente General para evaluar la gestión del Administrador de Tienda y la operación general de la sede.'}
+              : user.role === 'Auditor'
+                ? 'Auditoría de estándares operativos realizada por el Auditor de Operaciones para evaluar la sede.'
+                : 'Auditoría oficial del Gerente General para evaluar la gestión del Administrador de Tienda y la operación general de la sede.'}
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>Tienda a Evaluar:</label>
@@ -739,7 +743,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
                   required
                 >
                   <option value="">-- Seleccionar Colaborador --</option>
-                  {user && user.role === 'Gerente' && (
+                  {user && ['Gerente', 'Auditor'].includes(user.role) && (
                     <option value="Diana Valdivia">Diana Valdivia (Administrador - Barranco)</option>
                   )}
                   {storeCollaborators.map(m => (
@@ -787,7 +791,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', borderTop: '1px solid var(--border)', paddingTop: '15px', marginTop: '5px' }}>
             <SignatureCanvas 
               key={`sig-auditor-${checkedIds ? Object.keys(checkedIds).length : 0}`}
-              label={user && user.role === 'Administrador' ? 'Firma del Administrador (Auditor)' : 'Firma del Gerente General'} 
+              label={user && user.role === 'Administrador' ? 'Firma del Administrador (Auditor)' : user && user.role === 'Auditor' ? 'Firma del Auditor de Operaciones' : 'Firma del Gerente General'} 
               onSave={setSignatureAuditor} 
             />
             <SignatureCanvas 

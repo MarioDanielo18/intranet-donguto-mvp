@@ -317,6 +317,15 @@ const INITIAL_MOCK_TEAM = [
     store: 'Todas',
     trainingProgress: {},
     arrivalLogs: []
+  },
+  {
+    username: 'auditordg',
+    password: 'auditordg',
+    name: 'Auditor de Operaciones',
+    role: 'Auditor',
+    store: 'Todas',
+    trainingProgress: {},
+    arrivalLogs: []
   }
 ];
 
@@ -495,7 +504,7 @@ export default function App() {
     const saved = localStorage.getItem('donguto-user');
     if (saved) {
       const u = JSON.parse(saved);
-      if (['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(u.role)) {
+      if (['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(u.role)) {
         return u.role === 'Técnico' ? 'technical_panel' : 'monitoring';
       }
     }
@@ -642,7 +651,7 @@ export default function App() {
     // Expected time based on employee role
     let expectedTimeStr = '07:00 AM';
     if (employee.role === 'Servicio') expectedTimeStr = '08:00 AM';
-    else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico'].includes(employee.role)) expectedTimeStr = '08:00 AM';
+    else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico', 'Auditor'].includes(employee.role)) expectedTimeStr = '08:00 AM';
 
     const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
     let [eh, em] = expTimePart.split(':').map(Number);
@@ -753,7 +762,7 @@ export default function App() {
           // Expected time based on employee role
           let expectedTimeStr = '07:00 AM';
           if (m.role === 'Servicio') expectedTimeStr = '08:00 AM';
-          else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico'].includes(m.role)) expectedTimeStr = '08:00 AM';
+          else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico', 'Auditor'].includes(m.role)) expectedTimeStr = '08:00 AM';
           
           const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
           let [eh, em] = expTimePart.split(':').map(Number);
@@ -938,7 +947,7 @@ export default function App() {
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
-    if (['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(loggedInUser.role)) {
+    if (['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(loggedInUser.role)) {
       setActiveTab(loggedInUser.role === 'Técnico' ? 'technical_panel' : 'monitoring');
     } else {
       setActiveTab('checklist');
@@ -1331,7 +1340,7 @@ export default function App() {
                 <div className="user-info" style={{ textAlign: 'right', fontSize: '12px' }}>
                   <strong style={{ color: 'var(--text-main)', display: 'block' }}>{user.name}</strong>
                   <span style={{ color: 'var(--text-muted)' }}>
-                    {user.role === 'Administrador' ? 'Administrador / Auditor' : user.role} | Tienda: <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{user.store}</span>
+                    {user.role === 'Auditor' ? 'Auditor de Operaciones' : user.role} | Tienda: <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{user.store}</span>
                   </span>
                 </div>
                 <button onClick={handleLogout} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px' }}>
@@ -1363,7 +1372,7 @@ export default function App() {
         ) : (
           <div className="animate-fade-in">
             {/* Show view based on user role */}
-            {['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(user.role) ? (
+            {['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(user.role) ? (
               <SupervisorDashboard
                 user={user}
                 activeTab={activeTab}
@@ -1465,7 +1474,7 @@ export default function App() {
 
             <div className="drawer-section-title">Secciones</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '15px' }}>
-              {['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(user.role) ? (
+              {['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(user.role) ? (
                 <>
                   <button
                     className={`drawer-btn ${activeTab === 'monitoring' ? 'active' : ''}`}
@@ -1511,21 +1520,21 @@ export default function App() {
                       🛠️ Panel Técnico
                     </button>
                   )}
+                  {['Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(user.role) && (
+                    <button
+                      className={`drawer-btn ${activeTab === 'multistore' ? 'active' : ''}`}
+                      onClick={() => { setActiveTab('multistore'); setIsDrawerOpen(false); }}
+                    >
+                      🏢 Dashboard Multitienda
+                    </button>
+                  )}
                   {['Gerente', 'Supervisor', 'Técnico'].includes(user.role) && (
-                    <>
-                      <button
-                        className={`drawer-btn ${activeTab === 'multistore' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('multistore'); setIsDrawerOpen(false); }}
-                      >
-                        🏢 Dashboard Multitienda
-                      </button>
-                      <button
-                        className={`drawer-btn ${activeTab === 'managerial_kpis' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('managerial_kpis'); setIsDrawerOpen(false); }}
-                      >
-                        📈 Panel de Gerencia & KPIs
-                      </button>
-                    </>
+                    <button
+                      className={`drawer-btn ${activeTab === 'managerial_kpis' ? 'active' : ''}`}
+                      onClick={() => { setActiveTab('managerial_kpis'); setIsDrawerOpen(false); }}
+                    >
+                      📈 Panel de Gerencia & KPIs
+                    </button>
                   )}
                 </>
               ) : (
@@ -1588,14 +1597,15 @@ export default function App() {
                 { username: 'vrojasdg', name: 'Diana Valdivia Rojas', role: 'Administrador', label: '💼 Administrador' },
                 { username: 'sgomezdg', name: 'Pedro Supervisor Gómez', role: 'Supervisor', label: '🔍 Supervisor' },
                 { username: 'dongutodg', name: 'Don Guto', role: 'Gerente', label: '👑 Gerente General' },
-                { username: 'tecnicodg', name: 'Técnico de Sistemas', role: 'Técnico', label: '🛠️ Técnico' }
+                { username: 'tecnicodg', name: 'Técnico de Sistemas', role: 'Técnico', label: '🛠️ Técnico' },
+                { username: 'auditordg', name: 'Auditor de Operaciones', role: 'Auditor', label: '📋 Auditor de Operaciones' }
               ].map(r => (
                 <button
                   key={r.username}
                   className={`drawer-btn ${user.role === r.role ? 'active' : ''}`}
                   onClick={() => {
-                    setUser({ username: r.username, name: r.name, role: r.role, store: r.role === 'Supervisor' || r.role === 'Gerente' || r.role === 'Técnico' ? 'Todas' : 'Barranco' });
-                    if (['Administrador', 'Gerente', 'Supervisor', 'Técnico'].includes(r.role)) {
+                    setUser({ username: r.username, name: r.name, role: r.role, store: ['Supervisor', 'Gerente', 'Técnico', 'Auditor'].includes(r.role) ? 'Todas' : 'Barranco' });
+                    if (['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(r.role)) {
                       setActiveTab(r.role === 'Técnico' ? 'technical_panel' : 'monitoring');
                     } else {
                       setActiveTab('checklist');
