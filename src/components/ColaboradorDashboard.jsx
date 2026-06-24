@@ -2007,7 +2007,6 @@ export default function ColaboradorDashboard({
                   
                   {/* Fingerprint scan circle */}
                   <div 
-                    onClick={triggerFingerprintScan}
                     style={{
                       width: '130px',
                       height: '130px',
@@ -2019,7 +2018,7 @@ export default function ColaboradorDashboard({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
+                      cursor: 'default',
                       position: 'relative',
                       overflow: 'hidden',
                       transition: 'all 0.3s ease',
@@ -2049,28 +2048,7 @@ export default function ColaboradorDashboard({
                     </svg>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={triggerFingerprintScan}
-                    disabled={bioScanState !== 'idle'}
-                    className="btn"
-                    style={{
-                      padding: '8px 22px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      backgroundColor: bioScanState === 'idle' ? 'var(--primary)' : 'var(--bg-card)',
-                      color: bioScanState === 'idle' ? '#fff' : 'var(--text-muted)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '6px',
-                      cursor: bioScanState === 'idle' ? 'pointer' : 'not-allowed',
-                      marginTop: '5px',
-                      boxShadow: 'var(--shadow-sm)',
-                    }}
-                  >
-                    {bioScanState === 'idle' ? '☝️ Simular Colocar Dedo' : bioScanState === 'scanning' ? 'Leyendo huella...' : bioScanState === 'verifying' ? 'Verificando...' : 'Procesando Marcación...'}
-                  </button>
-
-                  <div style={{ fontSize: '12px', color: bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px', maxWidth: '340px', marginTop: '5px' }}>
+                  <div style={{ fontSize: '12px', color: bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px', maxWidth: '340px', marginTop: '15px' }}>
                     {bioFeedback}
                   </div>
                 </div>
