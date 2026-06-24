@@ -2101,7 +2101,11 @@ export default function ColaboradorDashboard({
                               <td style={{ padding: '10px 10px' }}>{log.checkOutTime || '--'}</td>
                               <td style={{ padding: '10px 10px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
                               <td style={{ padding: '10px 10px', fontWeight: 700, color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
-                                {log.delayMin > 0 ? `+${log.delayMin} min` : '0 min'}
+                                {log.delayMin > 0 
+                                  ? (log.delayMin >= 60 
+                                      ? `+${Math.floor(log.delayMin / 60)}h ${log.delayMin % 60}min` 
+                                      : `+${log.delayMin} min`) 
+                                  : '0 min'}
                               </td>
                               <td style={{ padding: '10px 10px', textAlign: 'center', fontWeight: 600 }}>
                                 {log.totalPunches || 1}

@@ -284,7 +284,7 @@ export default function SupervisorDashboard({
   const [myBioProgress, setMyBioProgress] = useState(0);
 
   // States for technical panel tab (moved to top level to satisfy Rules of Hooks)
-  const [techTabSub, setTechTabSub] = useState('users'); // 'users' | 'devices' | 'docs'
+  const [techTabSub, setTechTabSub] = useState('users'); // 'users' | 'devices' | 'docs' | 'punches'
   
   // States for system technician user management panel
   const [manageUserNames, setManageUserNames] = useState('');
@@ -2138,7 +2138,7 @@ export default function SupervisorDashboard({
                         <th style={{ padding: '10px 12px', fontWeight: 700 }}>Salida</th>
                         <th style={{ padding: '10px 12px', fontWeight: 700 }}>Tardanza</th>
                         <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'center' }}>Total</th>
-                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Marcaciones Registradas</th>
+                        {user.role === 'Técnico' && <th style={{ padding: '10px 12px', fontWeight: 700 }}>Marcaciones Registradas</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -2164,19 +2164,25 @@ export default function SupervisorDashboard({
                                   fontSize: '11px',
                                   color: delayVal > 15 ? 'var(--error)' : delayVal > 0 ? 'var(--warning)' : 'var(--success)'
                                 }}>
-                                  {delayVal > 0 ? `+${delayVal} min` : 'Puntual'}
+                                  {delayVal > 0 
+                                    ? (delayVal >= 60 
+                                        ? `+${Math.floor(delayVal / 60)}h ${delayVal % 60}min` 
+                                        : `+${delayVal} min`) 
+                                    : 'Puntual'}
                                 </span>
                               </td>
                               <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>{log.totalPunches || 1}</td>
-                              <td style={{ padding: '10px 12px', fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'monospace' }}>
-                                {log.allPunches || log.time}
-                              </td>
+                              {user.role === 'Técnico' && (
+                                <td style={{ padding: '10px 12px', fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'monospace' }}>
+                                  {log.allPunches || log.time}
+                                </td>
+                              )}
                             </tr>
                           );
                         })
                       ) : (
                         <tr>
-                          <td colSpan="10" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                          <td colSpan={user.role === 'Técnico' ? 10 : 9} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                             No se encontraron marcaciones que coincidan con los filtros seleccionados.
                           </td>
                         </tr>
@@ -2873,7 +2879,11 @@ export default function SupervisorDashboard({
                         <td style={{ padding: '8px 6px' }}>{log.checkOutTime || '--'}</td>
                         <td style={{ padding: '8px 6px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
                         <td style={{ padding: '8px 6px', fontWeight: 700, color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
-                          {log.delayMin > 0 ? `+${log.delayMin} min` : '0 min'}
+                          {log.delayMin > 0 
+                            ? (log.delayMin >= 60 
+                                ? `+${Math.floor(log.delayMin / 60)}h ${log.delayMin % 60}min` 
+                                : `+${log.delayMin} min`) 
+                            : '0 min'}
                         </td>
                         <td style={{ padding: '8px 6px', textAlign: 'center', fontWeight: 600 }}>
                           {log.totalPunches || 1}
@@ -2902,7 +2912,7 @@ export default function SupervisorDashboard({
             </p>
           </div>
           
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
               onClick={() => setTechTabSub('users')}
               className="btn"
@@ -2947,6 +2957,21 @@ export default function SupervisorDashboard({
               }}
             >
               📘 Manual de Integración Física
+            </button>
+            <button
+              onClick={() => setTechTabSub('punches')}
+              className="btn"
+              style={{
+                padding: '6px 12px',
+                fontSize: '11px',
+                backgroundColor: techTabSub === 'punches' ? 'var(--primary)' : 'var(--bg-main)',
+                color: techTabSub === 'punches' ? '#fff' : 'var(--text-main)',
+                border: '1px solid var(--border)',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              📋 Historial de Marcaciones
             </button>
           </div>
         </div>
@@ -3815,6 +3840,244 @@ main();`}
           </div>
         )}
 
+        {techTabSub === 'punches' && (
+          /* Consolidated table for technician (always shows raw punches column) */
+          <div className="card animate-scale-in" style={{ padding: '24px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid var(--border)', paddingBottom: '15px' }}>
+              <div>
+                <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
+                  📋 Registro Consolidado de Asistencia Biométrica (Consola Técnica)
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Historial completo de marcaciones dactilares incluyendo logs de perforación detallados para auditorías de hardware.
+                </p>
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: 800, backgroundColor: 'var(--primary-light)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '12px', border: '1px solid var(--primary)' }}>
+                ⚡ {getManagerConsolidatedLogs().length} Registros Encontrados
+              </div>
+            </div>
+
+            {/* FILTERS */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+              gap: '12px',
+              backgroundColor: 'var(--bg-main)',
+              padding: '15px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>👤 Buscar Colaborador:</label>
+                <input
+                  type="text"
+                  placeholder="Nombre..."
+                  value={managerSearchCollab}
+                  onChange={(e) => {
+                    setManagerSearchCollab(e.target.value);
+                    setManagerCurrentPage(1);
+                  }}
+                  className="input"
+                  style={{ padding: '6px 10px', fontSize: '12px', height: '32px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>🏢 Sede / Tienda:</label>
+                <select
+                  value={managerStoreFilter}
+                  onChange={(e) => {
+                    setManagerStoreFilter(e.target.value);
+                    setManagerCurrentPage(1);
+                  }}
+                  className="input"
+                  style={{ padding: '4px 8px', fontSize: '12px', height: '32px', cursor: 'pointer' }}
+                >
+                  <option value="Todas">🏢 Todas las sedes</option>
+                  <option value="Barranco">Sede Barranco</option>
+                  <option value="Miraflores">Sede Miraflores</option>
+                  <option value="San Isidro">Sede San Isidro</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>🤵 Cargo / Rol:</label>
+                <select
+                  value={managerRoleFilter}
+                  onChange={(e) => {
+                    setManagerRoleFilter(e.target.value);
+                    setManagerCurrentPage(1);
+                  }}
+                  className="input"
+                  style={{ padding: '4px 8px', fontSize: '12px', height: '32px', cursor: 'pointer' }}
+                >
+                  <option value="Todos">👥 Todos los roles</option>
+                  <option value="Barista">☕ Barista</option>
+                  <option value="Cocina">🍳 Cocina</option>
+                  <option value="Servicio">🤵 Servicio (Salón)</option>
+                  <option value="Administrador">👑 Administrador</option>
+                  <option value="Gerente">📊 Gerente</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>📅 Filtrar por Fecha:</label>
+                <input
+                  type="date"
+                  value={managerDateFilter}
+                  onChange={(e) => {
+                    setManagerDateFilter(e.target.value);
+                    setManagerCurrentPage(1);
+                  }}
+                  className="input"
+                  style={{ padding: '4px 8px', fontSize: '12px', height: '32px', cursor: 'pointer' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>⏰ Puntualidad:</label>
+                <select
+                  value={managerStatusFilter}
+                  onChange={(e) => {
+                    setManagerStatusFilter(e.target.value);
+                    setManagerCurrentPage(1);
+                  }}
+                  className="input"
+                  style={{ padding: '4px 8px', fontSize: '12px', height: '32px', cursor: 'pointer' }}
+                >
+                  <option value="Todos">⏰ Todos los estados</option>
+                  <option value="Puntual">🟢 Puntual</option>
+                  <option value="Tardanza">🔴 Con Retraso</option>
+                </select>
+              </div>
+            </div>
+
+            {/* TABLE */}
+            {(() => {
+              const filteredLogs = getManagerConsolidatedLogs();
+              const totalRecords = filteredLogs.length;
+              const totalPages = Math.ceil(totalRecords / managerRowsPerPage) || 1;
+              const startIndex = (managerCurrentPage - 1) * managerRowsPerPage;
+              const pageRecords = filteredLogs.slice(startIndex, startIndex + managerRowsPerPage);
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                    <table style={{ width: '100%', fontSize: '12.5px', borderCollapse: 'collapse', textAlign: 'left', minWidth: '950px' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: 'var(--bg-main)', borderBottom: '2px solid var(--border)', color: 'var(--text-muted)' }}>
+                          <th style={{ padding: '10px 12px', fontWeight: 700 }}>Colaborador</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 700 }}>Sede</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 700 }}>Rol</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 700 }}>Fecha</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 700 }}>Programado</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 700 }}>Entrada</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 700 }}>Salida</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 700 }}>Tardanza</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'center' }}>Total</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 700 }}>Marcaciones Registradas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageRecords.length > 0 ? (
+                          pageRecords.map((log, idx) => {
+                            const delayVal = log.delayMin || 0;
+                            return (
+                              <tr key={idx} style={{ borderBottom: '1px solid var(--border)', transition: 'background-color 0.2s ease' }}>
+                                <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--text-main)' }}>{log.employeeName}</td>
+                                <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{log.employeeStore}</td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                                    {log.employeeRole}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '10px 12px', fontWeight: 600 }}>{log.date}</td>
+                                <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
+                                <td style={{ padding: '10px 12px', color: 'var(--success)', fontWeight: 600 }}>{log.time}</td>
+                                <td style={{ padding: '10px 12px' }}>{log.checkOutTime || '--'}</td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  <span style={{
+                                    fontWeight: 800,
+                                    fontSize: '11px',
+                                    color: delayVal > 15 ? 'var(--error)' : delayVal > 0 ? 'var(--warning)' : 'var(--success)'
+                                  }}>
+                                    {delayVal > 0 
+                                      ? (delayVal >= 60 
+                                          ? `+${Math.floor(delayVal / 60)}h ${delayVal % 60}min` 
+                                          : `+${delayVal} min`) 
+                                      : 'Puntual'}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>{log.totalPunches || 1}</td>
+                                <td style={{ padding: '10px 12px', fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'monospace' }}>
+                                  {log.allPunches || log.time}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan="10" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                              No se encontraron marcaciones que coincidan con los filtros seleccionados.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* PAGINATION */}
+                  {totalRecords > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', paddingTop: '5px' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                        Mostrando <strong>{startIndex + 1}</strong> - <strong>{Math.min(startIndex + managerRowsPerPage, totalRecords)}</strong> de <strong>{totalRecords}</strong> registros
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                          onClick={() => setManagerCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={managerCurrentPage === 1}
+                          className="btn"
+                          style={{ padding: '4px 10px', fontSize: '11px', border: '1px solid var(--border)', cursor: 'pointer', borderRadius: '4px', backgroundColor: 'var(--bg-card)', color: managerCurrentPage === 1 ? 'var(--text-muted)' : 'var(--text-main)' }}
+                        >
+                          ◀ Ant.
+                        </button>
+                        
+                        <span style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: 700 }}>
+                          {managerCurrentPage} / {totalPages}
+                        </span>
+                        
+                        <button
+                          onClick={() => setManagerCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                          disabled={managerCurrentPage === totalPages}
+                          className="btn"
+                          style={{ padding: '4px 10px', fontSize: '11px', border: '1px solid var(--border)', cursor: 'pointer', borderRadius: '4px', backgroundColor: 'var(--bg-card)', color: managerCurrentPage === totalPages ? 'var(--text-muted)' : 'var(--text-main)' }}
+                        >
+                          Sig. ▶
+                        </button>
+
+                        <select
+                          value={managerRowsPerPage}
+                          onChange={(e) => {
+                            setManagerRowsPerPage(Number(e.target.value));
+                            setManagerCurrentPage(1);
+                          }}
+                          className="input"
+                          style={{ padding: '2px 4px', fontSize: '11px', height: '24px', width: '50px', cursor: 'pointer', marginLeft: '5px' }}
+                        >
+                          <option value={5}>5</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </div>
     );
   };
@@ -5060,7 +5323,11 @@ main();`}
                                           fontWeight: 800,
                                           color: log.delayMin > 10 ? 'var(--error)' : log.delayMin > 0 ? 'var(--warning)' : 'var(--success)'
                                         }}>
-                                          {log.delayMin > 0 ? `+${log.delayMin} min` : 'Puntual'}
+                                          {log.delayMin > 0 
+                                            ? (log.delayMin >= 60 
+                                                ? `+${Math.floor(log.delayMin / 60)}h ${log.delayMin % 60}min` 
+                                                : `+${log.delayMin} min`) 
+                                            : 'Puntual'}
                                         </span>
                                       </td>
                                       <td style={{ padding: '10px', textAlign: 'center', fontWeight: 600 }}>
