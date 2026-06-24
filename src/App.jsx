@@ -1331,7 +1331,7 @@ export default function App() {
                 <div className="user-info" style={{ textAlign: 'right', fontSize: '12px' }}>
                   <strong style={{ color: 'var(--text-main)', display: 'block' }}>{user.name}</strong>
                   <span style={{ color: 'var(--text-muted)' }}>
-                    {user.role} | Tienda: <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{user.store}</span>
+                    {user.role === 'Administrador' ? 'Administrador / Auditor' : user.role} | Tienda: <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{user.store}</span>
                   </span>
                 </div>
                 <button onClick={handleLogout} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px' }}>
