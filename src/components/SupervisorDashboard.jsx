@@ -1526,6 +1526,87 @@ export default function SupervisorDashboard({
     }
   };
 
+  const renderTaskItem = (t) => {
+    if (checklistStoreFilter === 'Todas') {
+      return (
+        <div key={t.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 10px', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg-card)', borderRadius: '6px', margin: '4px 0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ color: 'var(--text-main)', fontWeight: 600, fontSize: '12.5px', lineHeight: '1.3' }} title={t.descripcion}>{t.descripcion}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '8px', borderLeft: '2px solid var(--border)', marginTop: '4px' }}>
+            {['Barranco', 'Miraflores', 'San Isidro'].map(storeName => {
+              const matched = dbChecklists.find(r => r.taskId === t.id && (r.store === storeName || r.tienda === storeName));
+              const completed = matched ? matched.completado : false;
+              const evidence = matched ? matched.evidencia : null;
+              const collaborator = matched ? matched.colaborador : null;
+              
+              return (
+                <div key={storeName} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    🏢 <strong>{storeName}</strong>: {collaborator ? `(${collaborator})` : ''}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {evidence && (
+                      <button
+                        onClick={() => setPreviewPhoto({ task: `${t.descripcion} (${storeName})`, img: evidence, area: t.area })}
+                        style={{
+                          padding: '2px 6px',
+                          backgroundColor: 'var(--primary-light)',
+                          color: 'var(--primary)',
+                          border: '1px solid var(--primary)',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '9px',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        📸 Foto
+                      </button>
+                    )}
+                    <span style={{ fontWeight: 800, color: completed ? 'var(--success)' : 'var(--error)' }}>
+                      {completed ? '✓ Completado' : '✗ Falta'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: '12px', borderBottom: '1px solid var(--bg-main)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <span style={{ color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '240px' }} title={t.descripcion}>{t.descripcion}</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>👤 Responsable: {getTaskResponsible(t.id)}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {t.evidencia && (
+            <button
+              onClick={() => setPreviewPhoto({ task: t.descripcion, img: t.evidencia, area: t.area })}
+              style={{
+                padding: '2px 6px',
+                backgroundColor: 'var(--primary-light)',
+                color: 'var(--primary)',
+                border: '1px solid var(--primary)',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '9px',
+                fontWeight: 'bold'
+              }}
+            >
+              📸 Foto
+            </button>
+          )}
+          <span style={{ fontWeight: 800, color: t.completado ? 'var(--success)' : 'var(--error)' }}>
+            {t.completado ? '✓ Completado' : '✗ Falta'}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   // Calculate overall metrics per department
   const getDepartmentStats = (areaCode) => {
     const list = checklists.filter(t => t.area === areaCode);
@@ -5360,36 +5441,7 @@ main();`}
                           {getTasksForSelectedDate()
                             .filter(t => t.area === 'BARRA')
                             .filter(t => isTaskAssignedTo(t.id, filterArea === 'BARRA' ? selectedCollaborator : 'TODOS'))
-                            .map(t => (
-                              <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: '12px', borderBottom: '1px solid var(--bg-main)' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                  <span style={{ color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '240px' }} title={t.descripcion}>{t.descripcion}</span>
-                                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>👤 Responsable: {getTaskResponsible(t.id)}</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  {t.evidencia && (
-                                    <button
-                                      onClick={() => setPreviewPhoto({ task: t.descripcion, img: t.evidencia, area: t.area })}
-                                      style={{
-                                        padding: '2px 6px',
-                                        backgroundColor: 'var(--primary-light)',
-                                        color: 'var(--primary)',
-                                        border: '1px solid var(--primary)',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontSize: '9px',
-                                        fontWeight: 'bold'
-                                      }}
-                                    >
-                                      📸 Foto
-                                    </button>
-                                  )}
-                                  <span style={{ fontWeight: 800, color: t.completado ? 'var(--success)' : 'var(--error)' }}>
-                                    {t.completado ? '✓ Completado' : '✗ Falta'}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+                            .map(t => renderTaskItem(t))}
                         </div>
                       </div>
                     )}
@@ -5402,36 +5454,7 @@ main();`}
                           {getTasksForSelectedDate()
                             .filter(t => t.area === 'COCINA')
                             .filter(t => isTaskAssignedTo(t.id, filterArea === 'COCINA' ? selectedCollaborator : 'TODOS'))
-                            .map(t => (
-                              <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: '12px', borderBottom: '1px solid var(--bg-main)' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                  <span style={{ color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '240px' }} title={t.descripcion}>{t.descripcion}</span>
-                                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>👤 Responsable: {getTaskResponsible(t.id)}</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  {t.evidencia && (
-                                    <button
-                                      onClick={() => setPreviewPhoto({ task: t.descripcion, img: t.evidencia, area: t.area })}
-                                      style={{
-                                        padding: '2px 6px',
-                                        backgroundColor: 'var(--primary-light)',
-                                        color: 'var(--primary)',
-                                        border: '1px solid var(--primary)',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontSize: '9px',
-                                        fontWeight: 'bold'
-                                      }}
-                                    >
-                                      📸 Foto
-                                    </button>
-                                  )}
-                                  <span style={{ fontWeight: 800, color: t.completado ? 'var(--success)' : 'var(--error)' }}>
-                                    {t.completado ? '✓ Completado' : '✗ Falta'}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+                            .map(t => renderTaskItem(t))}
                         </div>
                       </div>
                     )}
@@ -5444,36 +5467,7 @@ main();`}
                           {getTasksForSelectedDate()
                             .filter(t => t.area === 'SALON')
                             .filter(t => isTaskAssignedTo(t.id, filterArea === 'SALON' ? selectedCollaborator : 'TODOS'))
-                            .map(t => (
-                              <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: '12px', borderBottom: '1px solid var(--bg-main)' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                  <span style={{ color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '240px' }} title={t.descripcion}>{t.descripcion}</span>
-                                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>👤 Responsable: {getTaskResponsible(t.id)}</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  {t.evidencia && (
-                                    <button
-                                      onClick={() => setPreviewPhoto({ task: t.descripcion, img: t.evidencia, area: t.area })}
-                                      style={{
-                                        padding: '2px 6px',
-                                        backgroundColor: 'var(--primary-light)',
-                                        color: 'var(--primary)',
-                                        border: '1px solid var(--primary)',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontSize: '9px',
-                                        fontWeight: 'bold'
-                                      }}
-                                    >
-                                      📸 Foto
-                                    </button>
-                                  )}
-                                  <span style={{ fontWeight: 800, color: t.completado ? 'var(--success)' : 'var(--error)' }}>
-                                    {t.completado ? '✓ Completado' : '✗ Falta'}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+                            .map(t => renderTaskItem(t))}
                         </div>
                       </div>
                     )}

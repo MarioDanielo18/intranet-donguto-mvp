@@ -62,7 +62,8 @@ export default async function handler(req, res) {
           completado: r.completado,
           evidencia: r.evidencia,
           colaborador: r.colaborador,
-          date: r.date
+          date: r.date,
+          store: r.store
         }))
       });
     } catch (err) {
