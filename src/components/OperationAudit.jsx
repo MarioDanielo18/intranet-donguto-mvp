@@ -689,7 +689,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
                         )}
 
                         {/* Foto Evidencia input if checked & requires photo */}
-                        {isChecked && c.requiere_foto && (
+                        {val === true && c.requiere_foto && (
                           <div 
                             onClick={(e) => e.stopPropagation()} 
                             style={{
@@ -749,7 +749,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
                         )}
 
                         {/* Action Plan input if unchecked */}
-                        {!isChecked && (
+                        {val === false && (
                           <div 
                             onClick={(e) => e.stopPropagation()} 
                             style={{
