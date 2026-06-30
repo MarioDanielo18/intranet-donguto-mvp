@@ -479,22 +479,26 @@ export default function SupervisorDashboard({
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #2b2b2b;
             margin: 0;
-            padding: 40px;
+            padding: 25px;
             background-color: #ffffff;
-            line-height: 1.5;
+            line-height: 1.35;
+            font-size: 11px;
+          }
+          .page {
+            box-sizing: border-box;
           }
           .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
           }
           .header-logo {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 800;
             color: #fff;
             background-color: #8b1a1a;
-            padding: 10px 20px;
-            border-radius: 6px;
+            padding: 8px 16px;
+            border-radius: 5px;
             display: inline-block;
           }
           .header-title {
@@ -503,81 +507,90 @@ export default function SupervisorDashboard({
           }
           .header-title h1 {
             margin: 0;
-            font-size: 20px;
+            font-size: 16px;
             color: #8b1a1a;
             text-transform: uppercase;
             letter-spacing: 0.5px;
           }
           .header-title p {
-            margin: 4px 0 0 0;
-            font-size: 12px;
+            margin: 2px 0 0 0;
+            font-size: 10px;
             color: #666;
           }
           .meta-box {
             background-color: #f9f9fb;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 15px 20px;
-            margin-bottom: 25px;
-            font-size: 13px;
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            font-size: 11px;
           }
           .meta-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px 20px;
+            gap: 6px 15px;
           }
           .score-card {
             background-color: #f9f9fb;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 30px;
+            border-radius: 6px;
+            padding: 12px 18px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             justify-content: space-between;
           }
           .score-value {
-            font-size: 38px;
+            font-size: 28px;
             font-weight: 800;
           }
           .score-badge {
-            font-size: 14px;
+            font-size: 11px;
             font-weight: bold;
-            padding: 6px 16px;
-            border-radius: 20px;
+            padding: 4px 12px;
+            border-radius: 15px;
             color: #fff;
           }
           .category-title {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 800;
             color: #8b1a1a;
             border-bottom: 2px solid #8b1a1a;
-            padding-bottom: 6px;
-            margin-top: 30px;
-            margin-bottom: 12px;
+            padding-bottom: 4px;
+            margin-top: 15px;
+            margin-bottom: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
           }
-          .criterion-row {
+          .criteria-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 15px;
+          }
+          .criterion-card {
             border-bottom: 1px solid #e5e7eb;
-            padding: 12px 5px;
+            padding: 6px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             page-break-inside: avoid;
           }
           .criterion-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 20px;
+            gap: 10px;
           }
           .criterion-text {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 600;
+            color: #333;
           }
           .criterion-status {
-            font-size: 11px;
+            font-size: 8.5px;
             font-weight: bold;
-            padding: 3px 8px;
-            border-radius: 4px;
+            padding: 1.5px 5px;
+            border-radius: 3px;
             text-transform: uppercase;
             white-space: nowrap;
           }
@@ -591,77 +604,80 @@ export default function SupervisorDashboard({
           }
           .plan-box {
             background-color: #fff5f5;
-            border-left: 3px solid #ef4444;
-            border-radius: 0 4px 4px 0;
-            padding: 8px 12px;
-            margin-top: 8px;
-            font-size: 12px;
+            border-left: 2px solid #ef4444;
+            border-radius: 0 3px 3px 0;
+            padding: 4px 8px;
+            margin-top: 4px;
+            font-size: 9.5px;
+            color: #991b1b;
           }
           .photo-gallery {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 30px;
-            page-break-before: auto;
+            gap: 10px;
+            margin-top: 10px;
           }
           .photo-card {
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 10px;
+            border-radius: 6px;
+            padding: 6px;
             background-color: #f9f9fb;
-            width: 220px;
+            width: 120px;
             page-break-inside: avoid;
           }
           .photo-img {
             width: 100%;
-            height: 150px;
+            height: 80px;
             object-fit: contain;
             background-color: #eaeaea;
             border-radius: 4px;
           }
           .photo-title {
-            font-size: 11px;
+            font-size: 8.5px;
             font-weight: 700;
-            margin-top: 8px;
+            margin-top: 4px;
             text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
           .signatures-container {
-            margin-top: 50px;
+            margin-top: 25px;
             display: flex;
             justify-content: space-around;
             page-break-inside: avoid;
           }
           .signature-box {
             text-align: center;
-            width: 200px;
+            width: 180px;
           }
           .signature-line {
             border-top: 1px solid #999;
-            margin-top: 60px;
-            padding-top: 6px;
-            font-size: 12px;
+            margin-top: 35px;
+            padding-top: 4px;
+            font-size: 11px;
             font-weight: 700;
           }
           .signature-img {
-            max-height: 50px;
-            max-width: 180px;
+            max-height: 40px;
+            max-width: 160px;
             object-fit: contain;
           }
           .print-button-container {
             text-align: center;
-            margin-top: 30px;
-            margin-bottom: 30px;
+            margin-top: 25px;
+            margin-bottom: 10px;
           }
           .btn-print {
             background-color: #8b1a1a;
             color: white;
             border: none;
-            padding: 12px 30px;
-            font-size: 14px;
+            padding: 10px 25px;
+            font-size: 13px;
             font-weight: bold;
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
           }
           .btn-print:hover {
             background-color: #721414;
@@ -677,86 +693,123 @@ export default function SupervisorDashboard({
         </style>
       </head>
       <body>
-        <table class="header-table">
-          <tr>
-            <td>
-              <div class="header-logo">DON GUTO</div>
-            </td>
-            <td class="header-title">
-              <h1>Reporte de Auditoría Operacional</h1>
-              <p>Intranet de Operaciones & Calidad Don Guto</p>
-            </td>
-          </tr>
-        </table>
-        
-        <div class="meta-box">
-          <div class="meta-grid">
-            <div><strong>Sede Auditada:</strong> ${log.tienda}</div>
-            <div><strong>Fecha y Hora:</strong> ${new Date(log.fecha).toLocaleString('es-PE')}</div>
-            <div><strong>Auditor:</strong> Administrador (Diana Valdivia Rojas)</div>
-            <div><strong>Persona Evaluada:</strong> ${log.colaboradorAuditado || 'N/A'}</div>
-          </div>
-        </div>
-        
-        <div class="score-card">
-          <div>
-            <div style="font-size: 11px; text-transform: uppercase; color: #666; font-weight: 700;">Resultado Ponderado</div>
-            <div class="score-value" style="color: ${ratingColor}">${log.nota.toFixed(1)}%</div>
-          </div>
-          <span class="score-badge" style="background-color: ${ratingColor}">${ratingText}</span>
-        </div>
-        
-        <h3 style="font-size: 14px; color: #333; margin-top: 40px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Criterios Evaluados y Plan de Acción:</h3>
-        
-        ${Object.entries(categoriesMap).map(([categoryName, criteriaList]) => `
-          <div class="category-title">${categoryName}</div>
-          ${criteriaList.map(c => `
-            <div class="criterion-row">
-              <div class="criterion-header">
-                <span class="criterion-text">[${c.id}] ${c.text}</span>
-                <span class="criterion-status ${c.cumple ? 'status-cumple' : 'status-nocumple'}">
-                  ${c.cumple ? 'Cumple' : 'No Cumple'}
-                </span>
-              </div>
-              ${c.plan ? `
-                <div class="plan-box">
-                  <strong>Plan de Acción Correctivo:</strong> ${c.plan}
-                </div>
-              ` : ''}
+        <!-- PAGE 1 -->
+        <div class="page">
+          <table class="header-table">
+            <tr>
+              <td>
+                <div class="header-logo">DON GUTO</div>
+              </td>
+              <td class="header-title">
+                <h1>Reporte de Auditoría Operacional</h1>
+                <p>Intranet de Operaciones & Calidad Don Guto</p>
+              </td>
+            </tr>
+          </table>
+          
+          <div class="meta-box">
+            <div class="meta-grid">
+              <div><strong>Sede Auditada:</strong> ${log.tienda}</div>
+              <div><strong>Fecha y Hora:</strong> ${new Date(log.fecha).toLocaleString('es-PE')}</div>
+              <div><strong>Auditor:</strong> Administrador (Diana Valdivia Rojas)</div>
+              <div><strong>Persona Evaluada:</strong> ${log.colaboradorAuditado || 'N/A'}</div>
             </div>
-          `).join('')}
-        `).join('')}
-        
-        <!-- Observaciones Generales -->
-        <div style="margin-top: 30px; background-color: #f9f9fb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; page-break-inside: avoid;">
-          <h4 style="margin: 0 0 8px 0; font-size: 12px; color: #8b1a1a; text-transform: uppercase;">Observaciones Generales de la Auditoría:</h4>
-          <p style="margin: 0; font-size: 12.5px; color: #444; line-height: 1.5;">${log.comentarios || 'Sin observaciones generales.'}</p>
-        </div>
-        
-        <!-- Galería de Evidencias -->
-        ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).length > 0 ? `
-          <div class="category-title" style="page-break-before: always;">Evidencias Fotográficas de Conformidad</div>
-          <div class="photo-gallery">
-            ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).map(c => `
-              <div class="photo-card">
-                <img class="photo-img" src="${safeImgSrc(c.photo)}" alt="Evidencia Criterio ${c.id}" />
-                <div class="photo-title">Criterio ${c.id} - ${c.text.substring(0, 30)}...</div>
+          </div>
+          
+          <div class="score-card">
+            <div>
+              <div style="font-size: 10px; text-transform: uppercase; color: #666; font-weight: 700;">Resultado Ponderado</div>
+              <div class="score-value" style="color: ${ratingColor}">${log.nota.toFixed(1)}%</div>
+            </div>
+            <span class="score-badge" style="background-color: ${ratingColor}">${ratingText}</span>
+          </div>
+
+          <!-- Page 1 Categories -->
+          ${['PRECISIÓN', 'PRESENTACIÓN', 'LIMPIEZA', 'INVENTARIO'].map(catName => {
+            const list = categoriesMap[catName] || [];
+            if (list.length === 0) return '';
+            return `
+              <div class="category-title">${catName}</div>
+              <div class="criteria-grid">
+                ${list.map(c => `
+                  <div class="criterion-card">
+                    <div class="criterion-header">
+                      <span class="criterion-text">[${c.id}] ${c.text}</span>
+                      <span class="criterion-status ${c.cumple ? 'status-cumple' : 'status-nocumple'}">
+                        ${c.cumple ? 'Sí' : 'No'}
+                      </span>
+                    </div>
+                    ${c.plan ? `
+                      <div class="plan-box">
+                        <strong>Plan:</strong> ${c.plan}
+                      </div>
+                    ` : ''}
+                  </div>
+                `).join('')}
               </div>
-            `).join('')}
+            `;
+          }).join('')}
+        </div>
+
+        <!-- PAGE 2 -->
+        <div class="page" style="page-break-before: always; padding-top: 15px;">
+          <!-- Page 2 Categories -->
+          ${['HOSPITALIDAD', 'MANTENIMIENTO', 'ENTRENAMIENTO'].map(catName => {
+            const list = categoriesMap[catName] || [];
+            if (list.length === 0) return '';
+            return `
+              <div class="category-title">${catName}</div>
+              <div class="criteria-grid">
+                ${list.map(c => `
+                  <div class="criterion-card">
+                    <div class="criterion-header">
+                      <span class="criterion-text">[${c.id}] ${c.text}</span>
+                      <span class="criterion-status ${c.cumple ? 'status-cumple' : 'status-nocumple'}">
+                        ${c.cumple ? 'Sí' : 'No'}
+                      </span>
+                    </div>
+                    ${c.plan ? `
+                      <div class="plan-box">
+                        <strong>Plan:</strong> ${c.plan}
+                      </div>
+                    ` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          }).join('')}
+
+          <!-- Observaciones Generales -->
+          <div style="margin-top: 20px; background-color: #f9f9fb; padding: 10px 15px; border-radius: 6px; border: 1px solid #e5e7eb; page-break-inside: avoid;">
+            <h4 style="margin: 0 0 4px 0; font-size: 11px; color: #8b1a1a; text-transform: uppercase;">Observaciones Generales de la Auditoría:</h4>
+            <p style="margin: 0; font-size: 11.5px; color: #444; line-height: 1.4;">${log.comentarios || 'Sin observaciones generales.'}</p>
           </div>
-        ` : ''}
-        
-        <!-- Firmas -->
-        <div class="signatures-container">
-          <div class="signature-box">
-            ${log.signatureAuditor ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditor)}" alt="Firma Auditor" />` : ''}
-            <div class="signature-line">Firma del Auditor</div>
-            <div style="font-size: 10px; color: #666; margin-top: 4px;">Diana Valdivia Rojas</div>
-          </div>
-          <div class="signature-box">
-            ${log.signatureAuditado ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditado)}" alt="Firma Auditado" />` : ''}
-            <div class="signature-line">Firma del Auditado</div>
-            <div style="font-size: 10px; color: #666; margin-top: 4px;">${log.colaboradorAuditado || 'Colaborador'}</div>
+          
+          <!-- Galería de Evidencias -->
+          ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).length > 0 ? `
+            <div class="category-title" style="margin-top: 20px; page-break-inside: avoid;">Evidencias Fotográficas de Conformidad</div>
+            <div class="photo-gallery">
+              ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).map(c => `
+                <div class="photo-card">
+                  <img class="photo-img" src="${safeImgSrc(c.photo)}" alt="Evidencia Criterio ${c.id}" />
+                  <div class="photo-title">Criterio ${c.id}</div>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+          
+          <!-- Firmas -->
+          <div class="signatures-container">
+            <div class="signature-box">
+              ${log.signatureAuditor ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditor)}" alt="Firma Auditor" />` : ''}
+              <div class="signature-line">Firma del Auditor</div>
+              <div style="font-size: 9px; color: #666; margin-top: 2px;">Diana Valdivia Rojas</div>
+            </div>
+            <div class="signature-box">
+              ${log.signatureAuditado ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditado)}" alt="Firma Auditado" />` : ''}
+              <div class="signature-line">Firma del Auditado</div>
+              <div style="font-size: 9px; color: #666; margin-top: 2px;">${log.colaboradorAuditado || 'Colaborador'}</div>
+            </div>
           </div>
         </div>
 
