@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import OperationAudit from './OperationAudit';
 
 const MOCK_HISTORY = {
@@ -5505,7 +5506,7 @@ main();`}
       </div>
       {/* Modal for previewing photo evidence */}
       {/* Modal for detailed audit log (Veridical Audit) */}
-      {selectedAuditLog && (
+      {selectedAuditLog && createPortal(
         <div style={{
           position: 'fixed',
           top: 0,
@@ -5516,7 +5517,7 @@ main();`}
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
+          zIndex: 99999,
           backdropFilter: 'blur(4px)',
           padding: '20px'
         }} onClick={() => setSelectedAuditLog(null)}>
@@ -5646,9 +5647,10 @@ main();`}
               Cerrar Reporte
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-      {previewPhoto && (
+      {previewPhoto && createPortal(
         <div style={{
           position: 'fixed',
           top: 0,
@@ -5659,7 +5661,7 @@ main();`}
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
+          zIndex: 99999,
           backdropFilter: 'blur(4px)',
           padding: '20px'
         }} onClick={() => setPreviewPhoto(null)}>
@@ -5689,11 +5691,12 @@ main();`}
               Cerrar
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Biometric Enrolment Wizard Modal */}
-      {isBioModalOpen && (
+      {isBioModalOpen && createPortal(
         <div style={{
           position: 'fixed',
           top: 0,
@@ -5704,7 +5707,7 @@ main();`}
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1100,
+          zIndex: 99999,
           backdropFilter: 'blur(8px)',
           padding: '20px'
         }}>
@@ -6025,7 +6028,8 @@ main();`}
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

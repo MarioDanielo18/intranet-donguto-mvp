@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import SensoryProfile from './SensoryProfile';
 import CartaDigital from './CartaDigital';
 
@@ -2359,10 +2360,11 @@ export default function ColaboradorDashboard({
       </div>
 
       {/* Modal de Capacitación (PDF + Video) */}
-      {selectedDayMaterial && (() => {
-        const manual = selectedDayMaterial.manualGenerico ? selectedDayMaterial : MANUALS_BY_DAY[selectedDayMaterial.id];
-        return (
-          <div className="edu-modal-backdrop" onClick={handleCloseModal}>
+      {selectedDayMaterial && createPortal(
+        (() => {
+          const manual = selectedDayMaterial.manualGenerico ? selectedDayMaterial : MANUALS_BY_DAY[selectedDayMaterial.id];
+          return (
+            <div className="edu-modal-backdrop" onClick={handleCloseModal}>
             <style dangerouslySetInnerHTML={{__html: `
               .edu-modal-backdrop {
                 position: fixed;
@@ -2442,6 +2444,30 @@ export default function ColaboradorDashboard({
                 flex-direction: column;
                 justify-content: space-between;
                 flex-shrink: 0;
+              }
+              
+              .edu-modal-close-btn {
+                border: none;
+                background-color: var(--bg-card);
+                border-radius: 50%;
+                width: 34px;
+                height: 34px;
+                font-size: 16px;
+                color: var(--text-main);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s ease;
+                border: 1px solid var(--border);
+                box-shadow: var(--shadow-sm);
+              }
+              
+              .edu-modal-close-btn:hover {
+                background-color: var(--primary);
+                color: #fff;
+                border-color: var(--primary);
+                transform: rotate(90deg);
               }
               
               @keyframes eduFadeIn {
@@ -2539,18 +2565,7 @@ export default function ColaboradorDashboard({
                 </div>
                 <button
                   onClick={handleCloseModal}
-                  style={{
-                    border: 'none',
-                    backgroundColor: 'transparent',
-                    fontSize: '20px',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'color 0.15s ease'
-                  }}
+                  className="edu-modal-close-btn"
                   title="Cerrar"
                 >
                   ✕
@@ -3045,7 +3060,9 @@ export default function ColaboradorDashboard({
             </div>
           </div>
         );
-      })()}
+      })(),
+      document.body
+    )}
 
 
 
