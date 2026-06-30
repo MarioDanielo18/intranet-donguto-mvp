@@ -1372,7 +1372,7 @@ export default function SupervisorDashboard({
     setSelectedCollaborator('TODOS');
   }, [filterArea]);
 
-  const [checklistStoreFilter, setChecklistStoreFilter] = useState(user.store === 'Todas' ? 'Barranco' : user.store);
+  const [checklistStoreFilter, setChecklistStoreFilter] = useState(user.store === 'Todas' ? 'Todas' : user.store);
   const [dbChecklists, setDbChecklists] = useState([]);
   const [loadingChecklists, setLoadingChecklists] = useState(false);
 
@@ -1468,15 +1468,43 @@ export default function SupervisorDashboard({
     });
   };
 
-  const getComplianceForStats = (areaCode, dateStr, collaborator = 'TODOS') => {
-    const tasksForDate = dateStr === selectedDateStr
-      ? getTasksForSelectedDate()
-      : (dateStr === new Date().toISOString().split('T')[0]
-          ? checklists
-          : checklists.map(t => ({
-              ...t,
-              completado: (MOCK_HISTORY[dateStr]?.completedIds || []).includes(t.id)
-            })));
+  const getStoreComplianceForArea = (storeName, areaCode, dateStr, collaborator = 'TODOS') => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const storeDbChecklists = dbChecklists.filter(r => r.store === storeName || r.tienda === storeName);
+    
+    if (dateStr === todayStr && storeDbChecklists.length === 0) {
+      const filteredChecklists = checklists.filter(t => {
+        const matchArea = areaCode === 'GENERAL' || t.area === areaCode;
+        const matchCollab = isTaskAssignedTo(t.id, collaborator);
+        return matchArea && matchCollab;
+      });
+      const total = filteredChecklists.length;
+      const completed = filteredChecklists.filter(t => t.completado).length;
+      return total > 0 ? (completed / total) * 100 : 0;
+    }
+
+    const tasksForDate = checklists.map(t => {
+      const matched = storeDbChecklists.find(r => r.taskId === t.id);
+      if (matched) {
+        return {
+          ...t,
+          completado: matched.completado
+        };
+      }
+
+      if (dateStr !== todayStr) {
+        const isCompleted = (MOCK_HISTORY[dateStr]?.completedIds || []).includes(t.id);
+        return {
+          ...t,
+          completado: isCompleted
+        };
+      }
+
+      return {
+        ...t,
+        completado: false
+      };
+    });
 
     const filtered = tasksForDate.filter(t => {
       const matchArea = areaCode === 'GENERAL' || t.area === areaCode;
@@ -1486,6 +1514,16 @@ export default function SupervisorDashboard({
     const total = filtered.length;
     const completed = filtered.filter(t => t.completado).length;
     return total > 0 ? (completed / total) * 100 : 0;
+  };
+
+  const getComplianceForStats = (areaCode, dateStr, collaborator = 'TODOS') => {
+    if (checklistStoreFilter === 'Todas') {
+      const stores = ['Barranco', 'Miraflores', 'San Isidro'];
+      const compliances = stores.map(store => getStoreComplianceForArea(store, areaCode, dateStr, collaborator));
+      return compliances.reduce((acc, val) => acc + val, 0) / stores.length;
+    } else {
+      return getStoreComplianceForArea(checklistStoreFilter, areaCode, dateStr, collaborator);
+    }
   };
 
   // Calculate overall metrics per department
@@ -4893,6 +4931,7 @@ main();`}
                         minWidth: '140px'
                       }}
                     >
+                      <option value="Todas">🏢 Todas las sedes</option>
                       <option value="Barranco">Sede Barranco</option>
                       <option value="Miraflores">Sede Miraflores</option>
                       <option value="San Isidro">Sede San Isidro</option>
@@ -5323,6 +5362,7 @@ main();`}
                               borderRadius: '4px'
                             }}
                           >
+                            <option value="Todas">Todas las sedes</option>
                             <option value="Barranco">Barranco</option>
                             <option value="Miraflores">Miraflores</option>
                             <option value="San Isidro">San Isidro</option>
