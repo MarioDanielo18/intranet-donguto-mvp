@@ -417,6 +417,26 @@ export default function SupervisorDashboard({
   };
 
   const handleDownloadAuditPDF = (log) => {
+    const safeImgSrc = (src) => {
+      if (!src) return '';
+      // If it is a raw SVG data URL (utf8), convert it to base64 to avoid quote breaking HTML img tag attributes
+      if (src.startsWith('data:image/svg+xml;utf8,') || src.startsWith('data:image/svg+xml,')) {
+        try {
+          const header = src.startsWith('data:image/svg+xml;utf8,') 
+            ? 'data:image/svg+xml;utf8,' 
+            : 'data:image/svg+xml,';
+          const svgText = src.substring(header.length);
+          // Base64 encode the SVG string safely
+          const base64 = btoa(unescape(encodeURIComponent(svgText)));
+          return `data:image/svg+xml;base64,${base64}`;
+        } catch (e) {
+          console.error('Error encoding SVG:', e);
+          return src;
+        }
+      }
+      return src;
+    };
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert("⚠️ Error: Bloqueador de ventanas emergentes activo. Por favor, permite las ventanas emergentes para descargar el PDF.");
@@ -719,7 +739,7 @@ export default function SupervisorDashboard({
           <div class="photo-gallery">
             ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).map(c => `
               <div class="photo-card">
-                <img class="photo-img" src="${c.photo}" alt="Evidencia Criterio ${c.id}" />
+                <img class="photo-img" src="${safeImgSrc(c.photo)}" alt="Evidencia Criterio ${c.id}" />
                 <div class="photo-title">Criterio ${c.id} - ${c.text.substring(0, 30)}...</div>
               </div>
             `).join('')}
@@ -729,12 +749,12 @@ export default function SupervisorDashboard({
         <!-- Firmas -->
         <div class="signatures-container">
           <div class="signature-box">
-            ${log.signatureAuditor ? `<img class="signature-img" src="${log.signatureAuditor}" alt="Firma Auditor" />` : ''}
+            ${log.signatureAuditor ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditor)}" alt="Firma Auditor" />` : ''}
             <div class="signature-line">Firma del Auditor</div>
             <div style="font-size: 10px; color: #666; margin-top: 4px;">Diana Valdivia Rojas</div>
           </div>
           <div class="signature-box">
-            ${log.signatureAuditado ? `<img class="signature-img" src="${log.signatureAuditado}" alt="Firma Auditado" />` : ''}
+            ${log.signatureAuditado ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditado)}" alt="Firma Auditado" />` : ''}
             <div class="signature-line">Firma del Auditado</div>
             <div style="font-size: 10px; color: #666; margin-top: 4px;">${log.colaboradorAuditado || 'Colaborador'}</div>
           </div>
