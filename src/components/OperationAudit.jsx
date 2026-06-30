@@ -214,7 +214,7 @@ const CAFETERIA_PRODUCTS = [
 
 export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
   const [store, setStore] = useState(() => {
-    return user && user.role === 'Administrador' ? user.store : 'Barranco';
+    return user && user.role === 'Administrador' ? user.store : '28 de Julio Miraflores';
   });
   const [activeTab, setActiveTab] = useState('precision');
   const [checkedIds, setCheckedIds] = useState({ I1: false });
@@ -447,9 +447,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
               className="input"
               style={{ width: '150px', padding: '6px 12px' }}
             >
-              <option value="Barranco">Barranco</option>
-              <option value="Miraflores">Miraflores</option>
-              <option value="San Isidro">San Isidro</option>
+              <option value="28 de Julio Miraflores">28 de Julio Miraflores</option>
             </select>
           </div>
         </div>
@@ -797,7 +795,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
                 >
                   <option value="">-- Seleccionar Colaborador --</option>
                   {user && ['Gerente', 'Auditor'].includes(user.role) && (
-                    <option value="Diana Valdivia">Diana Valdivia (Administrador - Barranco)</option>
+                    <option value="Diana Valdivia">Diana Valdivia (Administrador - 28 de Julio Miraflores)</option>
                   )}
                   {storeCollaborators.map(m => (
                     <option key={m.username} value={m.name}>{m.name} ({m.role})</option>

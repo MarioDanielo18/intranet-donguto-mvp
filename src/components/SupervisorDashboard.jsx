@@ -179,7 +179,7 @@ export default function SupervisorDashboard({
   const [newDevSn, setNewDevSn] = useState('');
   const [newDevIp, setNewDevIp] = useState('192.168.1.');
   const [newDevPort, setNewDevPort] = useState('4370');
-  const [newDevStore, setNewDevStore] = useState('Barranco');
+  const [newDevStore, setNewDevStore] = useState('28 de Julio Miraflores');
   
   // Simulator states
   const [simCollabUsername, setSimCollabUsername] = useState('');
@@ -286,14 +286,14 @@ export default function SupervisorDashboard({
   const [selectedAuditLog, setSelectedAuditLog] = useState(null);
   
   // States for Incident Dashboard
-  const [incStoreFilter, setIncStoreFilter] = useState('Todas');
+  const [incStoreFilter, setIncStoreFilter] = useState('28 de Julio Miraflores');
   const [incStatusFilter, setIncStatusFilter] = useState('Todos');
   const [incUrgencyFilter, setIncUrgencyFilter] = useState('Todos');
   const [incTypeFilter, setIncTypeFilter] = useState('Todos');
   const [incResponseTexts, setIncResponseTexts] = useState({});
   const [incSuccessMsg, setIncSuccessMsg] = useState('');
   const [incActiveTab, setIncActiveTab] = useState('active'); // 'active' | 'resolved'
-  const [baristaStoreFilter, setBaristaStoreFilter] = useState('Todas');
+  const [baristaStoreFilter, setBaristaStoreFilter] = useState('28 de Julio Miraflores');
   
   const [collabDetailTab, setCollabDetailTab] = useState('training'); // 'training' | 'attendance'
 
@@ -338,7 +338,7 @@ export default function SupervisorDashboard({
   const [manageUserTelefono, setManageUserTelefono] = useState('');
   const [manageUserPassword, setManageUserPassword] = useState('');
   const [manageUserRole, setManageUserRole] = useState('Barista');
-  const [manageUserStore, setManageUserStore] = useState('Barranco');
+  const [manageUserStore, setManageUserStore] = useState('28 de Julio Miraflores');
   const [manageUserBiometricId, setManageUserBiometricId] = useState('');
 
   // States for incident creation form in SupervisorDashboard
@@ -347,14 +347,14 @@ export default function SupervisorDashboard({
   const [createIncType, setCreateIncType] = useState('Mantenimiento');
   const [createIncUrgency, setCreateIncUrgency] = useState('Normal');
   const [createIncStore, setCreateIncStore] = useState(() => {
-    return user && user.store !== 'Todas' ? user.store : 'Barranco';
+    return user && user.store !== 'Todas' ? user.store : '28 de Julio Miraflores';
   });
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activeIncidentId, setActiveIncidentId] = useState(null);
   const [hoveredIncId, setHoveredIncId] = useState(null);
 
   // Filter state for monitoring panel
-  const [monitoringStoreFilter, setMonitoringStoreFilter] = useState('Todas');
+  const [monitoringStoreFilter, setMonitoringStoreFilter] = useState('28 de Julio Miraflores');
 
   // Reset tab to training when collaborator changes
   useEffect(() => {
@@ -778,7 +778,7 @@ export default function SupervisorDashboard({
   const [newMemberPassword, setNewMemberPassword] = useState('');
   const [newMemberBiometricId, setNewMemberBiometricId] = useState('');
   const [newMemberRole, setNewMemberRole] = useState('Barista');
-  const [newMemberStore, setNewMemberStore] = useState('Barranco');
+  const [newMemberStore, setNewMemberStore] = useState('28 de Julio Miraflores');
 
   // Biometric registration states
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
@@ -804,7 +804,7 @@ export default function SupervisorDashboard({
 
   // Manager's Consolidated Attendance Table states
   const [managerSearchCollab, setManagerSearchCollab] = useState('');
-  const [managerStoreFilter, setManagerStoreFilter] = useState('Todas');
+  const [managerStoreFilter, setManagerStoreFilter] = useState('28 de Julio Miraflores');
   const [managerRoleFilter, setManagerRoleFilter] = useState('Todos');
   const [managerDateFilter, setManagerDateFilter] = useState('');
   const [managerStatusFilter, setManagerStatusFilter] = useState('Todos'); // 'Todos' | 'Puntual' | 'Tardanza'
@@ -1372,7 +1372,7 @@ export default function SupervisorDashboard({
     setSelectedCollaborator('TODOS');
   }, [filterArea]);
 
-  const [checklistStoreFilter, setChecklistStoreFilter] = useState(user.store === 'Todas' ? 'Todas' : user.store);
+  const [checklistStoreFilter, setChecklistStoreFilter] = useState('28 de Julio Miraflores');
   const [dbChecklists, setDbChecklists] = useState([]);
   const [loadingChecklists, setLoadingChecklists] = useState(false);
 
@@ -1518,7 +1518,7 @@ export default function SupervisorDashboard({
 
   const getComplianceForStats = (areaCode, dateStr, collaborator = 'TODOS') => {
     if (checklistStoreFilter === 'Todas') {
-      const stores = ['Barranco', 'Miraflores', 'San Isidro'];
+      const stores = ['28 de Julio Miraflores'];
       const compliances = stores.map(store => getStoreComplianceForArea(store, areaCode, dateStr, collaborator));
       return compliances.reduce((acc, val) => acc + val, 0) / stores.length;
     } else {
@@ -1534,7 +1534,7 @@ export default function SupervisorDashboard({
             <span style={{ color: 'var(--text-main)', fontWeight: 600, fontSize: '12.5px', lineHeight: '1.3' }} title={t.descripcion}>{t.descripcion}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '8px', borderLeft: '2px solid var(--border)', marginTop: '4px' }}>
-            {['Barranco', 'Miraflores', 'San Isidro'].map(storeName => {
+            {['28 de Julio Miraflores'].map(storeName => {
               const matched = dbChecklists.find(r => r.taskId === t.id && (r.store === storeName || r.tienda === storeName));
               const completed = matched ? matched.completado : false;
               const evidence = matched ? matched.evidencia : null;
@@ -1639,7 +1639,7 @@ export default function SupervisorDashboard({
   };
 
   const getQuincenalStatus = () => {
-    const storeKey = user.role === 'Administrador' ? user.store : 'Barranco';
+    const storeKey = user.role === 'Administrador' ? user.store : '28 de Julio Miraflores';
     const storeLogs = auditLogs.filter(log => log.tienda === storeKey);
     const today = new Date('2026-06-12T12:00:00Z'); // simulated today
     
@@ -2153,9 +2153,7 @@ export default function SupervisorDashboard({
   };
 
   const renderMultistoreDashboard = () => {
-    const storesList = monitoringStoreFilter === 'Todas'
-      ? ['Barranco', 'Miraflores', 'San Isidro']
-      : [monitoringStoreFilter];
+    const storesList = ['28 de Julio Miraflores'];
     
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -2180,10 +2178,7 @@ export default function SupervisorDashboard({
             className="input"
             style={{ padding: '5px 10px', fontSize: '12.5px', height: '32px', minWidth: '180px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
           >
-            <option value="Todas">🏢 Todas las sedes (General)</option>
-            <option value="Barranco">Sede Barranco</option>
-            <option value="Miraflores">Sede Miraflores</option>
-            <option value="San Isidro">Sede San Isidro</option>
+            <option value="28 de Julio Miraflores">🏢 Sede 28 de Julio Miraflores</option>
           </select>
         </div>
 
@@ -2316,7 +2311,7 @@ export default function SupervisorDashboard({
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                     <span>IP Autorizada Conexión:</span>
                     <strong style={{ color: 'var(--text-main)', fontSize: '11px' }}>
-                      {storeName === 'Barranco' ? '200.121.45.67' : storeName === 'Miraflores' ? '190.235.88.99' : '190.180.12.34'}
+                      {storeName === '28 de Julio Miraflores' ? '190.235.88.99' : '190.180.12.34'}
                     </strong>
                   </div>
                 </div>
@@ -2437,8 +2432,8 @@ export default function SupervisorDashboard({
       },
       {
         id: 2,
-        title: 'Mantenimiento del Extractor en Barranco',
-        description: 'La auditoría operacional de Barranco reporta el criterio M4 (mantenimiento preventivo) como desmarcado debido a fallas en el extractor de cocina. Se recomienda programar la visita técnica del proveedor antes del 20 de junio para evitar riesgos de sanidad.',
+        title: 'Mantenimiento del Extractor en 28 de Julio Miraflores',
+        description: 'La auditoría operacional de 28 de Julio Miraflores reporta el criterio M4 (mantenimiento preventivo) como desmarcado debido a fallas en el extractor de cocina. Se recomienda programar la visita técnica del proveedor antes del 20 de junio para evitar riesgos de sanidad.',
         urgency: 'MEDIA'
       },
       {
@@ -2574,10 +2569,7 @@ export default function SupervisorDashboard({
                   className="input"
                   style={{ padding: '4px 8px', fontSize: '11px', height: '28px', minWidth: '130px', cursor: 'pointer', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}
                 >
-                  <option value="Todas">🏢 Todas las sedes</option>
-                  <option value="Barranco">Sede Barranco</option>
-                  <option value="Miraflores">Sede Miraflores</option>
-                  <option value="San Isidro">Sede San Isidro</option>
+                  <option value="28 de Julio Miraflores">🏢 28 de Julio Miraflores</option>
                 </select>
               </div>
 
@@ -2717,10 +2709,7 @@ export default function SupervisorDashboard({
                 className="input"
                 style={{ padding: '4px 8px', fontSize: '12px', height: '32px', cursor: 'pointer' }}
               >
-                <option value="Todas">🏢 Todas las sedes</option>
-                <option value="Barranco">Sede Barranco</option>
-                <option value="Miraflores">Sede Miraflores</option>
-                <option value="San Isidro">Sede San Isidro</option>
+                <option value="28 de Julio Miraflores">🏢 28 de Julio Miraflores</option>
               </select>
             </div>
 
@@ -2947,7 +2936,7 @@ export default function SupervisorDashboard({
     });
 
     // Unique stores for filters (only for non-admins)
-    const uniqueStores = Array.from(new Set([...(incidents || []).map(inc => inc.store), 'Barranco', 'Miraflores', 'San Isidro']));
+    const uniqueStores = ['28 de Julio Miraflores'];
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
@@ -3069,9 +3058,7 @@ export default function SupervisorDashboard({
                       className="input"
                       style={{ padding: '8px', fontSize: '12.5px', height: '38px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}
                     >
-                      <option value="Barranco">Sede Barranco</option>
-                      <option value="Miraflores">Sede Miraflores</option>
-                      <option value="San Isidro">Sede San Isidro</option>
+                      <option value="28 de Julio Miraflores">Sede 28 de Julio Miraflores</option>
                     </select>
                   </div>
                 ) : (
@@ -3221,7 +3208,6 @@ export default function SupervisorDashboard({
                 className="input"
                 style={{ padding: '5px 10px', fontSize: '12px', height: '32px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
               >
-                <option value="Todas">🏢 Todas las sedes</option>
                 {uniqueStores.map(store => (
                   <option key={store} value={store}>{store}</option>
                 ))}
@@ -3818,9 +3804,7 @@ export default function SupervisorDashboard({
                         onChange={(e) => setManageUserStore(e.target.value)}
                         style={{ padding: '8px' }}
                       >
-                        <option value="Barranco">Barranco</option>
-                        <option value="Miraflores">Miraflores</option>
-                        <option value="San Isidro">San Isidro</option>
+                        <option value="28 de Julio Miraflores">28 de Julio Miraflores</option>
                         <option value="Todas">Todas (Multitienda)</option>
                       </select>
                     </div>
@@ -4155,9 +4139,7 @@ export default function SupervisorDashboard({
                         onChange={(e) => setNewDevStore(e.target.value)}
                         style={{ padding: '8px' }}
                       >
-                        <option value="Barranco">Barranco</option>
-                        <option value="Miraflores">Miraflores</option>
-                        <option value="San Isidro">San Isidro</option>
+                        <option value="28 de Julio Miraflores">28 de Julio Miraflores</option>
                       </select>
                     </div>
                   </div>
@@ -4596,10 +4578,7 @@ main();`}
                   className="input"
                   style={{ padding: '4px 8px', fontSize: '12px', height: '32px', cursor: 'pointer' }}
                 >
-                  <option value="Todas">🏢 Todas las sedes</option>
-                  <option value="Barranco">Sede Barranco</option>
-                  <option value="Miraflores">Sede Miraflores</option>
-                  <option value="San Isidro">Sede San Isidro</option>
+                  <option value="28 de Julio Miraflores">🏢 28 de Julio Miraflores</option>
                 </select>
               </div>
 
@@ -4982,10 +4961,7 @@ main();`}
                         minWidth: '140px'
                       }}
                     >
-                      <option value="Todas">🏢 Todas las sedes</option>
-                      <option value="Barranco">Sede Barranco</option>
-                      <option value="Miraflores">Sede Miraflores</option>
-                      <option value="San Isidro">Sede San Isidro</option>
+                      <option value="28 de Julio Miraflores">🏢 28 de Julio Miraflores</option>
                     </select>
                   </div>
                 )}
@@ -5413,10 +5389,7 @@ main();`}
                               borderRadius: '4px'
                             }}
                           >
-                            <option value="Todas">Todas las sedes</option>
-                            <option value="Barranco">Barranco</option>
-                            <option value="Miraflores">Miraflores</option>
-                            <option value="San Isidro">San Isidro</option>
+                            <option value="28 de Julio Miraflores">28 de Julio Miraflores</option>
                           </select>
                         ) : (
                           <span style={{ color: 'var(--primary)' }}>{user.store}</span>
@@ -5770,9 +5743,7 @@ main();`}
                         className="input"
                         style={{ padding: '8px 12px' }}
                       >
-                        <option value="Barranco">Barranco</option>
-                        <option value="Miraflores">Miraflores</option>
-                        <option value="San Isidro">San Isidro</option>
+                        <option value="28 de Julio Miraflores">28 de Julio Miraflores</option>
                         <option value="Todas">Todas</option>
                       </select>
                     </div>
@@ -5913,9 +5884,7 @@ main();`}
                           className="input"
                           style={{ padding: '2px 6px', fontSize: '11px', height: '26px', width: '110px', cursor: 'pointer', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
                         >
-                          <option value="Barranco">Barranco</option>
-                          <option value="Miraflores">Miraflores</option>
-                          <option value="San Isidro">San Isidro</option>
+                          <option value="28 de Julio Miraflores">28 de Julio Miraflores</option>
                           {user.role !== 'Administrador' && <option value="Todas">Todas</option>}
                         </select>
                       </div>

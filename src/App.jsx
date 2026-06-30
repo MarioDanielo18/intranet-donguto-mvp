@@ -130,7 +130,7 @@ const INITIAL_MOCK_TEAM = [
     password: 'baristadg',
     name: 'Mateo Quispe López',
     role: 'Barista',
-    store: 'Barranco',
+    store: '28 de Julio Miraflores',
     trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'En Curso' },
     arrivalLogs: [
       { date: '2026-06-08', time: '07:02 AM', expectedTime: '07:00 AM', delayMin: 2 },
@@ -145,7 +145,7 @@ const INITIAL_MOCK_TEAM = [
     password: 'baristadg',
     name: 'Carlos Mendoza Castro',
     role: 'Barista',
-    store: 'Barranco',
+    store: '28 de Julio Miraflores',
     trainingProgress: { D1: 'Completado' },
     arrivalLogs: [
       { date: '2026-06-08', time: '02:00 PM', expectedTime: '02:00 PM', delayMin: 0 },
@@ -160,7 +160,7 @@ const INITIAL_MOCK_TEAM = [
     password: 'cocinadg',
     name: 'Gabriela Alva Ruiz',
     role: 'Cocina',
-    store: 'Barranco',
+    store: '28 de Julio Miraflores',
     trainingProgress: { D1: 'Completado', D2: 'En Curso' },
     arrivalLogs: [
       { date: '2026-06-08', time: '07:05 AM', expectedTime: '07:00 AM', delayMin: 5 },
@@ -175,7 +175,7 @@ const INITIAL_MOCK_TEAM = [
     password: 'cocinadg',
     name: 'Elena Rojas Guerra',
     role: 'Cocina',
-    store: 'Barranco',
+    store: '28 de Julio Miraflores',
     trainingProgress: { D1: 'Completado' },
     arrivalLogs: [
       { date: '2026-06-08', time: '02:01 PM', expectedTime: '02:00 PM', delayMin: 1 },
@@ -190,7 +190,7 @@ const INITIAL_MOCK_TEAM = [
     password: 'serviciodg',
     name: 'Rodrigo Flores Pinedo',
     role: 'Servicio',
-    store: 'Barranco',
+    store: '28 de Julio Miraflores',
     trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: [
       { date: '2026-06-08', time: '08:00 AM', expectedTime: '08:00 AM', delayMin: 0 },
@@ -205,7 +205,7 @@ const INITIAL_MOCK_TEAM = [
     password: 'serviciodg',
     name: 'Lucía Díaz Ortiz',
     role: 'Servicio',
-    store: 'Barranco',
+    store: '28 de Julio Miraflores',
     trainingProgress: { D1: 'Completado' },
     arrivalLogs: [
       { date: '2026-06-08', time: '02:03 PM', expectedTime: '02:00 PM', delayMin: 3 },
@@ -220,7 +220,7 @@ const INITIAL_MOCK_TEAM = [
     password: 'baristadg',
     name: 'Carlos Miraflores Ortiz',
     role: 'Barista',
-    store: 'Miraflores',
+    store: '28 de Julio Miraflores',
     trainingProgress: { D1: 'Completado' },
     arrivalLogs: [
       { date: '2026-06-08', time: '07:15 AM', expectedTime: '07:00 AM', delayMin: 15 },
@@ -235,7 +235,7 @@ const INITIAL_MOCK_TEAM = [
     password: 'cocinadg',
     name: 'Laura Torres Salas',
     role: 'Cocina',
-    store: 'Miraflores',
+    store: '28 de Julio Miraflores',
     trainingProgress: { D1: 'Completado' },
     arrivalLogs: [
       { date: '2026-06-08', time: '07:10 AM', expectedTime: '07:00 AM', delayMin: 10 },
@@ -250,7 +250,7 @@ const INITIAL_MOCK_TEAM = [
     password: 'serviciodg',
     name: 'Andres Silva Ramos',
     role: 'Servicio',
-    store: 'Miraflores',
+    store: '28 de Julio Miraflores',
     trainingProgress: { D1: 'Completado' },
     arrivalLogs: [
       { date: '2026-06-08', time: '08:08 AM', expectedTime: '08:00 AM', delayMin: 8 },
@@ -265,7 +265,7 @@ const INITIAL_MOCK_TEAM = [
     password: 'admindg',
     name: 'Diana Valdivia Rojas',
     role: 'Administrador',
-    store: 'Barranco',
+    store: '28 de Julio Miraflores',
     trainingProgress: {},
     arrivalLogs: [
       { date: '2026-06-08', time: '07:45 AM', expectedTime: '08:00 AM', delayMin: 0 },
@@ -331,7 +331,7 @@ const INITIAL_MOCK_TEAM = [
 
 const INITIAL_AUDIT_LOGS = [
   { 
-    tienda: 'Barranco', 
+    tienda: '28 de Julio Miraflores', 
     fecha: '2026-06-10T15:30:00Z', 
     nota: 94.5, 
     comentarios: 'Tienda en excelentes condiciones. Se recomienda reparar luces de emergencia.',
@@ -342,7 +342,7 @@ const INITIAL_AUDIT_LOGS = [
     signatureAuditado: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50" viewBox="0 0 150 50"><path d="M 15 35 Q 40 15 70 35 T 110 30 T 135 15" fill="none" stroke="%2310b981" stroke-width="2" stroke-linecap="round"/></svg>'
   },
   { 
-    tienda: 'Miraflores', 
+    tienda: '28 de Julio Miraflores', 
     fecha: '2026-06-05T10:00:00Z', 
     nota: 81.2, 
     comentarios: 'Falta rotulado en insumos de cocina y vitrina de galletas sucia.',
@@ -361,7 +361,7 @@ const INITIAL_INCIDENTS = [
     reporterEmail: 'mateo@donguto.com',
     reporterName: 'Mateo Quispe',
     reporterRole: 'Barista',
-    store: 'Barranco',
+    store: '28 de Julio Miraflores',
     type: 'Mantenimiento',
     title: 'Fuga de vapor en la lanceta izquierda',
     description: 'La lanceta de vapor izquierda de la máquina La Marzocco gotea agua caliente constantemente y pierde presión al texturizar leche.',
@@ -380,7 +380,7 @@ const INITIAL_INCIDENTS = [
     reporterEmail: 'gabriela@donguto.com',
     reporterName: 'Gabriela Alva',
     reporterRole: 'Cocina',
-    store: 'Barranco',
+    store: '28 de Julio Miraflores',
     type: 'Insumos',
     title: 'Faltante de fresas frescas para postres',
     description: 'El proveedor de frutas no entregó la cantidad completa de fresas para el coulis y decoración de pasteles. Solo tenemos para hoy.',
@@ -399,7 +399,7 @@ const INITIAL_INCIDENTS = [
     reporterEmail: 'rodrigo@donguto.com',
     reporterName: 'Rodrigo Flores',
     reporterRole: 'Servicio',
-    store: 'Barranco',
+    store: '28 de Julio Miraflores',
     type: 'Operaciones',
     title: 'Incidencia con el datáfono de Visa',
     description: 'La ticketera de la terminal de Visa no imprime los vouchers para el cliente. La transacción se procesa pero no hay papel de copia física.',
@@ -579,7 +579,7 @@ export default function App() {
 
   useEffect(() => {
     if (user) {
-      loadDailyChecklists(user.store === 'Todas' ? 'Barranco' : user.store);
+      loadDailyChecklists(user.store === 'Todas' ? '28 de Julio Miraflores' : user.store);
     }
   }, [user]);
 
@@ -605,16 +605,16 @@ export default function App() {
 
   // Biometric states
   const INITIAL_BIOMETRIC_DEVICES = [
-    { id: 'DEV-001', name: 'ZKTeco M1 - Sede Barranco', model: 'ZKTeco M1', ip: '192.168.1.150', port: '4370', store: 'Barranco', sn: 'jchpxowbxxfrivrloqkg', status: 'Online' },
-    { id: 'DEV-002', name: 'ZKTeco K40 - Sede Miraflores', model: 'ZKTeco K40', ip: '192.168.1.151', port: '4370', store: 'Miraflores', sn: 'ZK-K40-MIRAF', status: 'Online' },
-    { id: 'DEV-003', name: 'ZKTeco MB20 - Sede San Isidro', model: 'ZKTeco MB20', ip: '192.168.1.152', port: '4370', store: 'San Isidro', sn: 'ZK-MB20-SANIS', status: 'Offline' }
+    { id: 'DEV-001', name: 'ZKTeco M1 - Sede 28 de Julio Miraflores', model: 'ZKTeco M1', ip: '192.168.1.150', port: '4370', store: '28 de Julio Miraflores', sn: 'jchpxowbxxfrivrloqkg', status: 'Online' },
+    { id: 'DEV-002', name: 'ZKTeco K40 - Sede Auxiliar', model: 'ZKTeco K40', ip: '192.168.1.151', port: '4370', store: '28 de Julio Miraflores', sn: 'ZK-K40-MIRAF', status: 'Online' },
+    { id: 'DEV-003', name: 'ZKTeco MB20 - Entrada Cocina', model: 'ZKTeco MB20', ip: '192.168.1.152', port: '4370', store: '28 de Julio Miraflores', sn: 'ZK-MB20-SANIS', status: 'Offline' }
   ];
 
   const INITIAL_BIOMETRIC_LOGS = [
-    { id: 'BLOG-001', date: '2026-06-12T07:01:00Z', name: 'Mateo Quispe López', username: 'qlopezdg', role: 'Barista', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede Barranco', status: 'Success' },
-    { id: 'BLOG-002', date: '2026-06-12T07:07:00Z', name: 'Gabriela Alva Ruiz', username: 'aruizdg', role: 'Cocina', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede Barranco', status: 'Success' },
-    { id: 'BLOG-003', date: '2026-06-12T07:51:00Z', name: 'Diana Valdivia Rojas', username: 'vrojasdg', role: 'Administrador', store: 'Barranco', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede Barranco', status: 'Success' },
-    { id: 'BLOG-004', date: '2026-06-12T07:55:00Z', name: 'Pedro Supervisor Gómez', username: 'sgomezdg', role: 'Supervisor', store: 'Todas', deviceId: 'DEV-002', deviceName: 'ZKTeco K40 - Sede Miraflores', status: 'Success' }
+    { id: 'BLOG-001', date: '2026-06-12T07:01:00Z', name: 'Mateo Quispe López', username: 'qlopezdg', role: 'Barista', store: '28 de Julio Miraflores', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede 28 de Julio Miraflores', status: 'Success' },
+    { id: 'BLOG-002', date: '2026-06-12T07:07:00Z', name: 'Gabriela Alva Ruiz', username: 'aruizdg', role: 'Cocina', store: '28 de Julio Miraflores', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede 28 de Julio Miraflores', status: 'Success' },
+    { id: 'BLOG-003', date: '2026-06-12T07:51:00Z', name: 'Diana Valdivia Rojas', username: 'vrojasdg', role: 'Administrador', store: '28 de Julio Miraflores', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede 28 de Julio Miraflores', status: 'Success' },
+    { id: 'BLOG-004', date: '2026-06-12T07:55:00Z', name: 'Pedro Supervisor Gómez', username: 'sgomezdg', role: 'Supervisor', store: 'Todas', deviceId: 'DEV-002', deviceName: 'ZKTeco K40 - Sede Auxiliar', status: 'Success' }
   ];
 
   const [biometricDevices, setBiometricDevices] = useState(() => {
@@ -641,7 +641,7 @@ export default function App() {
 
     const device = biometricDevices.find(d => d.id === deviceId);
     const deviceName = device ? device.name : 'Dispositivo Desconocido';
-    const store = employee.store === 'Todas' ? (device ? device.store : 'Barranco') : employee.store;
+    const store = employee.store === 'Todas' ? (device ? device.store : '28 de Julio Miraflores') : employee.store;
 
     let punchDateStr, punchTimeStr;
     let currentMins;
@@ -915,7 +915,7 @@ export default function App() {
                 name: employee ? employee.name : (punch.username || `ID ${punch.biometric_id}`),
                 username: employee ? employee.username : '',
                 role: employee ? employee.role : 'Barista',
-                store: employee ? employee.store : 'Barranco',
+                store: employee ? employee.store : '28 de Julio Miraflores',
                 deviceId: punch.device_id || 'DEV-001',
                 deviceName: punch.device_name || 'ZKTeco M1',
                 status: 'Success'
@@ -1030,7 +1030,7 @@ export default function App() {
             completado: completed,
             evidencia: finalEvidencia,
             colaborador: user.name,
-            store: user.store === 'Todas' ? 'Barranco' : user.store
+            store: user.store === 'Todas' ? '28 de Julio Miraflores' : user.store
           })
         });
         const data = await res.json();
@@ -1666,7 +1666,7 @@ export default function App() {
                   key={r.username}
                   className={`drawer-btn ${user.role === r.role ? 'active' : ''}`}
                   onClick={() => {
-                    setUser({ username: r.username, name: r.name, role: r.role, store: ['Supervisor', 'Gerente', 'Técnico', 'Auditor'].includes(r.role) ? 'Todas' : 'Barranco' });
+                    setUser({ username: r.username, name: r.name, role: r.role, store: ['Supervisor', 'Gerente', 'Técnico', 'Auditor'].includes(r.role) ? 'Todas' : '28 de Julio Miraflores' });
                     if (['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(r.role)) {
                       setActiveTab(r.role === 'Técnico' ? 'technical_panel' : 'monitoring');
                     } else {

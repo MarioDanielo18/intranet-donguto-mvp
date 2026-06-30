@@ -269,9 +269,7 @@ const MANUALS_BY_DAY = {
 
 
 const STORE_WIFI_IPS = {
-  'Barranco': '200.121.45.67',
-  'Miraflores': '190.235.88.99',
-  'San Isidro': '181.65.12.34'
+  '28 de Julio Miraflores': '190.235.88.99'
 };
 
 export default function ColaboradorDashboard({
@@ -391,7 +389,7 @@ export default function ColaboradorDashboard({
   const [incidentSubTab, setIncidentSubTab] = useState('instructions'); // 'instructions' | 'register' | 'my_reports' | 'store_history'
 
   const [userIp, setUserIp] = useState('Obteniendo IP...');
-  const [selectedWifi, setSelectedWifi] = useState('external'); // 'Barranco' | 'Miraflores' | 'San Isidro' | 'external'
+  const [selectedWifi, setSelectedWifi] = useState('external'); // '28 de Julio Miraflores' | 'external'
 
   useEffect(() => {
     fetch('https://api.ipify.org?format=json')
