@@ -292,6 +292,7 @@ export default function SupervisorDashboard({
   const [incTypeFilter, setIncTypeFilter] = useState('Todos');
   const [incResponseTexts, setIncResponseTexts] = useState({});
   const [incSuccessMsg, setIncSuccessMsg] = useState('');
+  const [incActiveTab, setIncActiveTab] = useState('active'); // 'active' | 'resolved'
   
   const [collabDetailTab, setCollabDetailTab] = useState('training'); // 'training' | 'attendance'
 
@@ -2693,21 +2694,31 @@ export default function SupervisorDashboard({
     const userStore = user.store;
     const isStoreAdmin = user.role === 'Administrador';
 
-
-
-    const filtered = (incidents || []).filter(inc => {
-      // Ignore resolved incidents entirely
-      if (inc.status === 'Resuelto') return false;
-
-      // Store filter
+    // Store filter helper to calculate overall statistics
+    const storeFiltered = (incidents || []).filter(inc => {
       if (isStoreAdmin) {
-        if (inc.store !== userStore) return false;
+        return inc.store === userStore;
       } else {
-        if (incStoreFilter !== 'Todas' && inc.store !== incStoreFilter) return false;
+        return incStoreFilter === 'Todas' || inc.store === incStoreFilter;
       }
-      
-      // Status filter
-      if (incStatusFilter !== 'Todos' && inc.status !== incStatusFilter) return false;
+    });
+
+    const pendingCount = storeFiltered.filter(inc => inc.status === 'Pendiente').length;
+    const processCount = storeFiltered.filter(inc => inc.status === 'En Proceso').length;
+    const escalatedCount = storeFiltered.filter(inc => inc.status === 'Escalado').length;
+    const resolvedCount = storeFiltered.filter(inc => inc.status === 'Resuelto').length;
+
+    // Filter incidents list based on current tab and filters
+    const filtered = storeFiltered.filter(inc => {
+      // Tab filter
+      if (incActiveTab === 'active') {
+        if (inc.status === 'Resuelto') return false;
+      } else {
+        if (inc.status !== 'Resuelto') return false;
+      }
+
+      // Status filter (only applicable for active tab)
+      if (incActiveTab === 'active' && incStatusFilter !== 'Todos' && inc.status !== incStatusFilter) return false;
       
       // Urgency filter
       if (incUrgencyFilter !== 'Todos' && inc.urgency !== incUrgencyFilter) return false;
@@ -2718,16 +2729,8 @@ export default function SupervisorDashboard({
       return true;
     });
 
-    // Stats
-    const totalCount = filtered.length;
-    const pendingCount = filtered.filter(inc => inc.status === 'Pendiente').length;
-    const processCount = filtered.filter(inc => inc.status === 'En Proceso').length;
-    const escalatedCount = filtered.filter(inc => inc.status === 'Escalado').length;
-
     // Unique stores for filters (only for non-admins)
     const uniqueStores = Array.from(new Set([...(incidents || []).map(inc => inc.store), 'Barranco', 'Miraflores', 'San Isidro']));
-
-
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
@@ -2840,7 +2843,6 @@ export default function SupervisorDashboard({
               </h3>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                {/* Store selection (Only if user has access to multiple stores) */}
                 {user.store === 'Todas' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>1. Seleccionar Sede afectada:</label>
@@ -2858,53 +2860,53 @@ export default function SupervisorDashboard({
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>1. Sede afectada:</label>
-                    <div style={{ padding: '10px', fontSize: '12.5px', height: '38px', backgroundColor: 'rgba(0,0,0,0.05)', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                    <div style={{ padding: '8px 12px', fontSize: '12.5px', backgroundColor: 'rgba(0,0,0,0.04)', border: '1px solid var(--border)', borderRadius: '4px', height: '38px', display: 'flex', alignItems: 'center', fontWeight: 'bold' }}>
                       📍 Sede {user.store}
                     </div>
                   </div>
                 )}
 
-                {/* Category/Type */}
+                {/* Category Selection */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>2. Categoría / Tipo:</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>2. Categoría:</label>
                   <select
                     value={createIncType}
                     onChange={(e) => setCreateIncType(e.target.value)}
                     className="input"
                     style={{ padding: '8px', fontSize: '12.5px', height: '38px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}
                   >
-                    <option value="Mantenimiento">🛠️ Mantenimiento</option>
-                    <option value="Insumos">📦 Insumos / Stock 86</option>
-                    <option value="Operaciones">📋 Operaciones</option>
+                    <option value="Mantenimiento">🛠️ Mantenimiento / Infraestructura</option>
+                    <option value="Insumos">📦 Insumos / Desabastecimiento</option>
+                    <option value="Operaciones">📋 Operaciones / Turnos</option>
                     <option value="Otros">❓ Otros</option>
                   </select>
                 </div>
 
-                {/* Urgency */}
+                {/* Urgency selection */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>3. Nivel de Urgencia:</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>3. Prioridad / Urgencia:</label>
                   <select
                     value={createIncUrgency}
                     onChange={(e) => setCreateIncUrgency(e.target.value)}
                     className="input"
                     style={{ padding: '8px', fontSize: '12.5px', height: '38px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}
                   >
-                    <option value="Normal">⚠️ Normal (No interrumpe operación inmediatamente)</option>
-                    <option value="Urgente">🚨 Urgente (Interrupción operativa o crítico)</option>
+                    <option value="Normal">⚠️ Normal (Resolución en 24-48h)</option>
+                    <option value="Urgente">🚨 Urgente (Atención Inmediata)</option>
                   </select>
                 </div>
               </div>
 
               {/* Title */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>4. Título Estándar de la Incidencia:</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>4. Asunto / Título corto:</label>
                 <input
                   type="text"
-                  placeholder="Ej: Falla en molino de café principal / Desabastecimiento de leche descremada"
+                  placeholder="Ej: Fuga de agua en barra, Falta leche fresca, Falla de molino principal..."
                   value={createIncTitle}
                   onChange={(e) => setCreateIncTitle(e.target.value)}
                   className="input"
-                  style={{ padding: '10px', fontSize: '12.5px', border: '1px solid var(--border)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+                  style={{ padding: '8px 12px', fontSize: '12.5px', border: '1px solid var(--border)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
                 />
               </div>
 
@@ -2935,10 +2937,6 @@ export default function SupervisorDashboard({
 
         {/* Stats Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
-          <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid var(--border)' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Filtrados</span>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', marginTop: '5px' }}>{totalCount}</div>
-          </div>
           <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid var(--warning)' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--warning)', textTransform: 'uppercase' }}>⏳ Pendientes</span>
             <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--warning)', marginTop: '5px' }}>{pendingCount}</div>
@@ -2951,13 +2949,52 @@ export default function SupervisorDashboard({
             <span style={{ fontSize: '11px', fontWeight: 700, color: '#d97706', textTransform: 'uppercase' }}>🚨 Escalados</span>
             <div style={{ fontSize: '24px', fontWeight: 800, color: '#d97706', marginTop: '5px' }}>{escalatedCount}</div>
           </div>
+          <div className="card glass" style={{ padding: '15px', textAlign: 'center', border: '1px solid var(--success)' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase' }}>✅ Casos Resueltos</span>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--success)', marginTop: '5px' }}>{resolvedCount}</div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div style={{ display: 'flex', borderBottom: '2px solid var(--border)', gap: '10px', marginTop: '10px' }}>
+          <button
+            onClick={() => setIncActiveTab('active')}
+            style={{
+              padding: '10px 20px',
+              fontSize: '13.5px',
+              fontWeight: 'bold',
+              background: 'none',
+              border: 'none',
+              borderBottom: incActiveTab === 'active' ? '3px solid var(--primary)' : '3px solid transparent',
+              color: incActiveTab === 'active' ? 'var(--primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            ⏳ Incidencias Activas ({pendingCount + processCount + escalatedCount})
+          </button>
+          <button
+            onClick={() => setIncActiveTab('resolved')}
+            style={{
+              padding: '10px 20px',
+              fontSize: '13.5px',
+              fontWeight: 'bold',
+              background: 'none',
+              border: 'none',
+              borderBottom: incActiveTab === 'resolved' ? '3px solid var(--success)' : '3px solid transparent',
+              color: incActiveTab === 'resolved' ? 'var(--success)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            ✅ Casos Resueltos ({resolvedCount})
+          </button>
         </div>
 
         {/* Filters Bar */}
         <div className="card glass" style={{ padding: '15px', display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'center', border: '1px solid var(--border)' }}>
           <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>🔍 Filtros rápidos:</strong>
           
-          {/* Store Filter */}
           {!isStoreAdmin ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
               <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>Sede:</label>
@@ -2982,21 +3019,23 @@ export default function SupervisorDashboard({
             </div>
           )}
 
-          {/* Status Filter */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
-            <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>Estado:</label>
-            <select
-              value={incStatusFilter}
-              onChange={(e) => setIncStatusFilter(e.target.value)}
-              className="input"
-              style={{ padding: '5px 10px', fontSize: '12px', height: '32px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
-            >
-              <option value="Todos">📄 Todos los estados</option>
-              <option value="Pendiente">⏳ Pendiente</option>
-              <option value="En Proceso">⚙️ En Proceso</option>
-              <option value="Escalado">🚨 Escalado</option>
-            </select>
-          </div>
+          {/* Status Filter (Only visible when active tab is selected) */}
+          {incActiveTab === 'active' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>Estado:</label>
+              <select
+                value={incStatusFilter}
+                onChange={(e) => setIncStatusFilter(e.target.value)}
+                className="input"
+                style={{ padding: '5px 10px', fontSize: '12px', height: '32px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                <option value="Todos">📄 Todos los estados</option>
+                <option value="Pendiente">⏳ Pendiente</option>
+                <option value="En Proceso">⚙️ En Proceso</option>
+                <option value="Escalado">🚨 Escalado</option>
+              </select>
+            </div>
+          )}
 
           {/* Category Filter */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
@@ -3069,6 +3108,10 @@ export default function SupervisorDashboard({
                 statusBg = 'var(--warning-light)';
                 statusColor = '#d97706';
                 statusBorder = '#d97706';
+              } else if (inc.status === 'Resuelto') {
+                statusBg = 'var(--success-light)';
+                statusColor = 'var(--success)';
+                statusBorder = 'var(--success)';
               }
 
               const isHovered = hoveredIncId === inc.id;
