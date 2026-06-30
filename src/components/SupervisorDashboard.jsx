@@ -2,6 +2,47 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import OperationAudit from './OperationAudit';
 
+const AUDIT_CRITERIA_LOOKUP = {
+  P1: { text: 'El calibrado de la molienda (18g in, 36g out) se realiza antes de abrir.', cat: 'PRECISIÓN' },
+  P2: { text: 'El peso de la dosis de espresso se verifica en cada preparación.', cat: 'PRECISIÓN' },
+  P3: { text: 'Se utiliza la balanza para calibrar el flujo de extracción constantemente.', cat: 'PRECISIÓN' },
+  P4: { text: 'El tiempo de extracción (25-30 seg) está dentro del estándar oficial.', cat: 'PRECISIÓN' },
+  P5: { text: 'Se registra la temperatura del agua del grupo (90-94°C) diariamente.', cat: 'PRECISIÓN' },
+  
+  PR1: { text: 'El personal viste el uniforme completo, limpio y gorro/cabello recogido.', cat: 'PRESENTACIÓN' },
+  PR2: { text: 'La vitrina de postres está limpia, ordenada y completamente abastecida.', cat: 'PRESENTACIÓN' },
+  PR3: { text: 'Las mesas, sillas y el salón en general están limpios y ordenados.', cat: 'PRESENTACIÓN' },
+  PR4: { text: 'La barra de atención está despejada de objetos personales de baristas.', cat: 'PRESENTACIÓN' },
+  PR5: { text: 'La música ambiental y el volumen están en el nivel adecuado oficial.', cat: 'PRESENTACIÓN' },
+  
+  L1: { text: 'Se realiza la limpieza profunda de la máquina de espresso y molinos.', cat: 'LIMPIEZA' },
+  L2: { text: 'Los utensilios de barra (jarras, pitchers, spoons) están desinfectados.', cat: 'LIMPIEZA' },
+  L3: { text: 'Los servicios higiénicos se limpian y abastecen constantemente.', cat: 'LIMPIEZA' },
+  L4: { text: 'El back of store y los equipos operativos están limpios.', cat: 'LIMPIEZA' },
+  L5: { text: 'El sistema y cronograma de limpieza mensual está establecido y activo.', cat: 'LIMPIEZA' },
+  
+  I1: { text: 'Se corrobora una muestra de solo 10 productos y están correctamente subidos al sistema de restaurante.pe.', cat: 'INVENTARIO' },
+  I2: { text: 'Verificar que el inventario físico esté alinea con el inventario en el sistema.', cat: 'INVENTARIO' },
+  
+  H1: { text: 'Bienvenida y recepción del cliente cálida y con sonrisa.', cat: 'HOSPITALIDAD' },
+  H2: { text: 'Atención y servicio personalizado de acuerdo al cliente.', cat: 'HOSPITALIDAD' },
+  H3: { text: 'Tiempo de respuesta y eficiencia al tomar el pedido.', cat: 'HOSPITALIDAD' },
+  H4: { text: 'Actitud, comportamiento y presentación impecable del personal.', cat: 'HOSPITALIDAD' },
+  H5: { text: 'Cumple con los 8 pasos del protocolo de servicio (OPS-01).', cat: 'HOSPITALIDAD' },
+  
+  M1: { text: 'Se da mantenimiento y están en buen estado techos, pisos, paredes.', cat: 'MANTENIMIENTO' },
+  M2: { text: 'Los equipos operativos están en buen estado de conservación.', cat: 'MANTENIMIENTO' },
+  M3: { text: 'El material publicitario (POP) actual y ayudas de venta están en buen estado.', cat: 'MANTENIMIENTO' },
+  M4: { text: 'Se realiza el mantenimiento preventivo programado.', cat: 'MANTENIMIENTO' },
+  M5: { text: 'Se realiza el envío y seguimiento de pendientes de mantenimiento.', cat: 'MANTENIMIENTO' },
+  
+  E1: { text: 'Se cuenta con el plan de entrenamiento para cada puesto.', cat: 'ENTRENAMIENTO' },
+  E2: { text: 'Se tienen las Validaciones de Competencia (VC) actualizadas.', cat: 'ENTRENAMIENTO' },
+  E3: { text: 'El personal tiene acceso a la carpeta compartida de manuales.', cat: 'ENTRENAMIENTO' },
+  E4: { text: 'Se cuenta con el file de personal completo en físico/digital.', cat: 'ENTRENAMIENTO' },
+  E5: { text: 'Se tienen las Listas de Verificación (LDV) físicas en tienda.', cat: 'ENTRENAMIENTO' }
+};
+
 const MOCK_HISTORY = {
   '2026-06-01': { score: 100, completedIds: ['B-AP-1','B-AP-2','B-AP-3','B-AP-4','B-AP-5','B-AP-6','B-AP-7','B-AP-8','B-AP-9','B-AP-10','B-AP-11','B-AP-12','B-AP-13','B-AP-14','B-AP-15','B-RL-1','B-RL-2','B-RL-3','B-CI-1','B-CI-2','B-CI-3','B-CI-4','B-CI-5','B-CI-6','B-CI-7','B-CI-8','B-CI-9','B-CI-10','B-CI-11','B-CI-12','B-CI-13','B-CI-14','B-CI-15','B-CI-16','B-CI-17','B-CI-18','B-CI-19','B-CI-20','K-AP-1','K-AP-2','K-AP-3','K-AP-4','K-AP-5','K-AP-6','K-AP-7','K-AP-8','K-CI-1','K-CI-2','K-CI-3','K-CI-4','K-CI-5','K-CI-6','S-AP-1','S-AP-2','S-AP-3','S-AP-4','S-AP-5','S-AP-6'] },
   '2026-06-02': { score: 95, completedIds: ['B-AP-1','B-AP-2','B-AP-3','B-AP-4','B-AP-5','B-AP-6','B-AP-7','B-AP-8','B-AP-9','B-AP-10','B-AP-11','B-AP-12','B-AP-13','B-AP-14','B-AP-15','B-RL-1','B-RL-2','B-RL-3','B-CI-1','B-CI-2','B-CI-3','B-CI-4','B-CI-5','B-CI-6','B-CI-7','B-CI-8','B-CI-9','B-CI-10','B-CI-11','B-CI-12','B-CI-13','B-CI-14','B-CI-15','B-CI-16','B-CI-17','B-CI-18','B-CI-19','B-CI-20','K-AP-1','K-AP-2','K-AP-3','K-AP-4','K-AP-5','K-AP-6','K-AP-7','K-AP-8','K-CI-1','K-CI-2','K-CI-3','K-CI-4','K-CI-5','K-CI-6','S-AP-1','S-AP-2','S-AP-3','S-AP-4','S-AP-5'] },
@@ -373,6 +414,341 @@ export default function SupervisorDashboard({
 
     result.sort((a, b) => b.avgDelay - a.avgDelay);
     return result;
+  };
+
+  const handleDownloadAuditPDF = (log) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("⚠️ Error: Bloqueador de ventanas emergentes activo. Por favor, permite las ventanas emergentes para descargar el PDF.");
+      return;
+    }
+    
+    const categoriesMap = {};
+    Object.entries(log.detalles || {}).forEach(([critId, val]) => {
+      const info = AUDIT_CRITERIA_LOOKUP[critId] || { text: `Criterio ${critId}`, cat: 'OTROS' };
+      if (!categoriesMap[info.cat]) {
+        categoriesMap[info.cat] = [];
+      }
+      categoriesMap[info.cat].push({
+        id: critId,
+        text: info.text,
+        cumple: val === true,
+        plan: log.actionPlans?.[critId] || null,
+        photo: log.evidencePhotos?.[critId] || null
+      });
+    });
+    
+    let ratingText = 'Excelente';
+    let ratingColor = '#10b981'; // success
+    if (log.nota < 70) {
+      ratingText = 'Crítico';
+      ratingColor = '#ef4444'; // error
+    } else if (log.nota < 90) {
+      ratingText = 'Regular / Alerta';
+      ratingColor = '#f59e0b'; // warning
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>Auditoría Operacional - Sede ${log.tienda}</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #2b2b2b;
+            margin: 0;
+            padding: 40px;
+            background-color: #ffffff;
+            line-height: 1.5;
+          }
+          .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+          }
+          .header-logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+            background-color: #8b1a1a;
+            padding: 10px 20px;
+            border-radius: 6px;
+            display: inline-block;
+          }
+          .header-title {
+            text-align: right;
+            vertical-align: middle;
+          }
+          .header-title h1 {
+            margin: 0;
+            font-size: 20px;
+            color: #8b1a1a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .header-title p {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            color: #666;
+          }
+          .meta-box {
+            background-color: #f9f9fb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            font-size: 13px;
+          }
+          .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px 20px;
+          }
+          .score-card {
+            background-color: #f9f9fb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          }
+          .score-value {
+            font-size: 38px;
+            font-weight: 800;
+          }
+          .score-badge {
+            font-size: 14px;
+            font-weight: bold;
+            padding: 6px 16px;
+            border-radius: 20px;
+            color: #fff;
+          }
+          .category-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #8b1a1a;
+            border-bottom: 2px solid #8b1a1a;
+            padding-bottom: 6px;
+            margin-top: 30px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .criterion-row {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 5px;
+            page-break-inside: avoid;
+          }
+          .criterion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+          }
+          .criterion-text {
+            font-size: 13px;
+            font-weight: 600;
+          }
+          .criterion-status {
+            font-size: 11px;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            white-space: nowrap;
+          }
+          .status-cumple {
+            background-color: #d1fae5;
+            color: #065f46;
+          }
+          .status-nocumple {
+            background-color: #fee2e2;
+            color: #991b1b;
+          }
+          .plan-box {
+            background-color: #fff5f5;
+            border-left: 3px solid #ef4444;
+            border-radius: 0 4px 4px 0;
+            padding: 8px 12px;
+            margin-top: 8px;
+            font-size: 12px;
+          }
+          .photo-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 30px;
+            page-break-before: auto;
+          }
+          .photo-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f9f9fb;
+            width: 220px;
+            page-break-inside: avoid;
+          }
+          .photo-img {
+            width: 100%;
+            height: 150px;
+            object-fit: contain;
+            background-color: #eaeaea;
+            border-radius: 4px;
+          }
+          .photo-title {
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 8px;
+            text-align: center;
+          }
+          .signatures-container {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-around;
+            page-break-inside: avoid;
+          }
+          .signature-box {
+            text-align: center;
+            width: 200px;
+          }
+          .signature-line {
+            border-top: 1px solid #999;
+            margin-top: 60px;
+            padding-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+          }
+          .signature-img {
+            max-height: 50px;
+            max-width: 180px;
+            object-fit: contain;
+          }
+          .print-button-container {
+            text-align: center;
+            margin-top: 30px;
+            margin-bottom: 30px;
+          }
+          .btn-print {
+            background-color: #8b1a1a;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          }
+          .btn-print:hover {
+            background-color: #721414;
+          }
+          @media print {
+            .print-button-container {
+              display: none;
+            }
+            body {
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <table class="header-table">
+          <tr>
+            <td>
+              <div class="header-logo">DON GUTO</div>
+            </td>
+            <td class="header-title">
+              <h1>Reporte de Auditoría Operacional</h1>
+              <p>Intranet de Operaciones & Calidad Don Guto</p>
+            </td>
+          </tr>
+        </table>
+        
+        <div class="meta-box">
+          <div class="meta-grid">
+            <div><strong>Sede Auditada:</strong> ${log.tienda}</div>
+            <div><strong>Fecha y Hora:</strong> ${new Date(log.fecha).toLocaleString('es-PE')}</div>
+            <div><strong>Auditor:</strong> Administrador (Diana Valdivia Rojas)</div>
+            <div><strong>Persona Evaluada:</strong> ${log.colaboradorAuditado || 'N/A'}</div>
+          </div>
+        </div>
+        
+        <div class="score-card">
+          <div>
+            <div style="font-size: 11px; text-transform: uppercase; color: #666; font-weight: 700;">Resultado Ponderado</div>
+            <div class="score-value" style="color: ${ratingColor}">${log.nota.toFixed(1)}%</div>
+          </div>
+          <span class="score-badge" style="background-color: ${ratingColor}">${ratingText}</span>
+        </div>
+        
+        <h3 style="font-size: 14px; color: #333; margin-top: 40px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Criterios Evaluados y Plan de Acción:</h3>
+        
+        ${Object.entries(categoriesMap).map(([categoryName, criteriaList]) => `
+          <div class="category-title">${categoryName}</div>
+          ${criteriaList.map(c => `
+            <div class="criterion-row">
+              <div class="criterion-header">
+                <span class="criterion-text">[${c.id}] ${c.text}</span>
+                <span class="criterion-status ${c.cumple ? 'status-cumple' : 'status-nocumple'}">
+                  ${c.cumple ? 'Cumple' : 'No Cumple'}
+                </span>
+              </div>
+              ${c.plan ? `
+                <div class="plan-box">
+                  <strong>Plan de Acción Correctivo:</strong> ${c.plan}
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+        `).join('')}
+        
+        <!-- Observaciones Generales -->
+        <div style="margin-top: 30px; background-color: #f9f9fb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; page-break-inside: avoid;">
+          <h4 style="margin: 0 0 8px 0; font-size: 12px; color: #8b1a1a; text-transform: uppercase;">Observaciones Generales de la Auditoría:</h4>
+          <p style="margin: 0; font-size: 12.5px; color: #444; line-height: 1.5;">${log.comentarios || 'Sin observaciones generales.'}</p>
+        </div>
+        
+        <!-- Galería de Evidencias -->
+        ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).length > 0 ? `
+          <div class="category-title" style="page-break-before: always;">Evidencias Fotográficas de Conformidad</div>
+          <div class="photo-gallery">
+            ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).map(c => `
+              <div class="photo-card">
+                <img class="photo-img" src="${c.photo}" alt="Evidencia Criterio ${c.id}" />
+                <div class="photo-title">Criterio ${c.id} - ${c.text.substring(0, 30)}...</div>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+        
+        <!-- Firmas -->
+        <div class="signatures-container">
+          <div class="signature-box">
+            ${log.signatureAuditor ? `<img class="signature-img" src="${log.signatureAuditor}" alt="Firma Auditor" />` : ''}
+            <div class="signature-line">Firma del Auditor</div>
+            <div style="font-size: 10px; color: #666; margin-top: 4px;">Diana Valdivia Rojas</div>
+          </div>
+          <div class="signature-box">
+            ${log.signatureAuditado ? `<img class="signature-img" src="${log.signatureAuditado}" alt="Firma Auditado" />` : ''}
+            <div class="signature-line">Firma del Auditado</div>
+            <div style="font-size: 10px; color: #666; margin-top: 4px;">${log.colaboradorAuditado || 'Colaborador'}</div>
+          </div>
+        </div>
+
+        <div class="print-button-container">
+          <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar en PDF</button>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
   };
 
   // States for adding team member
@@ -5736,14 +6112,23 @@ main();`}
               </div>
             )}
 
-            {/* Close Button */}
-            <button 
-              onClick={() => setSelectedAuditLog(null)} 
-              className="btn btn-secondary" 
-              style={{ alignSelf: 'flex-end', padding: '8px 24px', fontSize: '13px', marginTop: '10px' }}
-            >
-              Cerrar Reporte
-            </button>
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '15px', borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
+              <button 
+                onClick={() => handleDownloadAuditPDF(selectedAuditLog)} 
+                className="btn btn-primary"
+                style={{ padding: '8px 20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                📥 Descargar PDF Oficial
+              </button>
+              <button 
+                onClick={() => setSelectedAuditLog(null)} 
+                className="btn btn-secondary" 
+                style={{ padding: '8px 20px', fontSize: '13px' }}
+              >
+                Cerrar Reporte
+              </button>
+            </div>
           </div>
         </div>,
         document.body
