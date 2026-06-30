@@ -4955,7 +4955,7 @@ main();`}
             <div className="card" style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
                 <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Colaboradores en Tienda</h3>
-                <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>Selecciona un colaborador para evaluar su Ruta de Capacitación.</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>Selecciona un colaborador para ver su Educación y Capacitación.</p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -5258,7 +5258,7 @@ main();`}
                         cursor: 'pointer'
                       }}
                     >
-                      📖 Ruta de Capacitación
+                      📖 Educación / Capacitación
                     </button>
                     <button
                       onClick={() => setCollabDetailTab('attendance')}
@@ -5282,7 +5282,7 @@ main();`}
                     /* TRAINING INDUCTION VIEW */
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {trainingRoute.map(day => {
-                        const userStatus = selectedUser.trainingProgress?.[day.id] || 'Pendiente';
+                        const userStatus = 'Completado';
                         
                         let badgeColor = { bg: 'var(--bg-main)', text: 'var(--text-muted)', border: 'var(--border)' };
                         if (userStatus === 'Completado') badgeColor = { bg: 'var(--success-light)', text: 'var(--success)', border: 'var(--success)' };

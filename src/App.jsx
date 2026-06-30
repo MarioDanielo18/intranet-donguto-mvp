@@ -1471,8 +1471,7 @@ export default function App() {
                 cleaningTasks={cleaningTasks}
                 trainingRoute={INITIAL_TRAINING_ROUTE.map(d => ({
                   ...d,
-                  // Map specific user's training progress status or default to template status
-                  estado: teamMembers.find(m => m.username === user.username)?.trainingProgress?.[d.id] || 'Pendiente'
+                  estado: 'Completado'
                 }))}
                 arrivalLogs={teamMembers.find(m => m.username === user.username)?.arrivalLogs || []}
                 onSaveTask={handleSaveTask}
@@ -1618,7 +1617,7 @@ export default function App() {
                     className={`drawer-btn ${activeTab === 'route' ? 'active' : ''}`}
                     onClick={() => { setActiveTab('route'); setIsDrawerOpen(false); }}
                   >
-                    🎓 Ruta de Capacitación
+                    🎓 Educación
                   </button>
                   {user.role === 'Barista' && (
                     <button

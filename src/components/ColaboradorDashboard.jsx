@@ -40,6 +40,97 @@ const compressImage = (file, maxWidth, maxHeight, quality) => {
   });
 };
 
+const GENERAL_TRAINING_COURSES = [
+  {
+    id: 'GEN-1',
+    titulo: 'Atención y Servicio al Cliente',
+    title: 'Atención y Servicio al Cliente',
+    codigo: 'DG-MAN-GEN1',
+    duracion: '30 min',
+    modalidad: 'Teórico-Práctico',
+    descripcion: 'Aprende los protocolos de hospitalidad Don Guto: la bienvenida, la comunicación asertiva, el cobro y la resolución de quejas.',
+    videoUrl: 'https://www.youtube.com/embed/PdtP1yGv9jI',
+    sections: [
+      {
+        subtitle: '1. El Saludo Don Guto',
+        content: 'La primera impresión es clave. Todo cliente debe recibir un saludo sonriente y entusiasta en los primeros 5 segundos tras ingresar a la tienda. El saludo estándar es: "¡Hola! Bienvenidos a Don Guto. ¿Cómo están hoy?". Mantén contacto visual directo.'
+      },
+      {
+        subtitle: '2. Escucha Activa y Recomendación',
+        content: 'Pregunta al cliente por sus gustos. ¿Le gusta el café intenso o suave? ¿Con leche o negro? Utiliza esta información para recomendar un café de especialidad de nuestra carta o uno de los postres artesanales para acompañar.'
+      },
+      {
+        subtitle: '3. Manejo de Clientes Insatisfechos (Protocolo LAST)',
+        content: 'Cuando haya un error en el pedido o queja: L (Listen - Escucha con atención sin interrumpir), A (Apologize - Pide disculpas sinceramente por el inconveniente), S (Solve - Ofrece una solución inmediata como cambiar la bebida), T (Thank - Agradece al cliente por hacernos saber del inconveniente para mejorar).'
+      }
+    ]
+  },
+  {
+    id: 'GEN-2',
+    titulo: 'Buenas Prácticas de Manufactura (BPM) e Higiene',
+    title: 'Buenas Prácticas de Manufactura (BPM) e Higiene',
+    codigo: 'DG-MAN-GEN2',
+    duracion: '45 min',
+    modalidad: 'Teórico',
+    descripcion: 'Normas fundamentales para garantizar la seguridad alimentaria en barra, cocina y salón.',
+    videoUrl: 'https://www.youtube.com/embed/Lg_Qz1_H1gA',
+    sections: [
+      {
+        subtitle: '1. Lavado y Desinfección de Manos',
+        content: 'El lavado de manos debe realizarse por lo menos cada 30 minutos o inmediatamente después de: cambiar de actividad, usar el servicio higiénico, manipular basura, tocar dinero o tocarse la cara/cabello. Usa agua caliente, jabón desinfectante y frota por 20 segundos.'
+      },
+      {
+        subtitle: '2. Regla FIFO (PEPS - Primero en Entrar, Primero en Salir)',
+        content: 'Todo producto o insumo alimentario en barra y cocina debe rotularse con la fecha de preparación y fecha de vencimiento. Lo primero que ingresa al almacén o refrigerador debe ser lo primero que se utiliza para evitar mermas y contaminación.'
+      },
+      {
+        subtitle: '3. Evitar la Contaminación Cruzada',
+        content: 'Usa tablas de picar diferentes para carnes/panes y vegetales (Verde para vegetales, Roja para carnes preparadas/embutidos, Blanca para lácteos/pan). Los trapos de limpieza deben desinfectarse en soluciones de cloro y cambiarse diariamente.'
+      }
+    ]
+  },
+  {
+    id: 'GEN-3',
+    titulo: 'Cultura Corporativa y Misión Don Guto',
+    title: 'Cultura Corporativa y Misión Don Guto',
+    codigo: 'DG-MAN-GEN3',
+    duracion: '20 min',
+    modalidad: 'Teórico',
+    descripcion: 'Conoce los pilares de la marca: café de especialidad de comercio directo y compromiso con la calidad.',
+    videoUrl: 'https://www.youtube.com/embed/g6jU9S704nU',
+    sections: [
+      {
+        subtitle: '1. Misión y Valores',
+        content: 'Nuestra misión es conectar a los productores de café peruanos de alta calidad con el consumidor urbano, brindando una experiencia excepcional en cada taza. Nuestros valores clave son la Pasión, Integridad, Calidad y Trabajo en Equipo.'
+      },
+      {
+        subtitle: '2. Comercio Directo (Direct Trade)',
+        content: 'En Don Guto no compramos café a intermediarios genéricos. Trabajamos directamente con caficultores de Jaén, Villa Rica y Cusco, garantizándoles un pago justo por encima del mercado y fomentando prácticas agrícolas sostenibles.'
+      }
+    ]
+  },
+  {
+    id: 'GEN-4',
+    titulo: 'Seguridad y Salud en el Trabajo',
+    title: 'Seguridad y Salud en el Trabajo',
+    codigo: 'DG-MAN-GEN4',
+    duracion: '30 min',
+    modalidad: 'Práctico',
+    descripcion: 'Pautas para prevenir quemaduras, cortes, caídas y mantener una ergonomía de barra correcta.',
+    videoUrl: 'https://www.youtube.com/embed/3yU2Z-17nOQ',
+    sections: [
+      {
+        subtitle: '1. Prevención de Quemaduras',
+        content: 'El vaporizador de la máquina de espresso alcanza temperaturas elevadas. Nunca coloquases las manos cerca de la boquilla mientras vaporizas. Al purgar el vaporizador, dirígelo siempre hacia la bandeja de goteo.'
+      },
+      {
+        subtitle: '2. Ergonomía en Barra',
+        content: 'Al compactar el café (tampado), mantén el codo en un ángulo de 90 grados y aplica la fuerza con el hombro, no con la muñeca. Al levantar cajas de leche u otros suministros pesados, dobla las rodillas y mantén la espalda recta.'
+      }
+    ]
+  }
+];
+
 const MANUALS_BY_DAY = {
   D1: {
     title: 'Manual de Identidad de la Marca y Cultura Don Guto',
@@ -289,6 +380,7 @@ export default function ColaboradorDashboard({
   const [shiftType, setShiftType] = useState('APERTURA');
   const [selectedDayMaterial, setSelectedDayMaterial] = useState(null);
   const [cleaningSubTab, setCleaningSubTab] = useState('semanal'); // 'semanal' | 'mensual'
+  const [eduSubTab, setEduSubTab] = useState('general');
 
   const [incTitle, setIncTitle] = useState('');
   const [incType, setIncType] = useState('Mantenimiento');
@@ -1577,95 +1669,175 @@ export default function ColaboradorDashboard({
   };
 
   // Render Training Route (8 days)
-  const renderTrainingRoute = () => {
+  const renderEducationSection = () => {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
-        <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
-          <h3 style={{ margin: 0, color: 'var(--secondary)' }}>Ruta de Inducción y Capacitación</h3>
-          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-            Cronograma de 8 días de capacitación técnica en tienda. Aprobado por el Supervisor.
-          </p>
+        <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <div>
+            <h3 style={{ margin: 0, color: 'var(--secondary)' }}>Centro de Educación y Capacitación</h3>
+            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+              Accede a los manuales de entrenamiento y revisa la ruta de capacitación técnica de baristas.
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px', backgroundColor: 'var(--bg-main)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <button
+              onClick={() => setEduSubTab('general')}
+              style={{
+                padding: '6px 16px',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                backgroundColor: eduSubTab === 'general' ? 'var(--primary)' : 'transparent',
+                color: eduSubTab === 'general' ? '#fff' : 'var(--text-muted)',
+                transition: 'all 0.2s'
+              }}
+            >
+              📖 Capacitaciones Generales
+            </button>
+            <button
+              onClick={() => setEduSubTab('barista_route')}
+              style={{
+                padding: '6px 16px',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                backgroundColor: eduSubTab === 'barista_route' ? 'var(--primary)' : 'transparent',
+                color: eduSubTab === 'barista_route' ? '#fff' : 'var(--text-muted)',
+                transition: 'all 0.2s'
+              }}
+            >
+              ☕ Ruta de Baristas (Completado)
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
-          {trainingRoute.map((day) => {
-            const isCompleted = day.estado === 'Completado';
-            const isInProgress = day.estado === 'En Curso';
-            const isLocked = false; // Habilitado temporalmente por requerimiento del usuario
-            
-            let statusColor = { bg: 'var(--bg-main)', text: 'var(--text-muted)', border: 'var(--border)' };
-            if (isCompleted) statusColor = { bg: 'var(--success-light)', text: 'var(--success)', border: 'var(--success)' };
-            if (isInProgress) statusColor = { bg: 'var(--warning-light)', text: 'var(--warning)', border: 'var(--warning)' };
-            if (isLocked) statusColor = { bg: 'var(--bg-main)', text: 'var(--text-muted)', border: 'var(--border)' };
-
-            return (
+        {eduSubTab === 'general' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+            {GENERAL_TRAINING_COURSES.map(course => (
               <div
-                key={day.id}
-                onClick={() => {
-                  if (isLocked) {
-                    alert('Este día se encuentra bloqueado. Comunícate con el Administrador o Supervisor para que te dé de alta ("levante") en esta capacitación.');
-                    return;
-                  }
-                  setSelectedDayMaterial(day);
-                }}
+                key={course.id}
                 style={{
-                  padding: '16px',
+                  padding: '20px',
                   borderRadius: 'var(--radius-md)',
-                  border: `1px solid ${statusColor.border}`,
-                  backgroundColor: statusColor.bg,
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg-card)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '8px',
-                  cursor: isLocked ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-sm)',
-                  opacity: isLocked ? 0.55 : 1,
+                  gap: '12px',
+                  boxShadow: 'var(--shadow-sm)'
                 }}
-                className={isLocked ? "" : "training-route-card"}
               >
-                <style dangerouslySetInnerHTML={{__html: `
-                  .training-route-card {
-                    transition: all 0.2s ease !important;
-                  }
-                  .training-route-card:hover {
-                    transform: translateY(-3px);
-                    box-shadow: var(--shadow-md) !important;
-                    border-color: var(--primary) !important;
-                  }
-                `}} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '14px' }}>{day.dia}</span>
-                  <span style={{
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    color: statusColor.text,
-                    backgroundColor: 'rgba(255,255,255,0.7)',
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                    border: `1px solid ${statusColor.border}`
-                  }}>
-                    {isLocked ? '🔒 Bloqueado' : day.estado}
+                  <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: '1px solid var(--primary)' }}>
+                    {course.modalidad}
+                  </span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    ⏱ {course.duracion}
                   </span>
                 </div>
-                
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '12px', color: 'var(--text-main)' }}>{day.titulo}</h4>
-                  <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{day.descripcion}</p>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px', marginTop: '6px' }}>
-                  <div style={{ display: 'flex', gap: '8px', fontSize: '9.5px', fontWeight: 600 }}>
-                    <span style={{ color: 'var(--text-muted)' }}>⏱ {day.duracion}</span>
-                    <span style={{ color: 'var(--text-muted)' }}>📍 {day.modalidad}</span>
-                  </div>
-                  <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                    📋 Ver Manual & Video →
-                  </span>
-                </div>
+                <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '14px', fontWeight: 700 }}>{course.titulo}</h4>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, flex: 1 }}>{course.descripcion}</p>
+                <button
+                  onClick={() => setSelectedDayMaterial({
+                    id: course.id,
+                    dia: course.titulo,
+                    titulo: course.titulo,
+                    sections: course.sections,
+                    manualGenerico: true,
+                    duracion: course.duracion,
+                    modalidad: course.modalidad,
+                    estado: 'Completado'
+                  })}
+                  className="btn btn-secondary"
+                  style={{ width: '100%', padding: '8px', fontSize: '12px', fontWeight: 'bold' }}
+                >
+                  📖 Ver Material de Capacitación
+                </button>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {eduSubTab === 'barista_route' && (
+          <div>
+            <div style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)', border: '1px solid var(--success)', padding: '10px 15px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>✅ Todos los baristas actuales están plenamente capacitados. La ruta se muestra aprobada en verde.</span>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+              {trainingRoute.map((day) => {
+                const statusColor = { bg: 'var(--success-light)', text: 'var(--success)', border: 'var(--success)' };
+                
+                return (
+                  <div
+                    key={day.id}
+                    onClick={() => {
+                      setSelectedDayMaterial(day);
+                    }}
+                    style={{
+                      padding: '16px',
+                      borderRadius: 'var(--radius-md)',
+                      border: `1px solid ${statusColor.border}`,
+                      backgroundColor: statusColor.bg,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: 'var(--shadow-sm)'
+                    }}
+                    className="training-route-card"
+                  >
+                    <style dangerouslySetInnerHTML={{__html: `
+                      .training-route-card {
+                        transition: all 0.2s ease !important;
+                      }
+                      .training-route-card:hover {
+                        transform: translateY(-3px);
+                        box-shadow: var(--shadow-md) !important;
+                        border-color: var(--primary) !important;
+                      }
+                    `}} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '14px' }}>{day.dia}</span>
+                      <span style={{
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        color: statusColor.text,
+                        backgroundColor: 'rgba(255,255,255,0.7)',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        border: `1px solid ${statusColor.border}`
+                      }}>
+                        Aprobado ✓
+                      </span>
+                    </div>
+                    
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '12px', color: 'var(--text-main)' }}>{day.titulo}</h4>
+                      <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{day.descripcion}</p>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px', marginTop: '6px' }}>
+                      <div style={{ display: 'flex', gap: '8px', fontSize: '9.5px', fontWeight: 600 }}>
+                        <span style={{ color: 'var(--text-muted)' }}>⏱ {day.duracion}</span>
+                        <span style={{ color: 'var(--text-muted)' }}>📍 {day.modalidad}</span>
+                      </div>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        📋 Ver Manual & Video →
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -1720,7 +1892,7 @@ export default function ColaboradorDashboard({
             transition: 'all 0.2s ease',
           }}
         >
-          Ruta de Capacitación
+          Educación
         </button>
         <button
           onClick={() => setActiveTab('attendance')}
@@ -1859,7 +2031,7 @@ export default function ColaboradorDashboard({
 
         {activeTab === 'cleaning' && renderCleaningCalendar()}
 
-        {activeTab === 'route' && renderTrainingRoute()}
+        {activeTab === 'route' && renderEducationSection()}
 
         {activeTab === 'sensory' && user.role === 'Barista' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }} className="animate-fade-in">
@@ -2188,7 +2360,7 @@ export default function ColaboradorDashboard({
 
       {/* Modal de Capacitación (PDF + Video) */}
       {selectedDayMaterial && (() => {
-        const manual = MANUALS_BY_DAY[selectedDayMaterial.id];
+        const manual = selectedDayMaterial.manualGenerico ? selectedDayMaterial : MANUALS_BY_DAY[selectedDayMaterial.id];
         return (
           <div style={{
             position: 'fixed',
@@ -2820,7 +2992,7 @@ export default function ColaboradorDashboard({
                           height: '100%',
                           border: 'none'
                         }}
-                        src="https://www.youtube.com/embed/g6jU9S704nU"
+                        src={manual?.videoUrl || "https://www.youtube.com/embed/g6jU9S704nU"}
                         title="Curso de Barista Profesional - Don Guto"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
