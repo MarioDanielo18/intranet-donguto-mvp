@@ -2362,34 +2362,150 @@ export default function ColaboradorDashboard({
       {selectedDayMaterial && (() => {
         const manual = selectedDayMaterial.manualGenerico ? selectedDayMaterial : MANUALS_BY_DAY[selectedDayMaterial.id];
         return (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(44, 37, 35, 0.7)',
-            backdropFilter: 'blur(6px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px',
-            animation: 'fadeIn 0.2s ease-out'
-          }} onClick={handleCloseModal}>
-            <div style={{
-              backgroundColor: 'var(--bg-main)',
-              borderRadius: 'var(--radius-lg)',
-              maxWidth: '1100px',
-              width: '100%',
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column',
-              boxShadow: 'var(--shadow-lg)',
-              border: '1px solid var(--border)',
-              overflow: 'hidden',
-              animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            }} onClick={(e) => e.stopPropagation()}>
+          <div className="edu-modal-backdrop" onClick={handleCloseModal}>
+            <style dangerouslySetInnerHTML={{__html: `
+              .edu-modal-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(30, 24, 22, 0.75);
+                backdrop-filter: blur(6px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999; /* Set extremely high to override top navigation bar */
+                padding: 24px;
+                animation: eduFadeIn 0.25s ease-out;
+              }
+              
+              .edu-modal-container {
+                background-color: var(--bg-main);
+                border-radius: var(--radius-lg);
+                max-width: 1100px;
+                width: 100%;
+                max-height: 88vh;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+                border: 1px solid var(--border);
+                overflow: hidden;
+                animation: eduScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+              }
+              
+              .modal-split-container {
+                flex: 1;
+                display: flex;
+                flex-direction: row;
+                overflow: hidden;
+                background-color: #eae4dc;
+              }
+              
+              .modal-left-pdf {
+                width: 55%;
+                padding: 30px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                background-color: #f1ebd9;
+                border-right: 1px solid var(--border);
+                max-height: calc(88vh - 70px);
+              }
+              
+              .modal-right-video {
+                width: 45%;
+                padding: 30px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                background-color: var(--bg-card);
+                max-height: calc(88vh - 70px);
+              }
+              
+              .pdf-page-container {
+                background-color: #fffcf7;
+                width: 100%;
+                max-width: 600px;
+                padding: 40px 30px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+                border-radius: 6px;
+                border: 1px solid #dcd3c9;
+                font-family: inherit;
+                color: #2a2220;
+                line-height: 1.6;
+                position: relative;
+                min-height: 520px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                flex-shrink: 0;
+              }
+              
+              @keyframes eduFadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+              }
+              
+              @keyframes eduScaleIn {
+                from { transform: scale(0.95); opacity: 0; }
+                to { transform: scale(1); opacity: 1; }
+              }
+              
+              /* Tablets & smaller screens */
+              @media (max-width: 950px) {
+                .edu-modal-backdrop {
+                  padding: 16px;
+                }
+                .modal-left-pdf, .modal-right-video {
+                  padding: 20px;
+                }
+                .pdf-page-container {
+                  padding: 30px 20px;
+                }
+              }
+              
+              /* Mobile responsive stacking */
+              @media (max-width: 800px) {
+                .edu-modal-backdrop {
+                  padding: 0 !important;
+                }
+                .edu-modal-container {
+                  max-height: 100vh !important;
+                  height: 100% !important;
+                  border-radius: 0 !important;
+                  border: none !important;
+                }
+                .modal-split-container {
+                  flex-direction: column !important;
+                  overflow-y: auto !important;
+                }
+                .modal-left-pdf, .modal-right-video {
+                  width: 100% !important;
+                  max-height: none !important;
+                  overflow-y: visible !important;
+                  padding: 20px !important;
+                }
+                .modal-left-pdf {
+                  border-right: none !important;
+                  border-bottom: 2px solid var(--border);
+                }
+                .pdf-page-container {
+                  box-shadow: none !important;
+                  border-radius: 0 !important;
+                  margin: 0 !important;
+                  border: none !important;
+                  width: 100% !important;
+                  max-width: 100% !important;
+                  min-height: auto !important;
+                  padding: 10px 0 !important;
+                  background-color: transparent !important;
+                }
+              }
+            `}} />
+            <div className="edu-modal-container" onClick={(e) => e.stopPropagation()}>
               
               {/* Header de Modal */}
               <div style={{
@@ -2479,35 +2595,9 @@ export default function ColaboradorDashboard({
                   `}} />
 
                   {/* Left Column: Exam Questions Sheet */}
-                  <div className="modal-left-pdf" style={{
-                    width: '60%',
-                    padding: '24px',
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    backgroundColor: '#eae4dc',
-                    borderRight: '1px solid var(--border)',
-                    maxHeight: 'calc(90vh - 70px)',
-                  }}>
+                  <div className="modal-left-pdf">
                     {/* Exam Sheet container */}
-                    <div className="pdf-page-container" style={{
-                      backgroundColor: '#fffcf7',
-                      width: '100%',
-                      maxWidth: '650px',
-                      padding: '40px 30px',
-                      boxShadow: '0 4px 15px rgba(0,0,0,0.12)',
-                      borderRadius: '4px',
-                      border: '1px solid #dcd3c9',
-                      fontFamily: "sans-serif",
-                      color: '#2a2220',
-                      lineHeight: 1.5,
-                      position: 'relative',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '25px',
-                      flexShrink: 0
-                    }}>
+                    <div className="pdf-page-container" style={{ fontFamily: 'sans-serif', gap: '25px' }}>
                       <div style={{ textAlign: 'center', borderBottom: '2px solid #8b1a1a', paddingBottom: '12px' }}>
                         <span style={{ fontSize: '11px', fontWeight: 800, color: '#8b1a1a', display: 'block' }}>DON GUTO COFFEE COMPANY</span>
                         <h4 style={{ margin: '5px 0 0 0', fontSize: '16px', fontWeight: 'bold', color: 'var(--text-main)', textTransform: 'uppercase' }}>
@@ -2592,16 +2682,7 @@ export default function ColaboradorDashboard({
                   </div>
 
                   {/* Right Column: Timer & Controls */}
-                  <div className="modal-right-video" style={{
-                    width: '40%',
-                    padding: '24px',
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '20px',
-                    backgroundColor: 'var(--bg-card)',
-                    maxHeight: 'calc(90vh - 70px)'
-                  }}>
+                  <div className="modal-right-video">
                     <div style={{ borderBottom: '2px solid var(--primary)', paddingBottom: '8px' }}>
                       <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '13px', fontWeight: 800 }}>
                         ⏱️ Panel de Control del Examen
@@ -2755,76 +2836,12 @@ export default function ColaboradorDashboard({
                 </div>
               ) : (
                 /* NORMAL SPLIT MATERIAL VIEW */
-                <div style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'row',
-                  overflow: 'hidden',
-                  backgroundColor: '#eae4dc'
-                }} className="modal-split-container">
-                  <style dangerouslySetInnerHTML={{__html: `
-                    @media (max-width: 800px) {
-                      .modal-split-container {
-                        flex-direction: column !important;
-                        overflow-y: auto !important;
-                      }
-                      .modal-left-pdf, .modal-right-video {
-                        width: 100% !important;
-                        max-height: none !important;
-                        overflow-y: visible !important;
-                      }
-                      .pdf-page-container {
-                        box-shadow: none !important;
-                        border-radius: 0 !important;
-                        margin: 0 !important;
-                        border: none !important;
-                      }
-                    }
-                    @media (max-width: 600px) {
-                      .modal-left-pdf {
-                        padding: 10px !important;
-                      }
-                      .pdf-page-container {
-                        padding: 25px 15px !important;
-                        min-height: auto !important;
-                      }
-                      .modal-right-video {
-                        padding: 15px !important;
-                      }
-                    }
-                  `}} />
+                <div className="modal-split-container">
 
                   {/* Columna Izquierda: Simulación de PDF (A4 Page) */}
-                  <div className="modal-left-pdf" style={{
-                    width: '55%',
-                    padding: '24px',
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    backgroundColor: '#eae4dc',
-                    borderRight: '1px solid var(--border)',
-                    maxHeight: 'calc(90vh - 70px)'
-                  }}>
+                  <div className="modal-left-pdf">
                     {/* Contenedor A4 Simulado */}
-                    <div className="pdf-page-container" style={{
-                      backgroundColor: '#fffcf7',
-                      width: '100%',
-                      maxWidth: '600px',
-                      padding: '40px 30px',
-                      boxShadow: '0 4px 15px rgba(0,0,0,0.12)',
-                      borderRadius: '4px',
-                      border: '1px solid #dcd3c9',
-                      fontFamily: "'Courier New', Courier, monospace",
-                      color: '#2a2220',
-                      lineHeight: 1.6,
-                      position: 'relative',
-                      minHeight: '650px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      flexShrink: 0
-                    }}>
+                    <div className="pdf-page-container" style={{ fontFamily: "'Courier New', Courier, monospace" }}>
                       
                       {/* Marca de agua / Sello aprobado */}
                       <div style={{
@@ -2952,16 +2969,7 @@ export default function ColaboradorDashboard({
                   </div>
 
                   {/* Columna Derecha: Video Tutorial */}
-                  <div className="modal-right-video" style={{
-                    width: '45%',
-                    padding: '24px',
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '20px',
-                    backgroundColor: 'var(--bg-card)',
-                    maxHeight: 'calc(90vh - 70px)'
-                  }}>
+                  <div className="modal-right-video">
                     <div style={{ borderBottom: '2px solid var(--primary)', paddingBottom: '8px' }}>
                       <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '13px', fontWeight: 800 }}>
                         🎥 Video de Entrenamiento Práctico
