@@ -145,10 +145,10 @@ export function generateUsernameFromName(nombres, apellidos) {
 
 export default function SupervisorDashboard({
   user,
-  checklists,
-  cleaningTasks,
+  checklists: rawChecklists,
+  cleaningTasks: rawCleaningTasks,
   trainingRoute,
-  teamMembers,
+  teamMembers: rawTeamMembers,
   auditLogs,
   onApproveTrainingDay,
   onAddTeamMember,
@@ -169,6 +169,20 @@ export default function SupervisorDashboard({
   activeTab,
   setActiveTab,
 }) {
+  const isCueva = user && user.username === 'ccuevadg';
+
+  const teamMembers = isCueva
+    ? (rawTeamMembers || []).filter(m => m.role === 'Cocina' || m.username === 'ccuevadg')
+    : rawTeamMembers;
+
+  const checklists = isCueva
+    ? (rawChecklists || []).filter(t => t.area === 'COCINA')
+    : rawChecklists;
+
+  const cleaningTasks = isCueva
+    ? (rawCleaningTasks || []).filter(t => t.descripcion.toLowerCase().includes('cocina') || t.descripcion.toLowerCase().includes('grasa'))
+    : rawCleaningTasks;
+
   const approvedMembers = (teamMembers || []).filter(m => !m.pendingApproval);
 
 
@@ -5123,11 +5137,11 @@ main();`}
                 {/* Live Stats Row */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' }}>
                   {[
-                    { name: 'Barra (Baristas)', val: selectedDateStats.barra, color: 'var(--primary)' },
-                    { name: 'Cocina', val: selectedDateStats.cocina, color: 'var(--secondary)' },
-                    { name: 'Servicio (Salón)', val: selectedDateStats.salon, color: '#d97706' },
-                    { name: 'Limpieza del Mes', val: selectedDateStats.limpieza, color: 'var(--success)' },
-                  ].map(item => (
+                    { name: 'Barra (Baristas)', val: selectedDateStats.barra, color: 'var(--primary)', show: !isCueva },
+                    { name: 'Cocina', val: selectedDateStats.cocina, color: 'var(--secondary)', show: true },
+                    { name: 'Servicio (Salón)', val: selectedDateStats.salon, color: '#d97706', show: !isCueva },
+                    { name: 'Limpieza del Mes', val: selectedDateStats.limpieza, color: 'var(--success)', show: true },
+                  ].filter(item => item.show).map(item => (
                     <div key={item.name} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px' }}>
                       <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>{item.name}</span>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
