@@ -116,70 +116,131 @@ export default function IncidentDetailStandalone({
       flexDirection: 'column',
       fontFamily: 'system-ui, sans-serif'
     }}>
+      <style dangerouslySetInnerHTML={{__html: `
+        .incident-header-container {
+          border-bottom: 1px solid var(--border);
+          background-color: var(--bg-card);
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          transition: all 0.25s ease;
+        }
+        
+        /* PC Viewport */
+        @media (min-width: 769px) {
+          .incident-header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 30px;
+            gap: 20px;
+          }
+          .header-logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .header-theme-toggle {
+            margin-left: auto;
+          }
+          .header-user-info {
+            text-align: right;
+            font-size: 12px;
+          }
+          .header-close-btn {
+            display: block;
+          }
+        }
+
+        /* Mobile Viewport */
+        @media (max-width: 768px) {
+          .incident-header-inner {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-rows: auto auto;
+            gap: 12px;
+            padding: 12px 15px;
+          }
+          .header-logo-container {
+            grid-column: 1;
+            grid-row: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .header-close-btn {
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: end;
+          }
+          .header-theme-toggle {
+            grid-column: 1;
+            grid-row: 2;
+            align-self: center;
+          }
+          .header-user-info {
+            grid-column: 2;
+            grid-row: 2;
+            text-align: right;
+            font-size: 11px;
+            align-self: center;
+          }
+        }
+      `}} />
+
       {/* Header bar */}
-      <header className="incident-header glass" style={{
-        borderBottom: '1px solid var(--border)',
-        padding: '15px 30px',
-        backgroundColor: 'var(--bg-card)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '15px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>☕</span>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--primary)' }}>
-              DON GUTO
-            </h1>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.5px' }}>
-              PANEL DE DETALLE DE TICKET
-            </span>
+      <header className="incident-header-container glass">
+        <div className="incident-header-inner">
+          <div className="header-logo-container">
+            <span style={{ fontSize: '20px' }}>☕</span>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--primary)', lineHeight: 1.1 }}>
+                DON GUTO
+              </h1>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.5px' }}>
+                DETALLE DE TICKET
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          {/* Theme selector */}
-          <button
-            onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
-            className="btn btn-secondary"
-            style={{ padding: '6px 12px', fontSize: '11px' }}
-          >
-            {theme === 'light' ? '🌙 Oscuro' : '☀️ Claro'}
-          </button>
+          <div className="header-theme-toggle">
+            <button
+              onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+              className="btn btn-secondary"
+              style={{ padding: '6px 12px', fontSize: '11px' }}
+            >
+              {theme === 'light' ? '🌙 Oscuro' : '☀️ Claro'}
+            </button>
+          </div>
 
-          {/* User info */}
-          <div style={{ textAlign: 'right', fontSize: '12px' }}>
+          <div className="header-user-info">
             <strong style={{ color: 'var(--text-main)', display: 'block' }}>{user.name}</strong>
             <span style={{ color: 'var(--text-muted)' }}>
               {user.role} {user.store !== 'Todas' && `| ${user.store}`}
             </span>
           </div>
 
-          {/* Close tab button */}
-          <button
-            onClick={() => onClose()}
-            className="btn"
-            style={{
-              padding: '8px 16px',
-              fontSize: '12.5px',
-              backgroundColor: 'var(--error-light)',
-              color: 'var(--error)',
-              border: '1px solid var(--error)',
-              fontWeight: 700,
-              cursor: 'pointer',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            ✖ Cerrar Detalle
-          </button>
+          <div className="header-close-btn">
+            <button
+              onClick={() => onClose()}
+              className="btn"
+              style={{
+                padding: '8px 16px',
+                fontSize: '12px',
+                backgroundColor: 'var(--error-light)',
+                color: 'var(--error)',
+                border: '1px solid var(--error)',
+                fontWeight: 700,
+                cursor: 'pointer',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              ✖ Cerrar Detalle
+            </button>
+          </div>
         </div>
       </header>
 
