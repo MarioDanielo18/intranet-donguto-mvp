@@ -548,6 +548,41 @@ export default function App() {
     fetchCloudUsers();
   }, []);
 
+  const loadDailyChecklists = async (storeName) => {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const res = await fetch(`/api/checklists?date=${todayStr}&store=${storeName}`);
+      const data = await res.json();
+      if (data && data.status === 'success' && data.records) {
+        setChecklists(prev =>
+          prev.map(t => {
+            const matched = data.records.find(r => r.taskId === t.id);
+            if (matched) {
+              return {
+                ...t,
+                completado: matched.completado,
+                evidencia: matched.evidencia
+              };
+            }
+            return {
+              ...t,
+              completado: false,
+              evidencia: null
+            };
+          })
+        );
+      }
+    } catch (err) {
+      console.warn('[Checklist Sync] Failed to load checklist from Supabase:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadDailyChecklists(user.store === 'Todas' ? 'Barranco' : user.store);
+    }
+  }, [user]);
+
   const [auditLogs, setAuditLogs] = useState(INITIAL_AUDIT_LOGS);
   const [incidents, setIncidents] = useState(() => {
     const saved = localStorage.getItem('donguto-incidents');
@@ -965,19 +1000,47 @@ export default function App() {
   
   // Toggle checkmark on daily checklists
   // Toggle checkmark on daily checklists and save evidence
-  const handleSaveTask = (taskId, completed, evidencia = null) => {
+  const handleSaveTask = async (taskId, completed, evidencia = null) => {
+    const finalEvidencia = completed ? (evidencia || 'evidence_image_upload_simulated.png') : null;
+    
+    // 1. Optimistic UI update in React state
     setChecklists(prev =>
       prev.map(t => {
         if (t.id === taskId) {
           return {
             ...t,
             completado: completed,
-            evidencia: completed ? (evidencia || t.evidencia || (t.requiere_foto ? 'evidence_image_upload_simulated.png' : null)) : null
+            evidencia: finalEvidencia
           };
         }
         return t;
       })
     );
+
+    // 2. Persist in Supabase if user is logged in
+    if (user) {
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const res = await fetch('/api/checklists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskId: taskId,
+            date: todayStr,
+            completado: completed,
+            evidencia: finalEvidencia,
+            colaborador: user.name,
+            store: user.store === 'Todas' ? 'Barranco' : user.store
+          })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          console.log('[Checklist Sync] Saved successfully to Supabase');
+        }
+      } catch (err) {
+        console.warn('[Checklist Sync] Failed to save checklist, using local state fallback:', err);
+      }
+    }
   };
 
   // Toggle monthly cleaning calendar days

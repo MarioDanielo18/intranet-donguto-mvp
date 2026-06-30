@@ -977,6 +977,32 @@ export default function SupervisorDashboard({
     setSelectedCollaborator('TODOS');
   }, [filterArea]);
 
+  const [checklistStoreFilter, setChecklistStoreFilter] = useState(user.store === 'Todas' ? 'Barranco' : user.store);
+  const [dbChecklists, setDbChecklists] = useState([]);
+  const [loadingChecklists, setLoadingChecklists] = useState(false);
+
+  const fetchChecklistsFromDb = async (date, store) => {
+    setLoadingChecklists(true);
+    try {
+      const res = await fetch(`/api/checklists?date=${date}&store=${store}`);
+      const data = await res.json();
+      if (data.status === 'success' && data.records) {
+        setDbChecklists(data.records);
+      } else {
+        setDbChecklists([]);
+      }
+    } catch (err) {
+      console.warn('[Checklist Fetch] Failed, using local fallback:', err);
+      setDbChecklists([]);
+    } finally {
+      setLoadingChecklists(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchChecklistsFromDb(selectedDateStr, checklistStoreFilter);
+  }, [selectedDateStr, checklistStoreFilter]);
+
   const visibleMembers = user.role === 'Administrador'
     ? approvedMembers.filter(m => m.store === user.store && ['Barista', 'Cocina', 'Servicio'].includes(m.role))
     : approvedMembers;
@@ -1010,16 +1036,35 @@ export default function SupervisorDashboard({
   };
 
   const getTasksForSelectedDate = () => {
-    if (selectedDateStr === '2026-06-12') {
+    // If it is today (2026-06-12) and we have no database records loaded, fall back to live checklists prop
+    if (selectedDateStr === '2026-06-12' && dbChecklists.length === 0) {
       return checklists;
     }
-    const completedIds = MOCK_HISTORY[selectedDateStr]?.completedIds || [];
+
     return checklists.map(t => {
-      const isCompleted = completedIds.includes(t.id);
+      const matched = dbChecklists.find(r => r.taskId === t.id);
+      if (matched) {
+        return {
+          ...t,
+          completado: matched.completado,
+          evidencia: matched.evidencia
+        };
+      }
+
+      // For historical dates, fall back to MOCK_HISTORY if no database record exists
+      if (selectedDateStr !== '2026-06-12') {
+        const isCompleted = (MOCK_HISTORY[selectedDateStr]?.completedIds || []).includes(t.id);
+        return {
+          ...t,
+          completado: isCompleted,
+          evidencia: isCompleted ? (t.requiere_foto ? MOCK_PHOTO_URL : null) : null
+        };
+      }
+
       return {
         ...t,
-        completado: isCompleted,
-        evidencia: isCompleted ? (t.requiere_foto ? MOCK_PHOTO_URL : null) : null
+        completado: false,
+        evidencia: null
       };
     });
   };
@@ -4578,13 +4623,38 @@ main();`}
                   <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                       <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
-                        Checklists del Día - Tienda: {user.store}
+                        Checklists del Día - Sede: {user.store === 'Todas' ? (
+                          <select
+                            value={checklistStoreFilter}
+                            onChange={(e) => setChecklistStoreFilter(e.target.value)}
+                            className="input"
+                            style={{ 
+                              padding: '2px 8px', 
+                              fontSize: '13px', 
+                              height: '28px', 
+                              marginLeft: '8px', 
+                              cursor: 'pointer',
+                              fontWeight: 'bold',
+                              color: 'var(--primary)',
+                              backgroundColor: 'var(--bg-card)',
+                              border: '1px solid var(--border)',
+                              borderRadius: '4px'
+                            }}
+                          >
+                            <option value="Barranco">Barranco</option>
+                            <option value="Miraflores">Miraflores</option>
+                            <option value="San Isidro">San Isidro</option>
+                          </select>
+                        ) : (
+                          <span style={{ color: 'var(--primary)' }}>{user.store}</span>
+                        )}
                       </h3>
                       <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
                         Fecha consultada: <strong style={{ color: 'var(--primary)' }}>
                           {new Date(selectedDateStr + 'T12:00:00').toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                         </strong>
                         {selectedCollaborator !== 'TODOS' && <span> | Colaborador: <strong style={{ color: 'var(--primary)' }}>{selectedCollaborator}</strong></span>}.
+                        {loadingChecklists && <span style={{ marginLeft: '10px', fontStyle: 'italic', color: 'var(--text-muted)' }}>⌛ Cargando...</span>}
                       </p>
                     </div>
                   </div>
