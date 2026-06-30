@@ -30,6 +30,70 @@ export default async function handler(req, res) {
 
       if (error) throw error;
 
+      // Seed new production users if they are missing
+      const onavarroExists = (users || []).some(u => u.username === 'onavarrodg');
+      if (!onavarroExists) {
+        console.log('[seeder] Seeding new users to Supabase...');
+        const usersToSeed = [
+          { username: 'onavarrodg', password: 'dg.osca.N9405', name: 'Oscar Navarro', role: 'Gerente', store: 'Todas' },
+          { username: 'gechevarriadg', password: 'dg.gabr.E9087', name: 'Gabriela Echevarría', role: 'Gerente', store: 'Todas' },
+          { username: 'cnizamadg', password: 'dg.chri.N9633', name: 'Christian Nizama', role: 'Administrador', store: '28 de Julio Miraflores' },
+          { username: 'arianadg', password: 'dg.aria.A9928', name: 'Ariana', role: 'Auditor', store: '28 de Julio Miraflores' },
+          { username: 'ccuevadg', password: 'dg.chri.C9458', name: 'Christian Cueva', role: 'Cocina', store: 'Todas' },
+          { username: 'woviedodg', password: 'dg.wilf.O9580', name: 'Wilfredo Oviedo', role: 'Auditor', store: 'Todas' },
+          { username: 'jortizdg', password: 'dg.juan.O9040', name: 'Juan Ortiz', role: 'Administrador', store: 'Todas' },
+          
+          { username: 'avasquezdg', password: 'dg.alex.V38314', name: 'Alexander Vásquez Villalobos', role: 'Servicio', store: '28 de Julio Miraflores', email: 'Alexito1836@gmail.com', telefono: '992838314' },
+          { username: 'ddazadg', password: 'dg.daye.D65912', name: 'Dayerlin Carolina Daza Vargas', role: 'Barista', store: '28 de Julio Miraflores', email: 'dayerlincarolina.dv@gmail.com', telefono: '963365912' },
+          { username: 'mbravodg', password: 'dg.moni.B75773', name: 'Mónica Daniela Bravo Rodríguez', role: 'Servicio', store: '28 de Julio Miraflores', email: 'Monikbrav7@gmail.com', telefono: '908757732' },
+          { username: 'aocampodg', password: 'dg.alex.O37809', name: 'Alexis Ocampo Rodríguez', role: 'Cocina', store: '28 de Julio Miraflores', email: 'Alexisjo@gmail.com', telefono: '945837809' },
+          { username: 'fsotodg', password: 'dg.fran.S04464', name: 'Franchesca Giovana Soto Chávez', role: 'Cocina', store: '28 de Julio Miraflores', email: 'fgschavez@gmail.com', telefono: '958004464' },
+          { username: 'eegocheagadg', password: 'dg.emil.E54227', name: 'Emily Egocheaga Ormeño', role: 'Cocina', store: '28 de Julio Miraflores', email: 'egocheaga888@gmail.com', telefono: '904054227' },
+          { username: 'psilvadg', password: 'dg.patr.S26393', name: 'Patrick Silva Chávez', role: 'Barista', store: '28 de Julio Miraflores', email: 'murciegus@gmail.com', telefono: '979526393' },
+          { username: 'jaymadg', password: 'dg.jesu.A22582', name: 'Jesus Ayma Chaparro', role: 'Barista', store: '28 de Julio Miraflores', email: 'jesusaymachaparro@gmail.com', telefono: '912322582' },
+          { username: 'rlaurentedg', password: 'dg.ruth.L53898', name: 'Ruth Sarahi Laurente Olivera', role: 'Barista', store: '28 de Julio Miraflores', email: 'Sarahilaurente.7@gmail.com', telefono: '982953898' }
+        ];
+
+        for (const userToSeed of usersToSeed) {
+          const exists = (users || []).some(u => u.username === userToSeed.username);
+          if (!exists) {
+            await supabase.from('usuarios').insert([{
+              username: userToSeed.username,
+              password: userToSeed.password,
+              name: userToSeed.name,
+              role: userToSeed.role,
+              store: userToSeed.store,
+              email: userToSeed.email || null,
+              telefono: userToSeed.telefono || null
+            }]);
+          }
+        }
+
+        // Re-fetch users after seeding
+        const { data: updatedUsers } = await supabase
+          .from('usuarios')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (updatedUsers) {
+          return res.status(200).json({
+            status: 'success',
+            users: updatedUsers.map(u => ({
+              username: u.username,
+              password: u.password,
+              name: u.name,
+              apellidos: u.apellidos || '',
+              dni: u.dni || '',
+              email: u.email || '',
+              telefono: u.telefono || '',
+              role: u.role,
+              store: u.store,
+              biometricId: u.biometric_id || null
+            }))
+          });
+        }
+      }
+
       return res.status(200).json({
         status: 'success',
         users: users.map(u => ({
