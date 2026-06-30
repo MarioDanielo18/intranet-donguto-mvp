@@ -1469,13 +1469,14 @@ export default function SupervisorDashboard({
   };
 
   const getComplianceForStats = (areaCode, dateStr, collaborator = 'TODOS') => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const tasksForDate = dateStr === todayStr
-      ? checklists
-      : checklists.map(t => ({
-          ...t,
-          completado: (MOCK_HISTORY[dateStr]?.completedIds || []).includes(t.id)
-        }));
+    const tasksForDate = dateStr === selectedDateStr
+      ? getTasksForSelectedDate()
+      : (dateStr === new Date().toISOString().split('T')[0]
+          ? checklists
+          : checklists.map(t => ({
+              ...t,
+              completado: (MOCK_HISTORY[dateStr]?.completedIds || []).includes(t.id)
+            })));
 
     const filtered = tasksForDate.filter(t => {
       const matchArea = areaCode === 'GENERAL' || t.area === areaCode;
@@ -4871,31 +4872,60 @@ main();`}
               border: '1px solid var(--border)',
               marginBottom: '5px'
             }}>
-              {/* Department Filter Selector */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {[
-                  { key: 'GENERAL', label: 'General' },
-                  { key: 'BARRA', label: 'Baristas (Barra)' },
-                  { key: 'COCINA', label: 'Cocina' },
-                  { key: 'SALON', label: 'Servicio (Salón)' }
-                ].map(area => (
-                  <button
-                    key={area.key}
-                    onClick={() => setFilterArea(area.key)}
-                    className="btn"
-                    style={{
-                      padding: '8px 16px',
-                      fontSize: '13px',
-                      borderRadius: '20px',
-                      backgroundColor: filterArea === area.key ? 'var(--primary)' : 'var(--bg-main)',
-                      color: filterArea === area.key ? '#fff' : 'var(--text-main)',
-                      border: filterArea === area.key ? '1px solid var(--primary)' : '1px solid var(--border)',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    {area.key === 'GENERAL' ? '🌐' : area.key === 'BARRA' ? '☕' : area.key === 'COCINA' ? '🍳' : area.key === 'SALON' ? '🍽️' : ''} {area.label}
-                  </button>
-                ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                {user.store === 'Todas' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)' }}>🏢 Sede:</span>
+                    <select
+                      value={checklistStoreFilter}
+                      onChange={(e) => setChecklistStoreFilter(e.target.value)}
+                      className="input"
+                      style={{
+                        padding: '5px 10px',
+                        fontSize: '12.5px',
+                        height: '34px',
+                        backgroundColor: 'var(--bg-main)',
+                        color: 'var(--text-main)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        minWidth: '140px'
+                      }}
+                    >
+                      <option value="Barranco">Sede Barranco</option>
+                      <option value="Miraflores">Sede Miraflores</option>
+                      <option value="San Isidro">Sede San Isidro</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Department Filter Selector */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'GENERAL', label: 'General' },
+                    { key: 'BARRA', label: 'Baristas (Barra)' },
+                    { key: 'COCINA', label: 'Cocina' },
+                    { key: 'SALON', label: 'Servicio (Salón)' }
+                  ].map(area => (
+                    <button
+                      key={area.key}
+                      onClick={() => setFilterArea(area.key)}
+                      className="btn"
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '13px',
+                        borderRadius: '20px',
+                        backgroundColor: filterArea === area.key ? 'var(--primary)' : 'var(--bg-main)',
+                        color: filterArea === area.key ? '#fff' : 'var(--text-main)',
+                        border: filterArea === area.key ? '1px solid var(--primary)' : '1px solid var(--border)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {area.key === 'GENERAL' ? '🌐' : area.key === 'BARRA' ? '☕' : area.key === 'COCINA' ? '🍳' : area.key === 'SALON' ? '🍽️' : ''} {area.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* View Mode Toggle */}
