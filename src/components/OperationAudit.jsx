@@ -217,7 +217,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
     return user && user.role === 'Administrador' ? user.store : 'Barranco';
   });
   const [activeTab, setActiveTab] = useState('precision');
-  const [checkedIds, setCheckedIds] = useState({});
+  const [checkedIds, setCheckedIds] = useState({ I1: false });
   const [comments, setComments] = useState('');
   
   // New States for Verifiable Auditing
@@ -251,7 +251,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
   // Calculate scores
   const getCategoryScore = (category) => {
     const total = category.criteria.length;
-    const checked = category.criteria.filter(c => checkedIds[c.id]).length;
+    const checked = category.criteria.filter(c => checkedIds[c.id] === true).length;
     return (checked / total) * 100;
   };
 
@@ -294,13 +294,12 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
     });
   };
 
-  const toggleCheck = (id) => {
+  const setCriterionValue = (id, value) => {
     setCheckedIds(prev => {
-      const nextChecked = !prev[id];
-      const newCheckedIds = { ...prev, [id]: nextChecked };
+      const newCheckedIds = { ...prev, [id]: value };
       
       // Clean up action plans / photo evidence if state changes
-      if (nextChecked) {
+      if (value === true) {
         setActionPlans(prevPlans => {
           const nextPlans = { ...prevPlans };
           delete nextPlans[id];
@@ -325,20 +324,31 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
       return;
     }
 
+    const missingEvaluations = [];
     const missingPhotos = [];
     const missingPlans = [];
 
     AUDIT_CATEGORIES.forEach(cat => {
       cat.criteria.forEach(c => {
-        const isChecked = !!checkedIds[c.id];
-        if (isChecked && c.requiere_foto && !evidencePhotos[c.id]) {
-          missingPhotos.push(c.id);
-        }
-        if (!isChecked && !actionPlans[c.id]) {
-          missingPlans.push(c.id);
+        const val = checkedIds[c.id];
+        if (val === undefined) {
+          missingEvaluations.push(c.id);
+        } else if (val === true) {
+          if (c.requiere_foto && !evidencePhotos[c.id]) {
+            missingPhotos.push(c.id);
+          }
+        } else if (val === false) {
+          if (!actionPlans[c.id]) {
+            missingPlans.push(c.id);
+          }
         }
       });
     });
+
+    if (missingEvaluations.length > 0) {
+      alert("⚠️ Por favor, responda a todos los criterios de la auditoría. Todos los criterios son obligatorios.");
+      return;
+    }
 
     if (missingPhotos.length > 0) {
       alert(`⚠️ Evidencia requerida: Falta adjuntar fotografía para los criterios cumplidos: ${missingPhotos.join(', ')}`);
@@ -346,7 +356,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
     }
 
     if (missingPlans.length > 0) {
-      alert(`⚠️ Planes de acción requeridos: Por favor describe el plan de acción para los criterios desmarcados: ${missingPlans.join(', ')}`);
+      alert(`⚠️ Planes de acción requeridos: Por favor describe el plan de acción para los criterios que no cumplen: ${missingPlans.join(', ')}`);
       return;
     }
 
@@ -377,7 +387,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
     onSaveAudit(auditData);
 
     // Reset check list and states
-    setCheckedIds({});
+    setCheckedIds({ I1: false });
     setActionPlans({});
     setEvidencePhotos({});
     setComments('');
@@ -513,7 +523,18 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {cat.criteria.map(c => {
-                    const isChecked = !!checkedIds[c.id];
+                    const val = checkedIds[c.id];
+                    let cardBorderColor = 'var(--border)';
+                    let cardBgColor = 'transparent';
+                    
+                    if (val === true) {
+                      cardBorderColor = 'var(--success)';
+                      cardBgColor = 'var(--success-light)';
+                    } else if (val === false) {
+                      cardBorderColor = 'var(--error)';
+                      cardBgColor = 'var(--error-light)';
+                    }
+                    
                     return (
                       <div
                         key={c.id}
@@ -523,43 +544,75 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
                           gap: '10px',
                           padding: '12px',
                           borderRadius: 'var(--radius-sm)',
-                          border: isChecked ? '1px solid var(--success)' : '1px solid var(--border)',
-                          backgroundColor: isChecked ? 'var(--success-light)' : 'transparent',
+                          border: `1px solid ${cardBorderColor}`,
+                          backgroundColor: cardBgColor,
                           transition: 'all 0.2s ease',
                         }}
                       >
-                        {/* Clickable Header for Checkbox + Label */}
-                        <div 
-                          onClick={() => {
-                            if (c.id === 'I1') {
-                              alert("ℹ️ Este criterio se marca automáticamente al seleccionar exactamente 10 productos de la lista inferior.");
-                            } else {
-                              toggleCheck(c.id);
-                            }
-                          }}
-                          style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: c.id === 'I1' ? 'default' : 'pointer', width: '100%' }}
-                        >
-                          <div style={{
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '50%',
-                            border: isChecked ? 'none' : '2px solid var(--border)',
-                            backgroundColor: isChecked ? 'var(--success)' : 'transparent',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#fff',
-                            fontWeight: 'bold',
-                            fontSize: '11px',
-                            flexShrink: 0,
-                          }}>
-                            {isChecked ? '✓' : ''}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>
-                              ID: {c.id} {c.requiere_foto && <span style={{ color: 'var(--primary)', marginLeft: '6px' }}>📸 Foto Requerida</span>}
-                            </span>
-                            <span style={{ fontSize: '13px', color: 'var(--text-main)', fontWeight: 600 }}>{c.text}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px', flexWrap: 'wrap' }}>
+                            <div style={{ flex: 1, minWidth: '220px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>
+                                ID: {c.id} {c.requiere_foto && <span style={{ color: 'var(--primary)', marginLeft: '6px' }}>📸 Foto Requerida</span>}
+                              </span>
+                              <span style={{ fontSize: '13.5px', color: 'var(--text-main)', fontWeight: 600, lineHeight: 1.4 }}>{c.text}</span>
+                            </div>
+                            
+                            {c.id === 'I1' ? (
+                              <span style={{
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                padding: '4px 10px',
+                                borderRadius: '12px',
+                                backgroundColor: val === true ? 'var(--success)' : 'var(--border)',
+                                color: val === true ? '#fff' : 'var(--text-muted)'
+                              }}>
+                                {val === true ? '✓ Automático (10 prod.)' : '⚠️ Falta seleccionar 10 productos'}
+                              </span>
+                            ) : (
+                              <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setCriterionValue(c.id, true)}
+                                  style={{
+                                    padding: '6px 14px',
+                                    borderRadius: '6px',
+                                    border: val === true ? '1px solid var(--success)' : '1px solid var(--border)',
+                                    backgroundColor: val === true ? 'var(--success)' : 'var(--bg-card)',
+                                    color: val === true ? '#fff' : 'var(--text-main)',
+                                    fontWeight: 'bold',
+                                    fontSize: '11px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  ✓ Sí
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setCriterionValue(c.id, false)}
+                                  style={{
+                                    padding: '6px 14px',
+                                    borderRadius: '6px',
+                                    border: val === false ? '1px solid var(--error)' : '1px solid var(--border)',
+                                    backgroundColor: val === false ? 'var(--error)' : 'var(--bg-card)',
+                                    color: val === false ? '#fff' : 'var(--text-main)',
+                                    fontWeight: 'bold',
+                                    fontSize: '11px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  ✗ No
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -804,7 +857,7 @@ export default function OperationAudit({ user, teamMembers, onSaveAudit }) {
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
             <button
               onClick={() => {
-                setCheckedIds({});
+                setCheckedIds({ I1: false });
                 setActionPlans({});
                 setEvidencePhotos({});
                 setComments('');
