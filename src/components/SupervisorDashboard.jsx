@@ -1718,115 +1718,117 @@ export default function SupervisorDashboard({
             </div>
           </div>
 
-          {/* Calendar Grid */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {/* Weekdays header */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 700, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '5px' }}>
-              {weekdays.map(w => (
-                <div key={w} style={{ padding: '8px 0' }}>{w}</div>
-              ))}
-            </div>
+          {/* Calendar Grid Wrapper for Mobile Scroll */}
+          <div className="calendar-scroll-container">
+            <div className="calendar-grid-minwidth" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              {/* Weekdays header */}
+              <div className="calendar-grid-minwidth" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 700, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '5px' }}>
+                {weekdays.map(w => (
+                  <div key={w} style={{ padding: '8px 0' }}>{w}</div>
+                ))}
+              </div>
 
-            {/* Days grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
-              {Array.from({ length: daysInJune }, (_, i) => {
-                const day = i + 1;
-                const dateStr = `2026-06-${day.toString().padStart(2, '0')}`;
-                const hasData = day <= 12;
-                
-                let pct = 0;
-                let bg = 'var(--bg-main)';
-                let color = 'var(--text-muted)';
-                let border = '1px solid var(--border)';
-                let statusLabel = 'Sin datos';
-                
-                if (hasData) {
-                  pct = getComplianceForStats(filterArea, dateStr, selectedCollaborator);
-                  if (pct >= 90) {
-                    bg = 'var(--success-light)';
-                    color = 'var(--success)';
-                    border = '1px solid var(--success)';
-                    statusLabel = 'Excelente';
-                  } else if (pct >= 70) {
-                    bg = 'var(--warning-light)';
-                    color = 'var(--warning)';
-                    border = '1px solid var(--warning)';
-                    statusLabel = 'Regular';
-                  } else {
-                    bg = 'var(--error-light)';
-                    color = 'var(--error)';
-                    border = '1px solid var(--error)';
-                    statusLabel = 'Alerta';
+              {/* Days grid */}
+              <div className="calendar-grid-minwidth" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+                {Array.from({ length: daysInJune }, (_, i) => {
+                  const day = i + 1;
+                  const dateStr = `2026-06-${day.toString().padStart(2, '0')}`;
+                  const hasData = day <= 12;
+                  
+                  let pct = 0;
+                  let bg = 'var(--bg-main)';
+                  let color = 'var(--text-muted)';
+                  let border = '1px solid var(--border)';
+                  let statusLabel = 'Sin datos';
+                  
+                  if (hasData) {
+                    pct = getComplianceForStats(filterArea, dateStr, selectedCollaborator);
+                    if (pct >= 90) {
+                      bg = 'var(--success-light)';
+                      color = 'var(--success)';
+                      border = '1px solid var(--success)';
+                      statusLabel = 'Excelente';
+                    } else if (pct >= 70) {
+                      bg = 'var(--warning-light)';
+                      color = 'var(--warning)';
+                      border = '1px solid var(--warning)';
+                      statusLabel = 'Regular';
+                    } else {
+                      bg = 'var(--error-light)';
+                      color = 'var(--error)';
+                      border = '1px solid var(--error)';
+                      statusLabel = 'Alerta';
+                    }
                   }
-                }
 
-                return (
-                  <div
-                    key={day}
-                    onClick={() => {
-                      if (hasData) {
-                        setSelectedDateStr(dateStr);
-                        setViewMode('DIARIO');
-                      }
-                    }}
-                    className={hasData ? "animate-scale-in" : ""}
-                    style={{
-                      height: '90px',
-                      padding: '10px',
-                      borderRadius: 'var(--radius-sm)',
-                      backgroundColor: bg,
-                      border: border,
-                      color: color,
-                      cursor: hasData ? 'pointer' : 'default',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      opacity: hasData ? 1 : 0.45,
-                      transition: 'all 0.2s ease',
-                      boxShadow: hasData ? 'var(--shadow-sm)' : 'none',
-                      position: 'relative',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (hasData) {
-                        e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (hasData) {
-                        e.currentTarget.style.transform = 'none';
-                        e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-                      }
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '15px', fontWeight: 800 }}>{day}</span>
-                      {hasData && (
-                        <span style={{
-                          fontSize: '8px',
-                          fontWeight: 800,
-                          textTransform: 'uppercase',
-                          backgroundColor: color,
-                          color: '#fff',
-                          padding: '1px 4px',
-                          borderRadius: '3px'
-                        }}>
-                          {statusLabel}
-                        </span>
+                  return (
+                    <div
+                      key={day}
+                      onClick={() => {
+                        if (hasData) {
+                          setSelectedDateStr(dateStr);
+                          setViewMode('DIARIO');
+                        }
+                      }}
+                      className={(hasData ? "animate-scale-in " : "") + "calendar-day-cell"}
+                      style={{
+                        height: '90px',
+                        padding: '10px',
+                        borderRadius: 'var(--radius-sm)',
+                        backgroundColor: bg,
+                        border: border,
+                        color: color,
+                        cursor: hasData ? 'pointer' : 'default',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        opacity: hasData ? 1 : 0.45,
+                        transition: 'all 0.2s ease',
+                        boxShadow: hasData ? 'var(--shadow-sm)' : 'none',
+                        position: 'relative',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (hasData) {
+                          e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                          e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (hasData) {
+                          e.currentTarget.style.transform = 'none';
+                          e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                        }
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '15px', fontWeight: 800 }}>{day}</span>
+                        {hasData && (
+                          <span style={{
+                            fontSize: '8px',
+                            fontWeight: 800,
+                            textTransform: 'uppercase',
+                            backgroundColor: color,
+                            color: '#fff',
+                            padding: '1px 4px',
+                            borderRadius: '3px'
+                          }}>
+                            {statusLabel}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {hasData ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)' }}>{pct.toFixed(0)}%</span>
+                          <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Cumplido</span>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Pendiente</span>
                       )}
                     </div>
-                    
-                    {hasData ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)' }}>{pct.toFixed(0)}%</span>
-                        <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Cumplido</span>
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Pendiente</span>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -4898,7 +4900,7 @@ main();`}
         {activeTab === 'monitoring' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Filter and View mode toolbar */}
-            <div style={{
+            <div className="mobile-toolbar-container" style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -4910,7 +4912,7 @@ main();`}
               border: '1px solid var(--border)',
               marginBottom: '5px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+              <div className="mobile-toolbar-left" style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
                 {user.store === 'Todas' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)' }}>🏢 Sede:</span>
@@ -4968,7 +4970,7 @@ main();`}
               </div>
 
               {/* View Mode Toggle */}
-              <div style={{ display: 'flex', gap: '5px', backgroundColor: 'var(--bg-main)', padding: '4px', borderRadius: '25px', border: '1px solid var(--border)' }}>
+              <div className="mobile-toolbar-right" style={{ display: 'flex', gap: '5px', backgroundColor: 'var(--bg-main)', padding: '4px', borderRadius: '25px', border: '1px solid var(--border)' }}>
                 {[
                   { key: 'DIARIO', label: '📅 Vista Diaria' },
                   { key: 'CALENDARIO', label: '🗓️ Calendario' }

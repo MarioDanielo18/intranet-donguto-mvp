@@ -578,4 +578,59 @@ tr:nth-child(even) {
   }
 }
 
+/* Responsive adjustments for Mobile */
+@media (max-width: 768px) {
+  .mobile-toolbar-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 15px !important;
+    padding: 12px !important;
+  }
+  
+  .mobile-toolbar-left {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .mobile-toolbar-left select {
+    width: 100% !important;
+  }
+  
+  .mobile-toolbar-right {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .mobile-toolbar-right button {
+    flex: 1 !important;
+    text-align: center !important;
+  }
+  
+  .calendar-scroll-container {
+    width: 100% !important;
+    overflow-x: auto !important;
+    padding-bottom: 5px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .calendar-grid-minwidth {
+    min-width: 620px !important;
+  }
+  
+  .calendar-day-cell {
+    height: 75px !important;
+    padding: 6px !important;
+  }
+  
+  .calendar-day-cell span {
+    font-size: 10px !important;
+  }
+  
+  .calendar-day-cell strong {
+    font-size: 13px !important;
+  }
+}
+
 
