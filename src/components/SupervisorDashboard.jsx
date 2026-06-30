@@ -475,30 +475,37 @@ export default function SupervisorDashboard({
         <meta charset="UTF-8">
         <title>Auditoría Operacional - Sede ${log.tienda}</title>
         <style>
+          @page {
+            size: A4;
+            margin: 10mm 15mm;
+          }
           body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #2b2b2b;
             margin: 0;
-            padding: 25px;
+            padding: 0;
             background-color: #ffffff;
-            line-height: 1.35;
-            font-size: 11px;
+            line-height: 1.25;
+            font-size: 9.5px;
           }
           .page {
             box-sizing: border-box;
+            height: 275mm;
+            position: relative;
+            overflow: hidden;
           }
           .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
           }
           .header-logo {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 800;
             color: #fff;
             background-color: #8b1a1a;
-            padding: 8px 16px;
-            border-radius: 5px;
+            padding: 6px 12px;
+            border-radius: 4px;
             display: inline-block;
           }
           .header-title {
@@ -507,69 +514,69 @@ export default function SupervisorDashboard({
           }
           .header-title h1 {
             margin: 0;
-            font-size: 16px;
+            font-size: 14px;
             color: #8b1a1a;
             text-transform: uppercase;
             letter-spacing: 0.5px;
           }
           .header-title p {
             margin: 2px 0 0 0;
-            font-size: 10px;
+            font-size: 9px;
             color: #666;
           }
           .meta-box {
             background-color: #f9f9fb;
             border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 10px 15px;
-            margin-bottom: 15px;
-            font-size: 11px;
+            border-radius: 5px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            font-size: 10px;
           }
           .meta-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 6px 15px;
+            gap: 4px 12px;
           }
           .score-card {
             background-color: #f9f9fb;
             border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 12px 18px;
-            margin-bottom: 15px;
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
           }
           .score-value {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 800;
           }
           .score-badge {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
-            padding: 4px 12px;
-            border-radius: 15px;
+            padding: 3px 10px;
+            border-radius: 12px;
             color: #fff;
           }
           .category-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 800;
             color: #8b1a1a;
             border-bottom: 2px solid #8b1a1a;
-            padding-bottom: 4px;
-            margin-top: 15px;
-            margin-bottom: 8px;
+            padding-bottom: 3px;
+            margin-top: 10px;
+            margin-bottom: 6px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
           }
           .criteria-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px 15px;
+            gap: 6px 12px;
           }
           .criterion-card {
             border-bottom: 1px solid #e5e7eb;
-            padding: 6px 0;
+            padding: 3px 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -579,18 +586,19 @@ export default function SupervisorDashboard({
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 10px;
+            gap: 8px;
           }
           .criterion-text {
-            font-size: 11px;
+            font-size: 9px;
             font-weight: 600;
             color: #333;
+            line-height: 1.15;
           }
           .criterion-status {
-            font-size: 8.5px;
+            font-size: 8px;
             font-weight: bold;
-            padding: 1.5px 5px;
-            border-radius: 3px;
+            padding: 1px 4px;
+            border-radius: 2px;
             text-transform: uppercase;
             white-space: nowrap;
           }
@@ -606,78 +614,79 @@ export default function SupervisorDashboard({
             background-color: #fff5f5;
             border-left: 2px solid #ef4444;
             border-radius: 0 3px 3px 0;
-            padding: 4px 8px;
-            margin-top: 4px;
-            font-size: 9.5px;
+            padding: 3px 6px;
+            margin-top: 2px;
+            font-size: 8px;
             color: #991b1b;
+            line-height: 1.15;
           }
           .photo-gallery {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 8px;
+            margin-top: 8px;
           }
           .photo-card {
             border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 6px;
+            border-radius: 4px;
+            padding: 4px;
             background-color: #f9f9fb;
-            width: 120px;
+            width: 90px;
             page-break-inside: avoid;
           }
           .photo-img {
             width: 100%;
-            height: 80px;
+            height: 60px;
             object-fit: contain;
             background-color: #eaeaea;
-            border-radius: 4px;
+            border-radius: 3px;
           }
           .photo-title {
-            font-size: 8.5px;
+            font-size: 8px;
             font-weight: 700;
-            margin-top: 4px;
+            margin-top: 3px;
             text-align: center;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
           }
           .signatures-container {
-            margin-top: 25px;
+            margin-top: 15px;
             display: flex;
             justify-content: space-around;
             page-break-inside: avoid;
           }
           .signature-box {
             text-align: center;
-            width: 180px;
+            width: 150px;
           }
           .signature-line {
             border-top: 1px solid #999;
-            margin-top: 35px;
-            padding-top: 4px;
-            font-size: 11px;
+            margin-top: 20px;
+            padding-top: 3px;
+            font-size: 9.5px;
             font-weight: 700;
           }
           .signature-img {
-            max-height: 40px;
-            max-width: 160px;
+            max-height: 30px;
+            max-width: 140px;
             object-fit: contain;
           }
           .print-button-container {
             text-align: center;
-            margin-top: 25px;
-            margin-bottom: 10px;
+            margin-top: 20px;
+            margin-bottom: 5px;
           }
           .btn-print {
             background-color: #8b1a1a;
             color: white;
             border: none;
-            padding: 10px 25px;
-            font-size: 13px;
+            padding: 8px 20px;
+            font-size: 12px;
             font-weight: bold;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
           }
           .btn-print:hover {
             background-color: #721414;
@@ -718,7 +727,7 @@ export default function SupervisorDashboard({
           
           <div class="score-card">
             <div>
-              <div style="font-size: 10px; text-transform: uppercase; color: #666; font-weight: 700;">Resultado Ponderado</div>
+              <div style="font-size: 9px; text-transform: uppercase; color: #666; font-weight: 700;">Resultado Ponderado</div>
               <div class="score-value" style="color: ${ratingColor}">${log.nota.toFixed(1)}%</div>
             </div>
             <span class="score-badge" style="background-color: ${ratingColor}">${ratingText}</span>
@@ -752,7 +761,7 @@ export default function SupervisorDashboard({
         </div>
 
         <!-- PAGE 2 -->
-        <div class="page" style="page-break-before: always; padding-top: 15px;">
+        <div class="page" style="page-break-before: always;">
           <!-- Page 2 Categories -->
           ${['HOSPITALIDAD', 'MANTENIMIENTO', 'ENTRENAMIENTO'].map(catName => {
             const list = categoriesMap[catName] || [];
@@ -780,14 +789,14 @@ export default function SupervisorDashboard({
           }).join('')}
 
           <!-- Observaciones Generales -->
-          <div style="margin-top: 20px; background-color: #f9f9fb; padding: 10px 15px; border-radius: 6px; border: 1px solid #e5e7eb; page-break-inside: avoid;">
-            <h4 style="margin: 0 0 4px 0; font-size: 11px; color: #8b1a1a; text-transform: uppercase;">Observaciones Generales de la Auditoría:</h4>
-            <p style="margin: 0; font-size: 11.5px; color: #444; line-height: 1.4;">${log.comentarios || 'Sin observaciones generales.'}</p>
+          <div style="margin-top: 10px; background-color: #f9f9fb; padding: 6px 12px; border-radius: 4px; border: 1px solid #e5e7eb; page-break-inside: avoid;">
+            <h4 style="margin: 0 0 3px 0; font-size: 10px; color: #8b1a1a; text-transform: uppercase;">Observaciones Generales de la Auditoría:</h4>
+            <p style="margin: 0; font-size: 10px; color: #444; line-height: 1.35;">${log.comentarios || 'Sin observaciones generales.'}</p>
           </div>
           
           <!-- Galería de Evidencias -->
           ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).length > 0 ? `
-            <div class="category-title" style="margin-top: 20px; page-break-inside: avoid;">Evidencias Fotográficas de Conformidad</div>
+            <div class="category-title" style="margin-top: 10px; page-break-inside: avoid;">Evidencias Fotográficas de Conformidad</div>
             <div class="photo-gallery">
               ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).map(c => `
                 <div class="photo-card">
@@ -803,12 +812,12 @@ export default function SupervisorDashboard({
             <div class="signature-box">
               ${log.signatureAuditor ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditor)}" alt="Firma Auditor" />` : ''}
               <div class="signature-line">Firma del Auditor</div>
-              <div style="font-size: 9px; color: #666; margin-top: 2px;">Diana Valdivia Rojas</div>
+              <div style="font-size: 8px; color: #666; margin-top: 2px;">Diana Valdivia Rojas</div>
             </div>
             <div class="signature-box">
               ${log.signatureAuditado ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditado)}" alt="Firma Auditado" />` : ''}
               <div class="signature-line">Firma del Auditado</div>
-              <div style="font-size: 9px; color: #666; margin-top: 2px;">${log.colaboradorAuditado || 'Colaborador'}</div>
+              <div style="font-size: 8px; color: #666; margin-top: 2px;">${log.colaboradorAuditado || 'Colaborador'}</div>
             </div>
           </div>
         </div>
