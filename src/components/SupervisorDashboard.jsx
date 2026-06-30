@@ -4731,21 +4731,6 @@ main();`}
       <div className="animate-fade-in">
         {activeTab === 'monitoring' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Active Gerencia Directives */}
-            {directives.length > 0 && (
-              <div className="card glass animate-scale-in" style={{ border: '1px solid var(--primary)', backgroundColor: 'rgba(139, 26, 26, 0.02)', display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 16px' }}>
-                <h4 style={{ margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', textTransform: 'uppercase', fontWeight: 800 }}>
-                  📢 Directivas y Notas de Gerencia General:
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {directives.slice(0, 3).map(dir => (
-                    <div key={dir.id} style={{ fontSize: '11px', color: 'var(--text-main)', borderLeft: '3px solid var(--primary)', paddingLeft: '8px', lineHeight: '1.4' }}>
-                      <strong>{dir.date}</strong> - {dir.text}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
             {/* Filter and View mode toolbar */}
             <div style={{
               display: 'flex',
