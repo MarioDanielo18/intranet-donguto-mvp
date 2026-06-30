@@ -195,27 +195,12 @@ export default function SupervisorDashboard({
   const [newDevPort, setNewDevPort] = useState('4370');
   const [newDevStore, setNewDevStore] = useState('28 de Julio Miraflores');
   
-  // Simulator states
-  const [simCollabUsername, setSimCollabUsername] = useState('');
-  const [simDeviceId, setSimDeviceId] = useState('');
-  const [simResult, setSimResult] = useState(null);
-
   // Sync state with props
   useEffect(() => {
     if (biometricDevices) {
       setTechDevices(biometricDevices);
     }
   }, [biometricDevices]);
-
-  // Set default values for simulator dropdowns
-  useEffect(() => {
-    if (approvedMembers && approvedMembers.length > 0 && !simCollabUsername) {
-      setSimCollabUsername(approvedMembers[0].username);
-    }
-    if (biometricDevices && biometricDevices.length > 0 && !simDeviceId) {
-      setSimDeviceId(biometricDevices[0].id);
-    }
-  }, [approvedMembers, biometricDevices]);
 
   const handleAddDevSubmit = (e) => {
     e.preventDefault();
@@ -275,26 +260,7 @@ export default function SupervisorDashboard({
     }
   };
 
-  const handleSimulatePhysicalScan = () => {
-    if (!simCollabUsername || !simDeviceId) {
-      alert('Por favor, selecciona un colaborador y un dispositivo.');
-      return;
-    }
 
-    const res = onBiometricScan(simCollabUsername, simDeviceId);
-    if (res && res.success) {
-      setSimResult({
-        success: true,
-        message: `¡Marcación física simulada! Colaborador registrado a las ${res.log.time}.`
-      });
-    } else {
-      setSimResult({
-        success: false,
-        message: res ? res.message : 'Error en la comunicación con la terminal.'
-      });
-    }
-    setTimeout(() => setSimResult(null), 5000);
-  };
   const [selectedUser, setSelectedUser] = useState(null);
   const [previewPhoto, setPreviewPhoto] = useState(null);
   const [selectedAuditLog, setSelectedAuditLog] = useState(null);
@@ -3547,7 +3513,7 @@ export default function SupervisorDashboard({
                   cursor: myBioState === 'idle' ? 'pointer' : 'not-allowed'
                 }}
               >
-                {myBioState === 'idle' ? '☝️ Simular Colocar Dedo' : 'Procesando Marcación...'}
+                {myBioState === 'idle' ? '☝️ Registrar Marcación Directa' : 'Procesando Marcación...'}
               </button>
 
               <div style={{ fontSize: '12px', color: myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px' }}>
@@ -4312,60 +4278,15 @@ export default function SupervisorDashboard({
 
               </div>
 
-              {/* Right Column: Simulator & Logs */}
+              {/* Right Column: Server Logs and Settings */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
-                {/* Physical Scan Simulator Console */}
-                <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--primary)', backgroundColor: 'rgba(139, 26, 26, 0.01)' }}>
-                  <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    ⚡ Consola Simuladora de Transmisión de Hardware
-                  </h4>
+                {/* Control Actions */}
+                <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--border)' }}>
+                  <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>⚙️ Acciones de Control Local</h4>
                   <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                    Simula la reception de un pulso de asistencia física desde la lectora biométrica conectada. Sirve para certificar que el log entra a la base de datos y actualiza la intranet.
+                    Permite sincronizar y forzar la recarga de los datos de asistencia directamente desde la base de datos central en la nube.
                   </p>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Colaborador / Huella:</label>
-                      <select
-                        value={simCollabUsername}
-                        onChange={(e) => setSimCollabUsername(e.target.value)}
-                        className="input"
-                        style={{ padding: '8px' }}
-                      >
-                        {approvedMembers.map(m => (
-                          <option key={m.username} value={m.username}>
-                            {m.name} ({m.role} - {m.store})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Lector de Origen:</label>
-                      <select
-                        value={simDeviceId}
-                        onChange={(e) => setSimDeviceId(e.target.value)}
-                        className="input"
-                        style={{ padding: '8px' }}
-                      >
-                        {techDevices.map(d => (
-                          <option key={d.id} value={d.id} disabled={d.status === 'Offline'}>
-                            {d.name} ({d.status})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleSimulatePhysicalScan}
-                    className="btn btn-primary"
-                    style={{ width: '100%', padding: '10px', fontSize: '12.5px' }}
-                  >
-                    📡 Enviar Marcación (Simular ZK Hardware Push)
-                  </button>
 
                   <button
                     type="button"
@@ -4377,25 +4298,10 @@ export default function SupervisorDashboard({
                       }
                     }}
                     className="btn"
-                    style={{ width: '100%', padding: '8px', fontSize: '11.5px', marginTop: '10px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
+                    style={{ width: '100%', padding: '10px', fontSize: '12px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
                   >
-                    🧹 Limpiar Caché de Asistencia Local
+                    🧹 Sincronizar y Forzar Recarga de Caché
                   </button>
-
-                  {simResult && (
-                    <div style={{
-                      padding: '10px',
-                      borderRadius: '4px',
-                      backgroundColor: simResult.success ? 'var(--success-light)' : 'var(--error-light)',
-                      border: `1px solid ${simResult.success ? 'var(--success)' : 'var(--error)'}`,
-                      color: simResult.success ? 'var(--success)' : 'var(--error)',
-                      fontSize: '11.5px',
-                      fontWeight: 'bold',
-                      textAlign: 'center'
-                    }}>
-                      {simResult.message}
-                    </div>
-                  )}
                 </div>
 
                 {/* Real-time event log */}

@@ -289,63 +289,6 @@ const INITIAL_MOCK_TEAM = [
     telefono: '982953898',
     trainingProgress: {},
     arrivalLogs: []
-  },
-
-  // LOGINS AUXILIARES / TÉCNICOS / MOCKS PREVIOS
-  {
-    username: 'vrojasdg',
-    password: 'admindg',
-    name: 'Diana Valdivia Rojas',
-    role: 'Administrador',
-    store: '28 de Julio Miraflores',
-    trainingProgress: {},
-    arrivalLogs: []
-  },
-  {
-    username: 'sgomezdg',
-    password: 'supervisordg',
-    name: 'Pedro Supervisor Gómez',
-    role: 'Supervisor',
-    store: 'Todas',
-    trainingProgress: {},
-    arrivalLogs: []
-  },
-  {
-    username: 'dongutodg',
-    password: 'gerentedg',
-    name: 'Don Guto',
-    role: 'Gerente',
-    store: 'Todas',
-    trainingProgress: {},
-    arrivalLogs: []
-  },
-  {
-    username: 'mquispedg',
-    password: 'gerentedg',
-    name: 'Mario Quispe',
-    role: 'Gerente',
-    store: 'Todas',
-    biometricId: '898681',
-    trainingProgress: {},
-    arrivalLogs: []
-  },
-  {
-    username: 'tecnicodg',
-    password: 'tecnicodg',
-    name: 'Técnico de Sistemas',
-    role: 'Técnico',
-    store: 'Todas',
-    trainingProgress: {},
-    arrivalLogs: []
-  },
-  {
-    username: 'auditordg',
-    password: 'auditordg',
-    name: 'Auditor de Operaciones',
-    role: 'Auditor',
-    store: 'Todas',
-    trainingProgress: {},
-    arrivalLogs: []
   }
 ];
 
@@ -355,12 +298,12 @@ const INITIAL_INCIDENTS = [];
 
 export default function App() {
   // Clear old mock data once on production startup to ensure clean slate
-  if (!localStorage.getItem('donguto-prod-v3')) {
+  if (!localStorage.getItem('donguto-prod-v4')) {
     localStorage.removeItem('donguto-team');
     localStorage.removeItem('donguto-incidents');
     localStorage.removeItem('donguto-biometric-devices');
     localStorage.removeItem('donguto-biometric-logs');
-    localStorage.setItem('donguto-prod-v3', 'true');
+    localStorage.setItem('donguto-prod-v4', 'true');
   }
 
   const [user, setUser] = useState(() => {

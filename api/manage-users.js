@@ -33,7 +33,13 @@ export default async function handler(req, res) {
       // Seed new production users if they are missing
       const onavarroExists = (users || []).some(u => u.username === 'onavarrodg');
       if (!onavarroExists) {
-        console.log('[seeder] Seeding new users to Supabase...');
+        console.log('[seeder] Seeding new users and cleaning legacy mocks in Supabase...');
+        // Clean up legacy mock accounts in Supabase
+        await supabase
+          .from('usuarios')
+          .delete()
+          .in('username', ['vrojasdg', 'sgomezdg', 'dongutodg', 'mquispedg', 'tecnicodg', 'auditordg']);
+
         const usersToSeed = [
           { username: 'onavarrodg', password: 'dg.osca.N9405', name: 'Oscar Navarro', role: 'Gerente', store: 'Todas' },
           { username: 'gechevarriadg', password: 'dg.gabr.E9087', name: 'Gabriela Echevarría', role: 'Gerente', store: 'Todas' },

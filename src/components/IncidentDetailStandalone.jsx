@@ -21,6 +21,12 @@ export default function IncidentDetailStandalone({
 
   const [successMsg, setSuccessMsg] = useState('');
 
+  React.useEffect(() => {
+    if (!inc) {
+      onClose();
+    }
+  }, [inc, onClose]);
+
   if (!inc) {
     return (
       <div style={{
@@ -36,17 +42,10 @@ export default function IncidentDetailStandalone({
         fontFamily: 'system-ui, sans-serif'
       }}>
         <div className="card text-center" style={{ padding: '40px', maxWidth: '400px', border: '1px solid var(--border)' }}>
-          <h2 style={{ color: 'var(--error)', margin: '0 0 10px 0' }}>⚠️ Ticket No Encontrado</h2>
+          <h2 style={{ color: 'var(--primary)', margin: '0 0 10px 0' }}>⏳ Redireccionando...</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.5 }}>
-            La incidencia con ID <strong>{incidentId}</strong> no existe o ha sido eliminada del sistema.
+            El ticket <strong>{incidentId}</strong> no existe o fue eliminado. Volviendo al panel principal...
           </p>
-          <button
-            onClick={() => onClose()}
-            className="btn btn-primary"
-            style={{ marginTop: '20px', width: '100%' }}
-          >
-            Cerrar Detalle ✖
-          </button>
         </div>
       </div>
     );
