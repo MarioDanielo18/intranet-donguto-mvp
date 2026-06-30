@@ -2430,38 +2430,6 @@ export default function SupervisorDashboard({
                 ))}
               </div>
             </div>
-
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <h3 style={{ margin: 0, color: 'var(--secondary)' }}>📢 Publicar Directiva de Gerencia General</h3>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
-                Las directivas publicadas se mostrarán de forma inmediata en el panel de monitoreo de los administradores y supervisores de tienda.
-              </p>
-              <form onSubmit={handleAddDirective} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <textarea
-                  value={newDirectiveText}
-                  onChange={(e) => setNewDirectiveText(e.target.value)}
-                  placeholder="Ej: Asegurar que el cuadre de caja de cierre se reporte con foto del comprobante POS de Visa/Mastercard antes de las 10:15 pm..."
-                  rows="3"
-                  className="input"
-                  style={{ padding: '8px 12px', fontFamily: 'inherit', resize: 'vertical' }}
-                  required
-                />
-                <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end', padding: '6px 15px', fontSize: '12px' }}>
-                  Publicar Directiva
-                </button>
-              </form>
-
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Historial de Directivas Publicadas</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '150px', overflowY: 'auto' }}>
-                  {directives.map(dir => (
-                    <div key={dir.id} style={{ fontSize: '11px', padding: '6px', borderBottom: '1px solid var(--bg-main)' }}>
-                      <strong>{dir.date}</strong>: {dir.text}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
 
           <div style={{ flex: '1 1 350px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
