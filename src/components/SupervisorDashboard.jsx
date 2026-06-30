@@ -419,14 +419,12 @@ export default function SupervisorDashboard({
   const handleDownloadAuditPDF = (log) => {
     const safeImgSrc = (src) => {
       if (!src) return '';
-      // If it is a raw SVG data URL (utf8), convert it to base64 to avoid quote breaking HTML img tag attributes
       if (src.startsWith('data:image/svg+xml;utf8,') || src.startsWith('data:image/svg+xml,')) {
         try {
           const header = src.startsWith('data:image/svg+xml;utf8,') 
             ? 'data:image/svg+xml;utf8,' 
             : 'data:image/svg+xml,';
           const svgText = src.substring(header.length);
-          // Base64 encode the SVG string safely
           const base64 = btoa(unescape(encodeURIComponent(svgText)));
           return `data:image/svg+xml;base64,${base64}`;
         } catch (e) {
@@ -439,7 +437,7 @@ export default function SupervisorDashboard({
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert("⚠️ Error: Bloqueador de ventanas emergentes activo. Por favor, permite las ventanas emergentes para descargar el PDF.");
+      alert("⚠️ Error: Bloqueador de ventanas emergentes activo.");
       return;
     }
     
@@ -459,13 +457,13 @@ export default function SupervisorDashboard({
     });
     
     let ratingText = 'Excelente';
-    let ratingColor = '#10b981'; // success
+    let ratingColor = '#10b981';
     if (log.nota < 70) {
       ratingText = 'Crítico';
-      ratingColor = '#ef4444'; // error
+      ratingColor = '#ef4444';
     } else if (log.nota < 90) {
       ratingText = 'Regular';
-      ratingColor = '#f59e0b'; // warning
+      ratingColor = '#f59e0b';
     }
 
     const htmlContent = `
@@ -473,6 +471,7 @@ export default function SupervisorDashboard({
       <html lang="es">
       <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=1024">
         <title>Auditoría Operacional - Sede ${log.tienda}</title>
         <style>
           @page {
@@ -490,7 +489,9 @@ export default function SupervisorDashboard({
           }
           .page {
             box-sizing: border-box;
+            width: 186mm;
             height: 277mm;
+            margin: 0 auto;
             position: relative;
             overflow: hidden;
             display: flex;
@@ -629,29 +630,7 @@ export default function SupervisorDashboard({
             max-width: 80px;
             object-fit: contain;
           }
-          .print-button-container {
-            text-align: center;
-            margin-top: 10px;
-            margin-bottom: 5px;
-          }
-          .btn-print {
-            background-color: #8b1a1a;
-            color: white;
-            border: none;
-            padding: 6px 15px;
-            font-size: 11px;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-          }
-          .btn-print:hover {
-            background-color: #721414;
-          }
           @media print {
-            .print-button-container {
-              display: none;
-            }
             body {
               padding: 0;
             }
@@ -660,7 +639,6 @@ export default function SupervisorDashboard({
       </head>
       <body>
         <div class="page">
-          <!-- TOP HEADER BLOCK -->
           <div style="border-bottom: 2px solid #8b1a1a; padding-bottom: 6px; margin-bottom: 8px;">
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
@@ -683,9 +661,7 @@ export default function SupervisorDashboard({
             </table>
           </div>
 
-          <!-- TWO COLUMNS CHECKLIST -->
           <div class="main-columns">
-            <!-- LEFT COLUMN -->
             <div class="column">
               ${['PRECISIÓN', 'PRESENTACIÓN', 'LIMPIEZA', 'INVENTARIO'].map(catName => {
                 const list = categoriesMap[catName] || [];
@@ -713,7 +689,6 @@ export default function SupervisorDashboard({
               }).join('')}
             </div>
 
-            <!-- RIGHT COLUMN -->
             <div class="column">
               ${['HOSPITALIDAD', 'MANTENIMIENTO', 'ENTRENAMIENTO'].map(catName => {
                 const list = categoriesMap[catName] || [];
@@ -742,16 +717,12 @@ export default function SupervisorDashboard({
             </div>
           </div>
 
-          <!-- BOTTOM SECTION -->
           <div style="margin-top: 10px; border-top: 1.5px solid #8b1a1a; padding-top: 8px;">
-            <!-- Observaciones -->
             <div style="background-color: #f9f9fb; padding: 6px 10px; border-radius: 4px; border: 1px solid #e5e7eb; font-size: 8.5px;">
               <strong>Observaciones Generales:</strong> ${log.comentarios || 'Sin observaciones generales.'}
             </div>
 
-            <!-- Photos & Signatures side-by-side to save vertical space! -->
             <div style="display: flex; gap: 20px; margin-top: 8px; align-items: flex-start;">
-              <!-- Photos -->
               <div style="flex: 1.2;">
                 ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).length > 0 ? `
                   <div style="font-size: 9px; font-weight: 800; color: #8b1a1a; text-transform: uppercase; margin-bottom: 4px;">Evidencias Fotográficas</div>
@@ -766,25 +737,20 @@ export default function SupervisorDashboard({
                 ` : ''}
               </div>
 
-              <!-- Signatures -->
               <div style="flex: 1;" class="signatures-container">
                 <div class="signature-box">
                   ${log.signatureAuditor ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditor)}" alt="Firma Auditor" />` : ''}
                   <div class="signature-line">Firma del Auditor</div>
-                  <div style="font-size: 7.5px; color: #666; margin-top: 1px;">Diana Valdivia Rojas</div>
+                  <div style="font-size: 7.5px; color: #666; margin-top: 2px;">Diana Valdivia Rojas</div>
                 </div>
                 <div class="signature-box">
                   ${log.signatureAuditado ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditado)}" alt="Firma Auditado" />` : ''}
                   <div class="signature-line">Firma del Auditado</div>
-                  <div style="font-size: 7.5px; color: #666; margin-top: 1px;">${log.colaboradorAuditado || 'Colaborador'}</div>
+                  <div style="font-size: 7.5px; color: #666; margin-top: 2px;">${log.colaboradorAuditado || 'Colaborador'}</div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="print-button-container">
-          <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar en PDF</button>
         </div>
       </body>
       </html>
@@ -792,6 +758,13 @@ export default function SupervisorDashboard({
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
+
+    // Auto-trigger native printing and close the temporary window/tab immediately after
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
   };
 
   // States for adding team member
