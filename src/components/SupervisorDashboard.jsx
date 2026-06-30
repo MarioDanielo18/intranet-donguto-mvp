@@ -293,6 +293,7 @@ export default function SupervisorDashboard({
   const [incResponseTexts, setIncResponseTexts] = useState({});
   const [incSuccessMsg, setIncSuccessMsg] = useState('');
   const [incActiveTab, setIncActiveTab] = useState('active'); // 'active' | 'resolved'
+  const [baristaStoreFilter, setBaristaStoreFilter] = useState('Todas');
   
   const [collabDetailTab, setCollabDetailTab] = useState('training'); // 'training' | 'attendance'
 
@@ -2280,6 +2281,31 @@ export default function SupervisorDashboard({
       .filter(m => m.avgDelay > 5 || m.trainingDone < 4)
       .sort((a, b) => b.avgDelay - a.avgDelay);
 
+    // Barista performance calculations for the manager dashboard
+    const filteredBaristas = approvedMembers.filter(m => {
+      if (m.role !== 'Barista') return false;
+      return baristaStoreFilter === 'Todas' || m.store === baristaStoreFilter;
+    });
+
+    let avgGeneralTraining = 0;
+    let avgGeneralPunctuality = 0;
+
+    if (filteredBaristas.length > 0) {
+      const sumTraining = filteredBaristas.reduce((acc, m) => {
+        const completed = Object.values(m.trainingProgress || {}).filter(val => val === 'Completado').length;
+        return acc + (completed / 5) * 100;
+      }, 0);
+      avgGeneralTraining = sumTraining / filteredBaristas.length;
+
+      const sumPunctuality = filteredBaristas.reduce((acc, m) => {
+        const arrivals = m.arrivalLogs || [];
+        const onTime = arrivals.filter(l => (l.delayMin || 0) <= 5).length;
+        const rate = arrivals.length > 0 ? (onTime / arrivals.length) * 100 : 100;
+        return acc + rate;
+      }, 0);
+      avgGeneralPunctuality = sumPunctuality / filteredBaristas.length;
+    }
+
     const proposals = [
       {
         id: 1,
@@ -2443,6 +2469,107 @@ export default function SupervisorDashboard({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* BARISTAS PERFORMANCE AND TRAINING WIDGET */}
+            <div className="card animate-scale-in" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <h3 style={{ margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  ☕ Progreso y Calificación de Baristas
+                </h3>
+                <select
+                  value={baristaStoreFilter}
+                  onChange={(e) => setBaristaStoreFilter(e.target.value)}
+                  className="input"
+                  style={{ padding: '4px 8px', fontSize: '11px', height: '28px', minWidth: '130px', cursor: 'pointer', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}
+                >
+                  <option value="Todas">🏢 Todas las sedes</option>
+                  <option value="Barranco">Sede Barranco</option>
+                  <option value="Miraflores">Sede Miraflores</option>
+                  <option value="San Isidro">Sede San Isidro</option>
+                </select>
+              </div>
+
+              {/* General Store Averages Card */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', backgroundColor: 'var(--bg-main)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 'bold' }}>Capacitación Promedio</span>
+                  <strong style={{ fontSize: '18px', color: 'var(--primary)', display: 'block', marginTop: '4px' }}>
+                    {avgGeneralTraining.toFixed(1)}%
+                  </strong>
+                </div>
+                <div style={{ textAlign: 'center', borderLeft: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 'bold' }}>Puntualidad Promedio</span>
+                  <strong style={{ fontSize: '18px', color: 'var(--success)', display: 'block', marginTop: '4px' }}>
+                    {avgGeneralPunctuality.toFixed(1)}%
+                  </strong>
+                </div>
+              </div>
+
+              {/* Baristas list/table */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '250px', overflowY: 'auto' }}>
+                {filteredBaristas.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No hay baristas registrados en esta sede.
+                  </div>
+                ) : (
+                  filteredBaristas.map(m => {
+                    const totalDays = 5;
+                    const completedDays = Object.values(m.trainingProgress || {}).filter(status => status === 'Completado').length;
+                    const trainingPercent = (completedDays / totalDays) * 100;
+
+                    const arrivals = m.arrivalLogs || [];
+                    const onTimeArrivals = arrivals.filter(l => (l.delayMin || 0) <= 5).length;
+                    const punctualityPercent = arrivals.length > 0 ? (onTimeArrivals / arrivals.length) * 100 : 100;
+
+                    const baristaAudits = auditLogs.filter(log => log.colaboradorAuditado === m.name);
+                    const avgAuditScore = baristaAudits.length > 0
+                      ? baristaAudits.reduce((acc, log) => acc + log.nota, 0) / baristaAudits.length
+                      : null;
+
+                    return (
+                      <div key={m.username} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px', backgroundColor: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <strong style={{ fontSize: '12px', color: 'var(--text-main)' }}>{m.name}</strong>
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '8px' }}>Sede: {m.store}</span>
+                          </div>
+                          {avgAuditScore !== null && (
+                            <span style={{ fontSize: '10px', fontWeight: 800, backgroundColor: 'var(--primary-light)', color: 'var(--primary)', padding: '2px 6px', borderRadius: '4px' }}>
+                              Auditoría: {avgAuditScore.toFixed(0)}%
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Progress Indicators */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                          {/* Training Progress Bar */}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-muted)', marginBottom: '3px' }}>
+                              <span>Capacitación</span>
+                              <strong>{trainingPercent.toFixed(0)}%</strong>
+                            </div>
+                            <div style={{ height: '5px', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: '2.5px', overflow: 'hidden' }}>
+                              <div style={{ width: `${trainingPercent}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '2.5px' }} />
+                            </div>
+                          </div>
+
+                          {/* Punctuality Progress Bar */}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-muted)', marginBottom: '3px' }}>
+                              <span>Puntualidad</span>
+                              <strong>{punctualityPercent.toFixed(0)}%</strong>
+                            </div>
+                            <div style={{ height: '5px', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: '2.5px', overflow: 'hidden' }}>
+                              <div style={{ width: `${punctualityPercent}%`, height: '100%', backgroundColor: 'var(--success)', borderRadius: '2.5px' }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
