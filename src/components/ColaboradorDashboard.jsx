@@ -2,6 +2,44 @@ import React, { useState, useEffect } from 'react';
 import SensoryProfile from './SensoryProfile';
 import CartaDigital from './CartaDigital';
 
+const compressImage = (file, maxWidth, maxHeight, quality) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedBase64);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 const MANUALS_BY_DAY = {
   D1: {
     title: 'Manual de Identidad de la Marca y Cultura Don Guto',
@@ -166,17 +204,23 @@ export default function ColaboradorDashboard({
   const [bioProgress, setBioProgress] = useState(0);
   const [bioDevice, setBioDevice] = useState('');
 
-  // Native Camera Change Handler for Checklist Evidence
-  const handleNativeCameraChange = (e, taskId) => {
+  // Native Camera Change Handler for Checklist Evidence with Client-side Compression
+  const handleNativeCameraChange = async (e, taskId) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      // Send base64 data to parent to save in state and mark task completed
-      onSaveTask(taskId, true, reader.result);
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Compress image to max 800px width/height and 70% quality JPEG
+      const compressedDataUrl = await compressImage(file, 800, 800, 0.7);
+      onSaveTask(taskId, true, compressedDataUrl);
+    } catch (err) {
+      console.warn('[Image Compression] Failed, falling back to raw image:', err);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onSaveTask(taskId, true, reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Auto-select device based on user's store
