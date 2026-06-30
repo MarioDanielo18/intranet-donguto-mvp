@@ -464,7 +464,7 @@ export default function SupervisorDashboard({
       ratingText = 'Crítico';
       ratingColor = '#ef4444'; // error
     } else if (log.nota < 90) {
-      ratingText = 'Regular / Alerta';
+      ratingText = 'Regular';
       ratingColor = '#f59e0b'; // warning
     }
 
@@ -477,7 +477,7 @@ export default function SupervisorDashboard({
         <style>
           @page {
             size: A4;
-            margin: 10mm 15mm;
+            margin: 8mm 12mm;
           }
           body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -485,119 +485,79 @@ export default function SupervisorDashboard({
             margin: 0;
             padding: 0;
             background-color: #ffffff;
-            line-height: 1.25;
-            font-size: 9.5px;
+            line-height: 1.2;
+            font-size: 8.5px;
           }
           .page {
             box-sizing: border-box;
-            height: 275mm;
+            height: 277mm;
             position: relative;
             overflow: hidden;
-          }
-          .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
           }
           .header-logo {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 800;
             color: #fff;
             background-color: #8b1a1a;
-            padding: 6px 12px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            border-radius: 3px;
             display: inline-block;
           }
-          .header-title {
-            text-align: right;
+          .score-badge {
+            font-size: 8px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: #fff;
             vertical-align: middle;
           }
-          .header-title h1 {
-            margin: 0;
-            font-size: 14px;
-            color: #8b1a1a;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          .header-title p {
-            margin: 2px 0 0 0;
-            font-size: 9px;
-            color: #666;
-          }
-          .meta-box {
-            background-color: #f9f9fb;
-            border: 1px solid #e5e7eb;
-            border-radius: 5px;
-            padding: 8px 12px;
-            margin-bottom: 10px;
-            font-size: 10px;
-          }
-          .meta-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 4px 12px;
-          }
-          .score-card {
-            background-color: #f9f9fb;
-            border: 1px solid #e5e7eb;
-            border-radius: 5px;
-            padding: 10px 15px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          }
-          .score-value {
-            font-size: 24px;
-            font-weight: 800;
-          }
-          .score-badge {
-            font-size: 10px;
-            font-weight: bold;
-            padding: 3px 10px;
-            border-radius: 12px;
-            color: #fff;
-          }
           .category-title {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 800;
             color: #8b1a1a;
-            border-bottom: 2px solid #8b1a1a;
-            padding-bottom: 3px;
-            margin-top: 10px;
-            margin-bottom: 6px;
+            border-bottom: 1.5px solid #8b1a1a;
+            padding-bottom: 2px;
+            margin-top: 8px;
+            margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
           }
-          .criteria-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px 12px;
+          .main-columns {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+          }
+          .column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
           }
           .criterion-card {
             border-bottom: 1px solid #e5e7eb;
-            padding: 3px 0;
+            padding: 2.5px 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            page-break-inside: avoid;
           }
           .criterion-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 8px;
+            gap: 6px;
           }
           .criterion-text {
-            font-size: 9px;
+            font-size: 8px;
             font-weight: 600;
             color: #333;
-            line-height: 1.15;
+            line-height: 1.1;
           }
           .criterion-status {
-            font-size: 8px;
+            font-size: 7.5px;
             font-weight: bold;
-            padding: 1px 4px;
+            padding: 1px 3px;
             border-radius: 2px;
             text-transform: uppercase;
             white-space: nowrap;
@@ -612,81 +572,78 @@ export default function SupervisorDashboard({
           }
           .plan-box {
             background-color: #fff5f5;
-            border-left: 2px solid #ef4444;
-            border-radius: 0 3px 3px 0;
-            padding: 3px 6px;
+            border-left: 1.5px solid #ef4444;
+            border-radius: 0 2px 2px 0;
+            padding: 2px 4px;
             margin-top: 2px;
-            font-size: 8px;
+            font-size: 7.5px;
             color: #991b1b;
-            line-height: 1.15;
+            line-height: 1.1;
           }
           .photo-gallery {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
+            gap: 6px;
           }
           .photo-card {
             border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            padding: 4px;
+            border-radius: 3px;
+            padding: 3px;
             background-color: #f9f9fb;
-            width: 90px;
-            page-break-inside: avoid;
+            width: 70px;
           }
           .photo-img {
             width: 100%;
-            height: 60px;
+            height: 45px;
             object-fit: contain;
             background-color: #eaeaea;
-            border-radius: 3px;
+            border-radius: 2px;
           }
           .photo-title {
-            font-size: 8px;
+            font-size: 7px;
             font-weight: 700;
-            margin-top: 3px;
+            margin-top: 2px;
             text-align: center;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
           }
           .signatures-container {
-            margin-top: 15px;
             display: flex;
-            justify-content: space-around;
-            page-break-inside: avoid;
+            justify-content: space-between;
+            gap: 10px;
           }
           .signature-box {
             text-align: center;
-            width: 150px;
+            width: 90px;
           }
           .signature-line {
             border-top: 1px solid #999;
-            margin-top: 20px;
-            padding-top: 3px;
-            font-size: 9.5px;
+            margin-top: 15px;
+            padding-top: 2px;
+            font-size: 8px;
             font-weight: 700;
           }
           .signature-img {
-            max-height: 30px;
-            max-width: 140px;
+            max-height: 25px;
+            max-width: 80px;
             object-fit: contain;
           }
           .print-button-container {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 10px;
             margin-bottom: 5px;
           }
           .btn-print {
             background-color: #8b1a1a;
             color: white;
             border: none;
-            padding: 8px 20px;
-            font-size: 12px;
+            padding: 6px 15px;
+            font-size: 11px;
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           }
           .btn-print:hover {
             background-color: #721414;
@@ -702,122 +659,126 @@ export default function SupervisorDashboard({
         </style>
       </head>
       <body>
-        <!-- PAGE 1 -->
         <div class="page">
-          <table class="header-table">
-            <tr>
-              <td>
-                <div class="header-logo">DON GUTO</div>
-              </td>
-              <td class="header-title">
-                <h1>Reporte de Auditoría Operacional</h1>
-                <p>Intranet de Operaciones & Calidad Don Guto</p>
-              </td>
-            </tr>
-          </table>
-          
-          <div class="meta-box">
-            <div class="meta-grid">
-              <div><strong>Sede Auditada:</strong> ${log.tienda}</div>
-              <div><strong>Fecha y Hora:</strong> ${new Date(log.fecha).toLocaleString('es-PE')}</div>
-              <div><strong>Auditor:</strong> Administrador (Diana Valdivia Rojas)</div>
-              <div><strong>Persona Evaluada:</strong> ${log.colaboradorAuditado || 'N/A'}</div>
+          <!-- TOP HEADER BLOCK -->
+          <div style="border-bottom: 2px solid #8b1a1a; padding-bottom: 6px; margin-bottom: 8px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="width: 30%;">
+                  <div class="header-logo">DON GUTO</div>
+                  <div style="font-size: 7.5px; color: #666; margin-top: 2px; text-transform: uppercase; font-weight: 700;">Control de Calidad & Operaciones</div>
+                </td>
+                <td style="width: 45%; font-size: 9px; color: #444; line-height: 1.35; border-left: 1px solid #e5e7eb; padding-left: 15px;">
+                  <div><strong>Sede Auditada:</strong> ${log.tienda}</div>
+                  <div><strong>Fecha y Hora:</strong> ${new Date(log.fecha).toLocaleString('es-PE')}</div>
+                  <div><strong>Auditor:</strong> Diana Valdivia Rojas</div>
+                  <div><strong>Persona Evaluada:</strong> ${log.colaboradorAuditado || 'N/A'}</div>
+                </td>
+                <td style="width: 25%; text-align: right;">
+                  <div style="font-size: 8px; text-transform: uppercase; color: #666; font-weight: 700; margin-bottom: 2px;">Nota Ponderada</div>
+                  <span style="font-size: 20px; font-weight: 800; color: ${ratingColor}; margin-right: 8px;">${log.nota.toFixed(1)}%</span>
+                  <span class="score-badge" style="background-color: ${ratingColor}">${ratingText}</span>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- TWO COLUMNS CHECKLIST -->
+          <div class="main-columns">
+            <!-- LEFT COLUMN -->
+            <div class="column">
+              ${['PRECISIÓN', 'PRESENTACIÓN', 'LIMPIEZA', 'INVENTARIO'].map(catName => {
+                const list = categoriesMap[catName] || [];
+                if (list.length === 0) return '';
+                return `
+                  <div class="category-title">${catName}</div>
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    ${list.map(c => `
+                      <div class="criterion-card">
+                        <div class="criterion-header">
+                          <span class="criterion-text">[${c.id}] ${c.text}</span>
+                          <span class="criterion-status ${c.cumple ? 'status-cumple' : 'status-nocumple'}">
+                            ${c.cumple ? 'Sí' : 'No'}
+                          </span>
+                        </div>
+                        ${c.plan ? `
+                          <div class="plan-box">
+                            <strong>Plan:</strong> ${c.plan}
+                          </div>
+                        ` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="column">
+              ${['HOSPITALIDAD', 'MANTENIMIENTO', 'ENTRENAMIENTO'].map(catName => {
+                const list = categoriesMap[catName] || [];
+                if (list.length === 0) return '';
+                return `
+                  <div class="category-title">${catName}</div>
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    ${list.map(c => `
+                      <div class="criterion-card">
+                        <div class="criterion-header">
+                          <span class="criterion-text">[${c.id}] ${c.text}</span>
+                          <span class="criterion-status ${c.cumple ? 'status-cumple' : 'status-nocumple'}">
+                            ${c.cumple ? 'Sí' : 'No'}
+                          </span>
+                        </div>
+                        ${c.plan ? `
+                          <div class="plan-box">
+                            <strong>Plan:</strong> ${c.plan}
+                          </div>
+                        ` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                `;
+              }).join('')}
             </div>
           </div>
-          
-          <div class="score-card">
-            <div>
-              <div style="font-size: 9px; text-transform: uppercase; color: #666; font-weight: 700;">Resultado Ponderado</div>
-              <div class="score-value" style="color: ${ratingColor}">${log.nota.toFixed(1)}%</div>
+
+          <!-- BOTTOM SECTION -->
+          <div style="margin-top: 10px; border-top: 1.5px solid #8b1a1a; padding-top: 8px;">
+            <!-- Observaciones -->
+            <div style="background-color: #f9f9fb; padding: 6px 10px; border-radius: 4px; border: 1px solid #e5e7eb; font-size: 8.5px;">
+              <strong>Observaciones Generales:</strong> ${log.comentarios || 'Sin observaciones generales.'}
             </div>
-            <span class="score-badge" style="background-color: ${ratingColor}">${ratingText}</span>
-          </div>
 
-          <!-- Page 1 Categories -->
-          ${['PRECISIÓN', 'PRESENTACIÓN', 'LIMPIEZA', 'INVENTARIO'].map(catName => {
-            const list = categoriesMap[catName] || [];
-            if (list.length === 0) return '';
-            return `
-              <div class="category-title">${catName}</div>
-              <div class="criteria-grid">
-                ${list.map(c => `
-                  <div class="criterion-card">
-                    <div class="criterion-header">
-                      <span class="criterion-text">[${c.id}] ${c.text}</span>
-                      <span class="criterion-status ${c.cumple ? 'status-cumple' : 'status-nocumple'}">
-                        ${c.cumple ? 'Sí' : 'No'}
-                      </span>
-                    </div>
-                    ${c.plan ? `
-                      <div class="plan-box">
-                        <strong>Plan:</strong> ${c.plan}
+            <!-- Photos & Signatures side-by-side to save vertical space! -->
+            <div style="display: flex; gap: 20px; margin-top: 8px; align-items: flex-start;">
+              <!-- Photos -->
+              <div style="flex: 1.2;">
+                ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).length > 0 ? `
+                  <div style="font-size: 9px; font-weight: 800; color: #8b1a1a; text-transform: uppercase; margin-bottom: 4px;">Evidencias Fotográficas</div>
+                  <div class="photo-gallery">
+                    ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).map(c => `
+                      <div class="photo-card">
+                        <img class="photo-img" src="${safeImgSrc(c.photo)}" alt="Evidencia Criterio ${c.id}" />
+                        <div class="photo-title">Criterio ${c.id}</div>
                       </div>
-                    ` : ''}
+                    `).join('')}
                   </div>
-                `).join('')}
+                ` : ''}
               </div>
-            `;
-          }).join('')}
-        </div>
 
-        <!-- PAGE 2 -->
-        <div class="page" style="page-break-before: always;">
-          <!-- Page 2 Categories -->
-          ${['HOSPITALIDAD', 'MANTENIMIENTO', 'ENTRENAMIENTO'].map(catName => {
-            const list = categoriesMap[catName] || [];
-            if (list.length === 0) return '';
-            return `
-              <div class="category-title">${catName}</div>
-              <div class="criteria-grid">
-                ${list.map(c => `
-                  <div class="criterion-card">
-                    <div class="criterion-header">
-                      <span class="criterion-text">[${c.id}] ${c.text}</span>
-                      <span class="criterion-status ${c.cumple ? 'status-cumple' : 'status-nocumple'}">
-                        ${c.cumple ? 'Sí' : 'No'}
-                      </span>
-                    </div>
-                    ${c.plan ? `
-                      <div class="plan-box">
-                        <strong>Plan:</strong> ${c.plan}
-                      </div>
-                    ` : ''}
-                  </div>
-                `).join('')}
-              </div>
-            `;
-          }).join('')}
-
-          <!-- Observaciones Generales -->
-          <div style="margin-top: 10px; background-color: #f9f9fb; padding: 6px 12px; border-radius: 4px; border: 1px solid #e5e7eb; page-break-inside: avoid;">
-            <h4 style="margin: 0 0 3px 0; font-size: 10px; color: #8b1a1a; text-transform: uppercase;">Observaciones Generales de la Auditoría:</h4>
-            <p style="margin: 0; font-size: 10px; color: #444; line-height: 1.35;">${log.comentarios || 'Sin observaciones generales.'}</p>
-          </div>
-          
-          <!-- Galería de Evidencias -->
-          ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).length > 0 ? `
-            <div class="category-title" style="margin-top: 10px; page-break-inside: avoid;">Evidencias Fotográficas de Conformidad</div>
-            <div class="photo-gallery">
-              ${Object.values(categoriesMap).flatMap(list => list.filter(c => c.photo)).map(c => `
-                <div class="photo-card">
-                  <img class="photo-img" src="${safeImgSrc(c.photo)}" alt="Evidencia Criterio ${c.id}" />
-                  <div class="photo-title">Criterio ${c.id}</div>
+              <!-- Signatures -->
+              <div style="flex: 1;" class="signatures-container">
+                <div class="signature-box">
+                  ${log.signatureAuditor ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditor)}" alt="Firma Auditor" />` : ''}
+                  <div class="signature-line">Firma del Auditor</div>
+                  <div style="font-size: 7.5px; color: #666; margin-top: 1px;">Diana Valdivia Rojas</div>
                 </div>
-              `).join('')}
-            </div>
-          ` : ''}
-          
-          <!-- Firmas -->
-          <div class="signatures-container">
-            <div class="signature-box">
-              ${log.signatureAuditor ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditor)}" alt="Firma Auditor" />` : ''}
-              <div class="signature-line">Firma del Auditor</div>
-              <div style="font-size: 8px; color: #666; margin-top: 2px;">Diana Valdivia Rojas</div>
-            </div>
-            <div class="signature-box">
-              ${log.signatureAuditado ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditado)}" alt="Firma Auditado" />` : ''}
-              <div class="signature-line">Firma del Auditado</div>
-              <div style="font-size: 8px; color: #666; margin-top: 2px;">${log.colaboradorAuditado || 'Colaborador'}</div>
+                <div class="signature-box">
+                  ${log.signatureAuditado ? `<img class="signature-img" src="${safeImgSrc(log.signatureAuditado)}" alt="Firma Auditado" />` : ''}
+                  <div class="signature-line">Firma del Auditado</div>
+                  <div style="font-size: 7.5px; color: #666; margin-top: 1px;">${log.colaboradorAuditado || 'Colaborador'}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
