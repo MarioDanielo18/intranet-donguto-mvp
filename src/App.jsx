@@ -126,154 +126,13 @@ const INITIAL_TRAINING_ROUTE = [
 
 const INITIAL_MOCK_TEAM = [
   {
-    username: 'qlopezdg',
-    password: 'baristadg',
-    name: 'Mateo Quispe López',
-    role: 'Barista',
-    store: '28 de Julio Miraflores',
-    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'En Curso' },
-    arrivalLogs: [
-      { date: '2026-06-08', time: '07:02 AM', expectedTime: '07:00 AM', delayMin: 2 },
-      { date: '2026-06-09', time: '07:05 AM', expectedTime: '07:00 AM', delayMin: 5 },
-      { date: '2026-06-10', time: '07:01 AM', expectedTime: '07:00 AM', delayMin: 1 },
-      { date: '2026-06-11', time: '07:08 AM', expectedTime: '07:00 AM', delayMin: 8 },
-      { date: '2026-06-12', time: '07:04 AM', expectedTime: '07:00 AM', delayMin: 4 }
-    ]
-  },
-  {
-    username: 'mcastrodg',
-    password: 'baristadg',
-    name: 'Carlos Mendoza Castro',
-    role: 'Barista',
-    store: '28 de Julio Miraflores',
-    trainingProgress: { D1: 'Completado' },
-    arrivalLogs: [
-      { date: '2026-06-08', time: '02:00 PM', expectedTime: '02:00 PM', delayMin: 0 },
-      { date: '2026-06-09', time: '02:03 PM', expectedTime: '02:00 PM', delayMin: 3 },
-      { date: '2026-06-10', time: '02:01 PM', expectedTime: '02:00 PM', delayMin: 1 },
-      { date: '2026-06-11', time: '02:05 PM', expectedTime: '02:00 PM', delayMin: 5 },
-      { date: '2026-06-12', time: '02:02 PM', expectedTime: '02:00 PM', delayMin: 2 }
-    ]
-  },
-  {
-    username: 'aruizdg',
-    password: 'cocinadg',
-    name: 'Gabriela Alva Ruiz',
-    role: 'Cocina',
-    store: '28 de Julio Miraflores',
-    trainingProgress: { D1: 'Completado', D2: 'En Curso' },
-    arrivalLogs: [
-      { date: '2026-06-08', time: '07:05 AM', expectedTime: '07:00 AM', delayMin: 5 },
-      { date: '2026-06-09', time: '07:10 AM', expectedTime: '07:00 AM', delayMin: 10 },
-      { date: '2026-06-10', time: '07:08 AM', expectedTime: '07:00 AM', delayMin: 8 },
-      { date: '2026-06-11', time: '07:12 AM', expectedTime: '07:00 AM', delayMin: 12 },
-      { date: '2026-06-12', time: '07:07 AM', expectedTime: '07:00 AM', delayMin: 7 }
-    ]
-  },
-  {
-    username: 'rguerradg',
-    password: 'cocinadg',
-    name: 'Elena Rojas Guerra',
-    role: 'Cocina',
-    store: '28 de Julio Miraflores',
-    trainingProgress: { D1: 'Completado' },
-    arrivalLogs: [
-      { date: '2026-06-08', time: '02:01 PM', expectedTime: '02:00 PM', delayMin: 1 },
-      { date: '2026-06-09', time: '02:00 PM', expectedTime: '02:00 PM', delayMin: 0 },
-      { date: '2026-06-10', time: '02:04 PM', expectedTime: '02:00 PM', delayMin: 4 },
-      { date: '2026-06-11', time: '02:02 PM', expectedTime: '02:00 PM', delayMin: 2 },
-      { date: '2026-06-12', time: '02:01 PM', expectedTime: '02:00 PM', delayMin: 1 }
-    ]
-  },
-  {
-    username: 'fpinedodg',
-    password: 'serviciodg',
-    name: 'Rodrigo Flores Pinedo',
-    role: 'Servicio',
-    store: '28 de Julio Miraflores',
-    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
-    arrivalLogs: [
-      { date: '2026-06-08', time: '08:00 AM', expectedTime: '08:00 AM', delayMin: 0 },
-      { date: '2026-06-09', time: '08:02 AM', expectedTime: '08:00 AM', delayMin: 2 },
-      { date: '2026-06-10', time: '07:59 AM', expectedTime: '08:00 AM', delayMin: 0 },
-      { date: '2026-06-11', time: '08:03 AM', expectedTime: '08:00 AM', delayMin: 3 },
-      { date: '2026-06-12', time: '08:01 AM', expectedTime: '08:00 AM', delayMin: 1 }
-    ]
-  },
-  {
-    username: 'dortizdg',
-    password: 'serviciodg',
-    name: 'Lucía Díaz Ortiz',
-    role: 'Servicio',
-    store: '28 de Julio Miraflores',
-    trainingProgress: { D1: 'Completado' },
-    arrivalLogs: [
-      { date: '2026-06-08', time: '02:03 PM', expectedTime: '02:00 PM', delayMin: 3 },
-      { date: '2026-06-09', time: '02:05 PM', expectedTime: '02:00 PM', delayMin: 5 },
-      { date: '2026-06-10', time: '02:02 PM', expectedTime: '02:00 PM', delayMin: 2 },
-      { date: '2026-06-11', time: '02:04 PM', expectedTime: '02:00 PM', delayMin: 4 },
-      { date: '2026-06-12', time: '02:01 PM', expectedTime: '02:00 PM', delayMin: 1 }
-    ]
-  },
-  {
-    username: 'mortizdg',
-    password: 'baristadg',
-    name: 'Carlos Miraflores Ortiz',
-    role: 'Barista',
-    store: '28 de Julio Miraflores',
-    trainingProgress: { D1: 'Completado' },
-    arrivalLogs: [
-      { date: '2026-06-08', time: '07:15 AM', expectedTime: '07:00 AM', delayMin: 15 },
-      { date: '2026-06-09', time: '07:22 AM', expectedTime: '07:00 AM', delayMin: 22 },
-      { date: '2026-06-10', time: '07:18 AM', expectedTime: '07:00 AM', delayMin: 18 },
-      { date: '2026-06-11', time: '07:25 AM', expectedTime: '07:00 AM', delayMin: 25 },
-      { date: '2026-06-12', time: '07:20 AM', expectedTime: '07:00 AM', delayMin: 20 }
-    ]
-  },
-  {
-    username: 'tsalasdg',
-    password: 'cocinadg',
-    name: 'Laura Torres Salas',
-    role: 'Cocina',
-    store: '28 de Julio Miraflores',
-    trainingProgress: { D1: 'Completado' },
-    arrivalLogs: [
-      { date: '2026-06-08', time: '07:10 AM', expectedTime: '07:00 AM', delayMin: 10 },
-      { date: '2026-06-09', time: '07:12 AM', expectedTime: '07:00 AM', delayMin: 12 },
-      { date: '2026-06-10', time: '07:05 AM', expectedTime: '07:00 AM', delayMin: 5 },
-      { date: '2026-06-11', time: '07:15 AM', expectedTime: '07:00 AM', delayMin: 15 },
-      { date: '2026-06-12', time: '07:08 AM', expectedTime: '07:00 AM', delayMin: 8 }
-    ]
-  },
-  {
-    username: 'sramosdg',
-    password: 'serviciodg',
-    name: 'Andres Silva Ramos',
-    role: 'Servicio',
-    store: '28 de Julio Miraflores',
-    trainingProgress: { D1: 'Completado' },
-    arrivalLogs: [
-      { date: '2026-06-08', time: '08:08 AM', expectedTime: '08:00 AM', delayMin: 8 },
-      { date: '2026-06-09', time: '08:12 AM', expectedTime: '08:00 AM', delayMin: 12 },
-      { date: '2026-06-10', time: '08:05 AM', expectedTime: '08:00 AM', delayMin: 5 },
-      { date: '2026-06-11', time: '08:15 AM', expectedTime: '08:00 AM', delayMin: 15 },
-      { date: '2026-06-12', time: '08:10 AM', expectedTime: '08:00 AM', delayMin: 10 }
-    ]
-  },
-  {
     username: 'vrojasdg',
     password: 'admindg',
     name: 'Diana Valdivia Rojas',
     role: 'Administrador',
     store: '28 de Julio Miraflores',
     trainingProgress: {},
-    arrivalLogs: [
-      { date: '2026-06-08', time: '07:45 AM', expectedTime: '08:00 AM', delayMin: 0 },
-      { date: '2026-06-09', time: '07:50 AM', expectedTime: '08:00 AM', delayMin: 0 },
-      { date: '2026-06-10', time: '07:55 AM', expectedTime: '08:00 AM', delayMin: 0 },
-      { date: '2026-06-11', time: '07:48 AM', expectedTime: '08:00 AM', delayMin: 0 },
-      { date: '2026-06-12', time: '07:51 AM', expectedTime: '08:00 AM', delayMin: 0 }
-    ]
+    arrivalLogs: []
   },
   {
     username: 'sgomezdg',
@@ -282,13 +141,7 @@ const INITIAL_MOCK_TEAM = [
     role: 'Supervisor',
     store: 'Todas',
     trainingProgress: {},
-    arrivalLogs: [
-      { date: '2026-06-08', time: '08:05 AM', expectedTime: '08:00 AM', delayMin: 5 },
-      { date: '2026-06-09', time: '08:10 AM', expectedTime: '08:00 AM', delayMin: 10 },
-      { date: '2026-06-10', time: '07:58 AM', expectedTime: '08:00 AM', delayMin: 0 },
-      { date: '2026-06-11', time: '08:02 AM', expectedTime: '08:00 AM', delayMin: 2 },
-      { date: '2026-06-12', time: '07:55 AM', expectedTime: '08:00 AM', delayMin: 0 }
-    ]
+    arrivalLogs: []
   },
   {
     username: 'dongutodg',
@@ -329,92 +182,20 @@ const INITIAL_MOCK_TEAM = [
   }
 ];
 
-const INITIAL_AUDIT_LOGS = [
-  { 
-    tienda: '28 de Julio Miraflores', 
-    fecha: '2026-06-10T15:30:00Z', 
-    nota: 94.5, 
-    comentarios: 'Tienda en excelentes condiciones. Se recomienda reparar luces de emergencia.',
-    detalles: { P1: true, P2: true, P3: true, P4: true, P5: true, C1: true, C2: true, C3: true, C4: true, C5: true, L1: true, L2: true, L3: true, L4: true, L5: true, H1: true, H2: true, H3: true, H4: true, H5: true, M1: true, M2: true, M3: true, M4: false, M5: true, E1: true, E2: true, E3: true, E4: true, E5: true, I1: true, I2: true, I3: true, I4: true, I5: true },
-    actionPlans: { M4: 'Coordinar con técnico para revisión de extractor de cocina antes del 15 de junio.' },
-    evidencePhotos: { L3: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="100%" height="100%" fill="%2310b981"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="%23ffffff">SSHH Limpios y Abastecidos</text></svg>' },
-    signatureAuditor: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50" viewBox="0 0 150 50"><path d="M 10 30 Q 30 10 50 30 T 90 20 T 140 25" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round"/></svg>',
-    signatureAuditado: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50" viewBox="0 0 150 50"><path d="M 15 35 Q 40 15 70 35 T 110 30 T 135 15" fill="none" stroke="%2310b981" stroke-width="2" stroke-linecap="round"/></svg>'
-  },
-  { 
-    tienda: '28 de Julio Miraflores', 
-    fecha: '2026-06-05T10:00:00Z', 
-    nota: 81.2, 
-    comentarios: 'Falta rotulado en insumos de cocina y vitrina de galletas sucia.',
-    detalles: { P1: true, P2: true, P3: true, P4: true, C1: true, C2: true, C3: false, C4: true, L1: true, L2: false, L3: true, M1: true, E1: true, I1: true, I2: false, I3: true },
-    actionPlans: { C3: 'Rotular todos los insumos de la cámara fría de inmediato.', L2: 'Limpiar vitrina de galletas en el relevo.', I2: 'Proceder a realizar cuadre de inventario físico vs restaurante.pe.' },
-    evidencePhotos: {},
-    signatureAuditor: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50" viewBox="0 0 150 50"><path d="M 10 30 Q 30 10 50 30 T 90 20 T 140 25" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round"/></svg>',
-    signatureAuditado: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50" viewBox="0 0 150 50"><path d="M 15 35 Q 40 15 70 35 T 110 30 T 135 15" fill="none" stroke="%2310b981" stroke-width="2" stroke-linecap="round"/></svg>'
-  },
-];
+const INITIAL_AUDIT_LOGS = [];
 
-const INITIAL_INCIDENTS = [
-  {
-    id: 'INC-001',
-    date: '2026-06-12T09:15:00Z',
-    reporterEmail: 'mateo@donguto.com',
-    reporterName: 'Mateo Quispe',
-    reporterRole: 'Barista',
-    store: '28 de Julio Miraflores',
-    type: 'Mantenimiento',
-    title: 'Fuga de vapor en la lanceta izquierda',
-    description: 'La lanceta de vapor izquierda de la máquina La Marzocco gotea agua caliente constantemente y pierde presión al texturizar leche.',
-    urgency: 'Urgente',
-    status: 'Resuelto',
-    adminResponse: 'Ya coordiné con el técnico de La Marzocco. Pasará hoy por la tarde para cambiar los empaques de la lanceta.',
-    adminResponseAt: '2026-06-12T10:30:00Z',
-    supervisorResponse: 'Revisado. Verificado que el técnico realizó el mantenimiento el 12/06 a las 4:00 PM y el equipo quedó al 100%.',
-    supervisorResponseAt: '2026-06-12T17:00:00Z',
-    resolvedBy: 'Supervisor',
-    resolvedAt: '2026-06-12T17:00:00Z'
-  },
-  {
-    id: 'INC-002',
-    date: '2026-06-14T15:30:00Z',
-    reporterEmail: 'gabriela@donguto.com',
-    reporterName: 'Gabriela Alva',
-    reporterRole: 'Cocina',
-    store: '28 de Julio Miraflores',
-    type: 'Insumos',
-    title: 'Faltante de fresas frescas para postres',
-    description: 'El proveedor de frutas no entregó la cantidad completa de fresas para el coulis y decoración de pasteles. Solo tenemos para hoy.',
-    urgency: 'Normal',
-    status: 'En Proceso',
-    adminResponse: 'Estamos comprando 3 kg de fresas en el supermercado local para cubrir el turno de la noche y mañana temprano. El reclamo al proveedor ya está hecho.',
-    adminResponseAt: '2026-06-14T16:15:00Z',
-    supervisorResponse: '',
-    supervisorResponseAt: '',
-    resolvedBy: '',
-    resolvedAt: ''
-  },
-  {
-    id: 'INC-003',
-    date: '2026-06-15T08:00:00Z',
-    reporterEmail: 'rodrigo@donguto.com',
-    reporterName: 'Rodrigo Flores',
-    reporterRole: 'Servicio',
-    store: '28 de Julio Miraflores',
-    type: 'Operaciones',
-    title: 'Incidencia con el datáfono de Visa',
-    description: 'La ticketera de la terminal de Visa no imprime los vouchers para el cliente. La transacción se procesa pero no hay papel de copia física.',
-    urgency: 'Urgente',
-    status: 'Pendiente',
-    adminResponse: '',
-    adminResponseAt: '',
-    supervisorResponse: '',
-    supervisorResponseAt: '',
-    resolvedBy: '',
-    resolvedAt: ''
-  }
-];
+const INITIAL_INCIDENTS = [];
 
 export default function App() {
+  // Clear old mock data once on production startup to ensure clean slate
+  if (!localStorage.getItem('donguto-prod-v1')) {
+    localStorage.removeItem('donguto-team');
+    localStorage.removeItem('donguto-incidents');
+    localStorage.removeItem('donguto-biometric-devices');
+    localStorage.removeItem('donguto-biometric-logs');
+    localStorage.setItem('donguto-prod-v1', 'true');
+  }
+
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('donguto-user');
     return saved ? JSON.parse(saved) : null;
@@ -604,18 +385,9 @@ export default function App() {
   }, []);
 
   // Biometric states
-  const INITIAL_BIOMETRIC_DEVICES = [
-    { id: 'DEV-001', name: 'ZKTeco M1 - Sede 28 de Julio Miraflores', model: 'ZKTeco M1', ip: '192.168.1.150', port: '4370', store: '28 de Julio Miraflores', sn: 'jchpxowbxxfrivrloqkg', status: 'Online' },
-    { id: 'DEV-002', name: 'ZKTeco K40 - Sede Auxiliar', model: 'ZKTeco K40', ip: '192.168.1.151', port: '4370', store: '28 de Julio Miraflores', sn: 'ZK-K40-MIRAF', status: 'Online' },
-    { id: 'DEV-003', name: 'ZKTeco MB20 - Entrada Cocina', model: 'ZKTeco MB20', ip: '192.168.1.152', port: '4370', store: '28 de Julio Miraflores', sn: 'ZK-MB20-SANIS', status: 'Offline' }
-  ];
+  const INITIAL_BIOMETRIC_DEVICES = [];
 
-  const INITIAL_BIOMETRIC_LOGS = [
-    { id: 'BLOG-001', date: '2026-06-12T07:01:00Z', name: 'Mateo Quispe López', username: 'qlopezdg', role: 'Barista', store: '28 de Julio Miraflores', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede 28 de Julio Miraflores', status: 'Success' },
-    { id: 'BLOG-002', date: '2026-06-12T07:07:00Z', name: 'Gabriela Alva Ruiz', username: 'aruizdg', role: 'Cocina', store: '28 de Julio Miraflores', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede 28 de Julio Miraflores', status: 'Success' },
-    { id: 'BLOG-003', date: '2026-06-12T07:51:00Z', name: 'Diana Valdivia Rojas', username: 'vrojasdg', role: 'Administrador', store: '28 de Julio Miraflores', deviceId: 'DEV-001', deviceName: 'ZKTeco M1 - Sede 28 de Julio Miraflores', status: 'Success' },
-    { id: 'BLOG-004', date: '2026-06-12T07:55:00Z', name: 'Pedro Supervisor Gómez', username: 'sgomezdg', role: 'Supervisor', store: 'Todas', deviceId: 'DEV-002', deviceName: 'ZKTeco K40 - Sede Auxiliar', status: 'Success' }
-  ];
+  const INITIAL_BIOMETRIC_LOGS = [];
 
   const [biometricDevices, setBiometricDevices] = useState(() => {
     const saved = localStorage.getItem('donguto-biometric-devices');
