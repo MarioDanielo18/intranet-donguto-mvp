@@ -431,111 +431,111 @@ export default function ColaboradorDashboard({
   const EXAM_QUESTIONS = [
     {
       id: 1,
-      q: '1. ¿Cuál es el ratio de extracción ideal para el espresso de Cajamarca en Don Guto?',
+      q: '1. ¿Qué opciones de jugos tenemos en la carta?',
       options: [
-        { label: 'A) 1:1 a 1:1.5', val: 'A' },
-        { label: 'B) 1:2 a 1:2.2 (18g dry input para 36.0g a 39.5g de líquido)', val: 'B' },
-        { label: 'C) 1:3 a 1:3.5', val: 'C' },
-        { label: 'D) 1:2.5 a 1:3.0', val: 'D' }
+        { label: 'A) Solo jugo de papaya y naranja embotellado.', val: 'A' },
+        { label: 'B) Jugo de Naranja Natural, Limonada Imperial y Jugos de Temporada (fresa/maracuyá con agua o leche).', val: 'B' },
+        { label: 'C) Solo refrescos gasificados y agua mineral.', val: 'C' },
+        { label: 'D) Licuado de plátano y papaya únicamente.', val: 'D' }
       ],
       correct: 'B'
     },
     {
       id: 2,
-      q: '2. ¿Cuál es el rango de tiempo de extracción óptimo para calibrar el espresso?',
+      q: '2. Menciona los ingredientes del sándwich Trilogía de Jamones:',
       options: [
-        { label: 'A) 15 a 20 segundos', val: 'A' },
-        { label: 'B) 20 a 25 segundos', val: 'B' },
-        { label: 'C) 25 a 29 segundos (tiempo óptimo de taza)', val: 'C' },
-        { label: 'D) 30 a 35 segundos', val: 'D' }
+        { label: 'A) Jamón de pavo, tocino y lechuga en pan blanco.', val: 'A' },
+        { label: 'B) Jamón inglés, jamón del país, jamón serrano y queso fundido en pan de masa madre rústico.', val: 'B' },
+        { label: 'C) Jamón cocido, queso edam y mantequilla de ajo.', val: 'C' },
+        { label: 'D) Jamón ahumado, piña y queso mozzarella.', val: 'D' }
       ],
-      correct: 'C'
+      correct: 'B'
     },
     {
       id: 3,
-      q: '3. ¿A qué temperatura se debe texturizar la leche para las bebidas de Don Guto?',
+      q: '3. ¿Cuáles son los ingredientes de Teriyaki Chicken y Capresse en la carta?',
       options: [
-        { label: 'A) 50°C a 55°C', val: 'A' },
-        { label: 'B) 60°C a 65°C (para mantener el dulzor óptimo de la lactosa)', val: 'B' },
-        { label: 'C) 70°C a 75°C', val: 'C' },
-        { label: 'D) 80°C a 85°C', val: 'D' }
+        { label: 'A) Pollo hervido con mayonesa / Jamón con piña.', val: 'A' },
+        { label: 'B) Filete de pollo en salsa teriyaki casera, sésamo y cebollín / Queso mozzarella, rodajas de tomate, albahaca fresca y reducción de balsámico.', val: 'B' },
+        { label: 'C) Pollo a la brasa deshilachado / Queso crema con aceitunas y pimientos.', val: 'C' },
+        { label: 'D) Pollo crujiente con miel / Queso parmesano con espinaca y ajo.', val: 'D' }
       ],
       correct: 'B'
     },
     {
       id: 4,
-      q: '4. ¿De qué provincias de Cajamarca proviene el café de especialidad de Don Guto?',
+      q: '4. ¿Cuáles son los ingredientes de Avocado Chicken Grill?',
       options: [
-        { label: 'A) Chota y Cutervo', val: 'A' },
-        { label: 'B) Jaén y San Ignacio', val: 'B' },
-        { label: 'C) Celendín y Cajabamba', val: 'C' },
-        { label: 'D) Contumazá y Hualgayoc', val: 'D' }
+        { label: 'A) Pollo deshilachado, apio y trozos de palta con aliño de limón.', val: 'A' },
+        { label: 'B) Pechuga de pollo a la parrilla, láminas de palta (aguacate) fresca, tomate, lechuga y salsa de la casa.', val: 'B' },
+        { label: 'C) Filete de pollo apanado con salsa guacamole y cebolla encurtida.', val: 'C' },
+        { label: 'D) Pollo a la plancha, puré de palta picante y queso cheddar.', val: 'D' }
       ],
       correct: 'B'
     },
     {
       id: 5,
-      q: '5. ¿Cuál es la regla de marcado para los Checklists Diarios (Apertura, Relevo, Cierre)?',
+      q: '5. Nombra las opciones de frappé de la carta:',
       options: [
-        { label: 'A) Se pueden completar en cualquier momento de la semana.', val: 'A' },
-        { label: 'B) Se deben completar estrictamente en tiempo real en el día en curso; no se permite marcado retroactivo.', val: 'B' },
-        { label: 'C) Solo se marcan los fines de semana.', val: 'C' },
-        { label: 'D) Se pueden marcar al día siguiente con justificación.', val: 'D' }
+        { label: 'A) Frappé de Fresa y Frappé de Mango.', val: 'A' },
+        { label: 'B) Frappé de Espresso Clásico, Frappé de Moka, Frappé de Caramelo y Frappé de Oreo.', val: 'B' },
+        { label: 'C) Solo Frapuccino de vainilla.', val: 'C' },
+        { label: 'D) Frappé de maracuyá y lúcuma.', val: 'D' }
       ],
       correct: 'B'
     },
     {
       id: 6,
-      q: '6. ¿Qué químico se utiliza para lavar los grupos y porta-filtros de la máquina de espresso?',
+      q: '6. ¿Qué topping incluyen los Huevos al Guto?',
       options: [
-        { label: 'A) Detergente común de vajilla', val: 'A' },
-        { label: 'B) Cloro/Lejía diluida', val: 'B' },
-        { label: 'C) Pulicaff / Pulycaff', val: 'C' },
-        { label: 'D) Vinagre blanco con bicarbonato', val: 'D' }
+        { label: 'A) Queso cheddar fundido y trocitos de chorizo.', val: 'A' },
+        { label: 'B) Palta en cubos, tocino crocante picado, cebollín y un toque de brotes frescos.', val: 'B' },
+        { label: 'C) Champiñones salteados y perejil fresco.', val: 'C' },
+        { label: 'D) Huevo frito extra y salsa barbacoa.', val: 'D' }
       ],
-      correct: 'C'
+      correct: 'B'
     },
     {
       id: 7,
-      q: '7. ¿Cuánto tiempo dura una salsa de chocolate/fudge artesanal rotulada en refrigeración?',
+      q: '7. Menciona las opciones de ensaladas de la carta:',
       options: [
-        { label: 'A) 3 días', val: 'A' },
-        { label: 'B) 5 días', val: 'B' },
-        { label: 'C) 7 días', val: 'C' },
-        { label: 'D) 10 días', val: 'D' }
+        { label: 'A) Ensalada de fideos fría y ensalada rusa tradicional.', val: 'A' },
+        { label: 'B) Ensalada César Don Guto, Ensalada Caprese Especial y Ensalada Andina de Quinua.', val: 'B' },
+        { label: 'C) Solo ensalada verde simple (lechuga y tomate).', val: 'C' },
+        { label: 'D) Ensalada Waldorf de manzana y Ensalada de papa con pollo.', val: 'D' }
       ],
       correct: 'B'
     },
     {
       id: 8,
-      q: '8. ¿Cuánto tiempo dura el coulis de fresa rotulado en refrigeración?',
+      q: '8. Describe una pizza de la carta de Don Guto:',
       options: [
-        { label: 'A) 3 días', val: 'A' },
-        { label: 'B) 5 días', val: 'B' },
-        { label: 'C) 7 días', val: 'C' },
-        { label: 'D) 10 días', val: 'D' }
+        { label: 'A) Pizza americana clásica con masa gruesa industrial, queso mozzarella y jamón de pizzería.', val: 'A' },
+        { label: 'B) Pizza de masa madre estirada a mano, salsa pomodoro artesanal, queso mozzarella y toppings premium (como jamón serrano y rúcula).', val: 'B' },
+        { label: 'C) Pizza hawaiana con piña en almíbar, cerezas y jamón ahumado dulce.', val: 'C' },
+        { label: 'D) Pizza congelada pre-cocida horneada al instante.', val: 'D' }
       ],
-      correct: 'A'
+      correct: 'B'
     },
     {
       id: 9,
-      q: '9. ¿Qué sucede si un checklist diario de actividades queda vacío al finalizar la jornada laboral (11:59 PM)?',
+      q: '9. Describe un tostón de la carta de Don Guto:',
       options: [
-        { label: 'A) Se traslada automáticamente al día siguiente.', val: 'A' },
-        { label: 'B) Se registra como "Falta de Cumplimiento" (0 pts) afectando el expediente.', val: 'B' },
-        { label: 'C) No pasa nada, el supervisor lo completa por ti.', val: 'C' },
-        { label: 'D) Se puede completar el fin de semana sin penalidad.', val: 'D' }
+        { label: 'A) Rodaja de plátano verde frito y aplastado, típico de la selva.', val: 'A' },
+        { label: 'B) Rebanada gruesa de pan de masa madre tostada a la plancha con palta machacada, huevo pochado y semillas.', val: 'B' },
+        { label: 'C) Pan de molde tostado untado con mantequilla y mermelada comercial.', val: 'C' },
+        { label: 'D) Tostada francesa con canela y miel de maple.', val: 'D' }
       ],
       correct: 'B'
     },
     {
       id: 10,
-      q: '10. ¿Cuál es el estándar de tiempo de Don Guto para despachar una comanda de 4 bebidas en hora punta?',
+      q: '10. Dime los Pasos de Servicio obligatorios en Don Guto:',
       options: [
-        { label: 'A) Menos de 3 minutos', val: 'A' },
-        { label: 'B) Menos de 5 minutos', val: 'B' },
-        { label: 'C) Menos de 8 minutos', val: 'C' },
-        { label: 'D) Menos de 10 minutos', val: 'D' }
+        { label: 'A) Saludo corto, entregar ticket y pedir que retiren el pedido en el counter.', val: 'A' },
+        { label: 'B) Secuencia de Hospitalidad: Recibir con saludo cálido, entregar la carta sugiriendo especialidades, tomar orden repitiendo detalles, servir el pedido amablemente, consultar conformidad ("¿Todo conforme?") y despedir afectuosamente.', val: 'B' },
+        { label: 'C) Atender únicamente a través de la tablet o pantalla táctil de auto-servicio sin interactuar.', val: 'C' },
+        { label: 'D) Saludar, cobrar por adelantado y no realizar seguimiento en mesa.', val: 'D' }
       ],
       correct: 'B'
     }

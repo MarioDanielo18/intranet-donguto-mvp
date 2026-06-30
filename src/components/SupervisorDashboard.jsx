@@ -5931,7 +5931,7 @@ main();`}
                     /* TRAINING INDUCTION VIEW */
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {trainingRoute.map(day => {
-                        const userStatus = 'Completado';
+                        const userStatus = selectedUser.trainingProgress ? (selectedUser.trainingProgress[day.id] || 'Pendiente') : 'Pendiente';
                         
                         let badgeColor = { bg: 'var(--bg-main)', text: 'var(--text-muted)', border: 'var(--border)' };
                         if (userStatus === 'Completado') badgeColor = { bg: 'var(--success-light)', text: 'var(--success)', border: 'var(--success)' };
