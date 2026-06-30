@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   // 1. GET ALL USERS (GET /api/manage-users)
   if (req.method === 'GET') {
     try {
-      const { data: users, error } = await supabase
+      let { data: users, error } = await supabase
         .from('usuarios')
         .select('*')
         .order('created_at', { ascending: true });
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
           { username: 'gechevarriadg', password: 'dg.gabr.E9087', name: 'Gabriela Echevarría', role: 'Gerente', store: 'Todas' },
           { username: 'cnizamadg', password: 'dg.chri.N9633', name: 'Christian Nizama', role: 'Administrador', store: '28 de Julio Miraflores' },
           { username: 'arianadg', password: 'dg.aria.A9928', name: 'Ariana', role: 'Auditor', store: '28 de Julio Miraflores' },
-          { username: 'ccuevadg', password: 'dg.chri.C9458', name: 'Christian Cueva', role: 'Cocina', store: 'Todas' },
+          { username: 'ccuevadg', password: 'dg.chri.C9458', name: 'Christian Cueva', role: 'Administrador', store: 'Todas' },
           { username: 'woviedodg', password: 'dg.wilf.O9580', name: 'Wilfredo Oviedo', role: 'Auditor', store: 'Todas' },
           { username: 'jortizdg', password: 'dg.juan.O9040', name: 'Juan Ortiz', role: 'Administrador', store: 'Todas' },
           
@@ -76,21 +76,26 @@ export default async function handler(req, res) {
           .order('created_at', { ascending: true });
 
         if (updatedUsers) {
-          return res.status(200).json({
-            status: 'success',
-            users: updatedUsers.map(u => ({
-              username: u.username,
-              password: u.password,
-              name: u.name,
-              apellidos: u.apellidos || '',
-              dni: u.dni || '',
-              email: u.email || '',
-              telefono: u.telefono || '',
-              role: u.role,
-              store: u.store,
-              biometricId: u.biometric_id || null
-            }))
-          });
+          users = updatedUsers;
+        }
+      }
+
+      // Ensure Christian Cueva has the correct Administrador role if previously seeded
+      const ccueva = (users || []).find(u => u.username === 'ccuevadg');
+      if (ccueva && ccueva.role === 'Cocina') {
+        console.log('[seeder] Updating Christian Cueva role to Administrador in Supabase...');
+        await supabase
+          .from('usuarios')
+          .update({ role: 'Administrador' })
+          .eq('username', 'ccuevadg');
+        
+        // Re-fetch users to keep local array up to date
+        const { data: refreshedUsers } = await supabase
+          .from('usuarios')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (refreshedUsers) {
+          users = refreshedUsers;
         }
       }
 
