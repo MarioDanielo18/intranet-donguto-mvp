@@ -969,7 +969,7 @@ export default function SupervisorDashboard({
   // New states for Monitoreo Avanzado
   const [filterArea, setFilterArea] = useState('GENERAL');
   const [viewMode, setViewMode] = useState('DIARIO');
-  const [selectedDateStr, setSelectedDateStr] = useState('2026-06-12');
+  const [selectedDateStr, setSelectedDateStr] = useState(new Date().toISOString().split('T')[0]);
   const [selectedCollaborator, setSelectedCollaborator] = useState('TODOS');
 
   // Reset collaborator filter when changing department
@@ -1030,14 +1030,18 @@ export default function SupervisorDashboard({
     const newMonth = currentDate.getMonth();
     const newDay = currentDate.getDate();
     
-    if (newYear === 2026 && newMonth === 5 && newDay >= 1 && newDay <= 12) {
-      setSelectedDateStr(`2026-06-${newDay.toString().padStart(2, '0')}`);
+    const formattedDate = `${newYear}-${(newMonth + 1).toString().padStart(2, '0')}-${newDay.toString().padStart(2, '0')}`;
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    if (formattedDate >= '2026-06-01' && formattedDate <= todayStr) {
+      setSelectedDateStr(formattedDate);
     }
   };
 
   const getTasksForSelectedDate = () => {
-    // If it is today (2026-06-12) and we have no database records loaded, fall back to live checklists prop
-    if (selectedDateStr === '2026-06-12' && dbChecklists.length === 0) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    // If it is today and we have no database records loaded, fall back to live checklists prop
+    if (selectedDateStr === todayStr && dbChecklists.length === 0) {
       return checklists;
     }
 
@@ -1052,7 +1056,7 @@ export default function SupervisorDashboard({
       }
 
       // For historical dates, fall back to MOCK_HISTORY if no database record exists
-      if (selectedDateStr !== '2026-06-12') {
+      if (selectedDateStr !== todayStr) {
         const isCompleted = (MOCK_HISTORY[selectedDateStr]?.completedIds || []).includes(t.id);
         return {
           ...t,
@@ -1070,7 +1074,8 @@ export default function SupervisorDashboard({
   };
 
   const getComplianceForStats = (areaCode, dateStr, collaborator = 'TODOS') => {
-    const tasksForDate = dateStr === '2026-06-12'
+    const todayStr = new Date().toISOString().split('T')[0];
+    const tasksForDate = dateStr === todayStr
       ? checklists
       : checklists.map(t => ({
           ...t,
@@ -4571,11 +4576,12 @@ main();`}
                     <input
                       type="date"
                       min="2026-06-01"
-                      max="2026-06-12"
+                      max={new Date().toISOString().split('T')[0]}
                       value={selectedDateStr}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (val >= '2026-06-01' && val <= '2026-06-12') {
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        if (val >= '2026-06-01' && val <= todayStr) {
                           setSelectedDateStr(val);
                         }
                       }}
@@ -4597,7 +4603,7 @@ main();`}
                       onClick={() => handleNavigateDate('next')}
                       className="btn btn-secondary"
                       style={{ padding: '6px 12px', borderRadius: 'var(--radius-sm)' }}
-                      disabled={selectedDateStr === '2026-06-12'}
+                      disabled={selectedDateStr === new Date().toISOString().split('T')[0]}
                     >
                       Siguiente →
                     </button>
@@ -4609,11 +4615,11 @@ main();`}
                       fontWeight: 800,
                       padding: '6px 12px',
                       borderRadius: '4px',
-                      backgroundColor: selectedDateStr === '2026-06-12' ? 'var(--success-light)' : 'var(--primary-light)',
-                      color: selectedDateStr === '2026-06-12' ? 'var(--success)' : 'var(--primary)',
+                      backgroundColor: selectedDateStr === new Date().toISOString().split('T')[0] ? 'var(--success-light)' : 'var(--primary-light)',
+                      color: selectedDateStr === new Date().toISOString().split('T')[0] ? 'var(--success)' : 'var(--primary)',
                       border: '1px solid currentColor'
                     }}>
-                      {selectedDateStr === '2026-06-12' ? '🟢 EN VIVO (HOY)' : '⏳ HISTÓRICO'}
+                      {selectedDateStr === new Date().toISOString().split('T')[0] ? '🟢 EN VIVO (HOY)' : '⏳ HISTÓRICO'}
                     </span>
                   </div>
                 </div>
