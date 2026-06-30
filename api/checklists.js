@@ -31,15 +31,25 @@ export default async function handler(req, res) {
     }
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('checklists_completados')
         .select('*')
-        .eq('date', date)
-        .eq('store', store);
+        .eq('date', date);
+
+      if (store !== 'Todas') {
+        query = query.eq('store', store);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         // If the table doesn't exist, we return fallback rather than 500
-        if (error.code === 'P0001' || error.message.includes('relation "checklists_completados" does not exist')) {
+        if (
+          error.code === 'P0001' || 
+          error.message.includes('relation "checklists_completados" does not exist') ||
+          error.message.includes('Could not find the table') ||
+          error.message.includes('schema cache')
+        ) {
           return res.status(200).json({ status: 'fallback', message: 'Table does not exist. Using fallback.' });
         }
         throw error;
@@ -98,7 +108,12 @@ export default async function handler(req, res) {
         }, { onConflict: 'task_id,date,store' });
 
       if (error) {
-        if (error.code === 'P0001' || error.message.includes('relation "checklists_completados" does not exist')) {
+        if (
+          error.code === 'P0001' || 
+          error.message.includes('relation "checklists_completados" does not exist') ||
+          error.message.includes('Could not find the table') ||
+          error.message.includes('schema cache')
+        ) {
           return res.status(200).json({ status: 'fallback', message: 'Table does not exist. Using fallback.' });
         }
         throw error;
