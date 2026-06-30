@@ -4503,6 +4503,104 @@ main();`}
                 {/* Tienda Mas Tardona Widget */}
                 {(() => {
                   const storeStats = getStorePunctualityStats();
+                  const isGlobalView = user.store === 'Todas';
+                  
+                  if (!isGlobalView) {
+                    const myStoreStat = storeStats.find(s => s.store === user.store) || { store: user.store, avgDelay: 0, totalLogs: 0 };
+                    
+                    // Calculate member delay ranking for this store
+                    const storeMembers = approvedMembers.filter(m => m.store === user.store && ['Barista', 'Cocina', 'Servicio'].includes(m.role));
+                    const memberStats = storeMembers.map(m => {
+                      const logs = m.arrivalLogs || [];
+                      const avg = calculateAverageDelay(logs);
+                      return {
+                        name: m.name,
+                        avgDelay: avg,
+                        totalLogs: logs.length
+                      };
+                    }).sort((a, b) => b.avgDelay - a.avgDelay);
+                    
+                    let ratingText = 'Excelente';
+                    let ratingColor = 'var(--success)';
+                    let ratingBg = 'var(--success-light)';
+                    if (myStoreStat.avgDelay >= 15) {
+                      ratingText = 'Crítico / Alerta';
+                      ratingColor = 'var(--error)';
+                      ratingBg = 'var(--error-light)';
+                    } else if (myStoreStat.avgDelay >= 5) {
+                      ratingText = 'Aceptable';
+                      ratingColor = 'var(--warning)';
+                      ratingBg = 'var(--warning-light)';
+                    }
+                    
+                    return (
+                      <div className="card glass animate-scale-in" style={{ padding: '20px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '5px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
+                          <div>
+                            <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              ⏰ Indicadores de Puntualidad: Sede {user.store}
+                            </h3>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                              Retraso promedio y rendimiento del personal en tu sede.
+                            </p>
+                          </div>
+                          <span style={{
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            backgroundColor: ratingBg,
+                            color: ratingColor,
+                            border: `1px solid ${ratingColor}`
+                          }}>
+                            Estatus: {ratingText}
+                          </span>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                          <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '5px', backgroundColor: 'var(--bg-main)', padding: '15px', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center' }}>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Retraso Promedio Sede</span>
+                            <span style={{ fontSize: '32px', fontWeight: 800, color: ratingColor }}>{myStoreStat.avgDelay.toFixed(1)} min</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Basado en {myStoreStat.totalLogs} marcaciones</span>
+                          </div>
+                          
+                          <div style={{ flex: '2 1 300px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>📊 Ranking de Retraso de Colaboradores (Mayor a Menor)</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '5px' }}>
+                              {memberStats.length === 0 ? (
+                                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>No hay datos de colaboradores en esta sede.</p>
+                              ) : (
+                                memberStats.map(m => {
+                                  const maxVal = Math.max(...memberStats.map(x => x.avgDelay), 1);
+                                  const percentage = (m.avgDelay / maxVal) * 100;
+                                  return (
+                                    <div key={m.name} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                                        <span style={{ fontWeight: 600 }}>{m.name}</span>
+                                        <span style={{ fontWeight: 700, color: m.avgDelay > 5 ? 'var(--error)' : 'var(--text-muted)' }}>
+                                          {m.avgDelay.toFixed(1)} min ({m.totalLogs} marcaciones)
+                                        </span>
+                                      </div>
+                                      <div style={{ height: '6px', backgroundColor: 'var(--bg-main)', borderRadius: '3px', overflow: 'hidden' }}>
+                                        <div style={{
+                                          width: `${percentage}%`,
+                                          height: '100%',
+                                          backgroundColor: m.avgDelay > 10 ? 'var(--error)' : m.avgDelay > 5 ? 'var(--warning)' : 'var(--success)',
+                                          borderRadius: '3px'
+                                        }} />
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Global multi-store comparison view (Gerente, Auditor, Supervisor)
                   const tardiestStore = storeStats[0];
                   return (
                     <div className="card glass animate-scale-in" style={{ padding: '20px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '5px' }}>
