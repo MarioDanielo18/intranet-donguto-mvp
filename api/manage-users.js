@@ -41,7 +41,7 @@ export default async function handler(req, res) {
           .from('usuarios')
           .delete()
           .in('username', [
-            'vrojasdg', 'sgomezdg', 'dongutodg', 'mquispedg', 'tecnicodg', 'auditordg',
+            'vrojasdg', 'sgomezdg', 'dongutodg', 'mquispedg', 'tecnicodg', 'auditordg', 'qlopezdg',
             'mcastrodg', 'aruizdg', 'rguerradg', 'fpinedodg', 'dortizdg', 'mortizdg', 'tsalasdg', 'sramosdg'
           ]);
 
@@ -78,7 +78,7 @@ export default async function handler(req, res) {
           .from('usuarios')
           .delete()
           .in('username', [
-            'vrojasdg', 'sgomezdg', 'dongutodg', 'mquispedg', 'tecnicodg', 'auditordg',
+            'vrojasdg', 'sgomezdg', 'dongutodg', 'mquispedg', 'tecnicodg', 'auditordg', 'qlopezdg',
             'mcastrodg', 'aruizdg', 'rguerradg', 'fpinedodg', 'dortizdg', 'mortizdg', 'tsalasdg', 'sramosdg'
           ]);
 
