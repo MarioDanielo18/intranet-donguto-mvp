@@ -1959,11 +1959,26 @@ export default function SupervisorDashboard({
     const weekId = getWeekIdFromDateStr(selectedDateStr);
     
     const getWeekLabel = (wId) => {
-      if (wId === 'W1') return 'Semana 1: 01 - 07 Jun';
-      if (wId === 'W2') return 'Semana 2: 08 - 14 Jun (En curso)';
-      if (wId === 'W3') return 'Semana 3: 15 - 21 Jun';
-      if (wId === 'W4') return 'Semana 4: 22 - 28 Jun';
-      return `Semana: ${wId}`;
+      const parts = selectedDateStr.split('-');
+      const year = parseInt(parts[0], 10);
+      const monthIndex = parseInt(parts[1], 10) - 1;
+      
+      const monthNames = [
+        'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+        'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+      ];
+      const monthName = monthNames[monthIndex] || 'Mes';
+      
+      // Determine the number of days in this month
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      
+      if (wId === 'W1') return `Semana 1: 01 - 07 ${monthName}`;
+      if (wId === 'W2') return `Semana 2: 08 - 14 ${monthName}`;
+      if (wId === 'W3') return `Semana 3: 15 - 21 ${monthName}`;
+      if (wId === 'W4') return `Semana 4: 22 - 28 ${monthName}`;
+      
+      const endDay = daysInMonth;
+      return `Semana 5: 29 al ${endDay} de ${monthName}`;
     };
 
     const getCleaningTasks = () => {
@@ -2001,7 +2016,6 @@ export default function SupervisorDashboard({
           return taskState.completedDays[wId];
         }
       }
-      if (wId === 'W1') return true;
       return false;
     };
 
@@ -2068,7 +2082,7 @@ export default function SupervisorDashboard({
           <div className="card animate-scale-in" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
               <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '15px' }}>
-                📅 Control de Limpieza Mensual (Semana 5: 29 al 30 de Junio)
+                📅 Control de Limpieza Mensual ({getWeekLabel('W5')})
               </h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
                 Las tareas mensuales se realizan únicamente en la última semana del mes y se cierran al finalizar el mes.
@@ -2090,10 +2104,20 @@ export default function SupervisorDashboard({
                     <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '4px' }}>
                       {areaTasks.map(t => {
                         const done = isCompleted(t, 'W5');
+                        
+                        const parts = selectedDateStr.split('-');
+                        const selYear = parseInt(parts[0], 10);
+                        const selMonth = parseInt(parts[1], 10) - 1; // 0-indexed
+                        
                         const today = new Date();
-                        const currentDay = today.getDate();
-                        const isPastMonth = today.getMonth() > 5 || today.getFullYear() > 2026 || (today.getMonth() === 5 && currentDay > 30);
-                        const isFutureW5 = currentDay < 29;
+                        const realYear = today.getFullYear();
+                        const realMonth = today.getMonth(); // 0-indexed
+                        const realDay = today.getDate();
+
+                        const isPastMonth = (realYear > selYear) || (realYear === selYear && realMonth > selMonth);
+                        const isFutureMonth = (realYear < selYear) || (realYear === selYear && realMonth < selMonth);
+                        const isCurrentMonth = (realYear === selYear && realMonth === selMonth);
+                        const isFutureW5 = isFutureMonth || (isCurrentMonth && realDay < 29);
 
                         let statusColor = 'var(--error)';
                         let statusText = '✗ Pendiente';
