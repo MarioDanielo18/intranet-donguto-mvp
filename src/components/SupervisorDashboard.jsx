@@ -4786,7 +4786,7 @@ main();`}
             ☝️ Mi Asistencia (Huella)
           </button>
         )}
-        {['Técnico', 'Supervisor', 'Gerente'].includes(user.role) && (
+        {(user.username === 'mquispetec' || user.username === 'mquispedg') && (
           <button
             onClick={() => setActiveTab('technical_panel')}
             style={{

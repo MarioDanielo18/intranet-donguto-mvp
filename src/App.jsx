@@ -414,7 +414,7 @@ export default function App() {
     if (saved) {
       const u = JSON.parse(saved);
       if (['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(u.role)) {
-        return u.role === 'Técnico' ? 'technical_panel' : 'monitoring';
+        return (u.username === 'mquispetec' || u.username === 'mquispedg') ? 'technical_panel' : 'monitoring';
       }
     }
     return 'checklist';
@@ -883,7 +883,7 @@ export default function App() {
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
     if (['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(loggedInUser.role)) {
-      setActiveTab(loggedInUser.role === 'Técnico' ? 'technical_panel' : 'monitoring');
+      setActiveTab((loggedInUser.username === 'mquispetec' || loggedInUser.username === 'mquispedg') ? 'technical_panel' : 'monitoring');
     } else {
       setActiveTab('checklist');
     }
@@ -1458,7 +1458,7 @@ export default function App() {
                   >
                     🕒 Mi Asistencia (Huella)
                   </button>
-                  {user.role === 'Técnico' && (
+                  {(user.username === 'mquispetec' || user.username === 'mquispedg') && (
                     <button
                       className={`drawer-btn ${activeTab === 'technical_panel' ? 'active' : ''}`}
                       onClick={() => { setActiveTab('technical_panel'); setIsDrawerOpen(false); }}
