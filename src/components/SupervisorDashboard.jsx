@@ -5164,50 +5164,17 @@ main();`}
                   }
                   
                   // Global multi-store comparison view (Gerente, Auditor, Supervisor)
-                  const tardiestStore = storeStats[0];
                   return (
                     <div className="card glass animate-scale-in" style={{ padding: '20px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '5px' }}>
                       <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        🚨 Comparativa de Puntualidad y Tienda Más Tardona
+                        ⚖️ Comparativa de Sedes y Análisis Operativo
                       </h3>
                       <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
-                        Comparativa del retraso promedio en minutos acumulado por sede (basado en registros reales de asistencia).
+                        Comparativa del retraso promedio acumulado en minutos por sede de Don Guto Coffee Company.
                       </p>
                       
-                      {tardiestStore && (
-                        <div style={{ padding: '12px 15px', borderRadius: '6px', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid var(--error)', color: 'var(--error)', fontSize: '12.5px', fontWeight: 700 }}>
-                          ⚠️ <strong>Sede con Mayor Retraso:</strong> {tardiestStore.store.toUpperCase()} — Retraso Promedio de <strong>{tardiestStore.avgDelay.toFixed(1)} minutos</strong>.
-                        </div>
-                      )}
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '5px' }}>
-                        {storeStats.map(item => {
-                          const maxVal = Math.max(...storeStats.map(s => s.avgDelay), 1);
-                          const percentage = (item.avgDelay / maxVal) * 100;
-                          const isTardiest = item.store === tardiestStore?.store;
-                          
-                          return (
-                            <div key={item.store} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
-                                <strong style={{ color: isTardiest ? 'var(--error)' : 'var(--text-main)' }}>
-                                  Sede {item.store} {isTardiest && '🚨 (Personal llega más tarde)'}
-                                </strong>
-                                <span style={{ fontWeight: 800, color: isTardiest ? 'var(--error)' : 'var(--success)' }}>
-                                  Retraso Promedio: {item.avgDelay.toFixed(1)} min ({item.totalLogs} marcaciones)
-                                </span>
-                              </div>
-                              <div style={{ height: '12px', backgroundColor: 'var(--bg-main)', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                                <div style={{
-                                  width: `${percentage}%`,
-                                  height: '100%',
-                                  backgroundColor: isTardiest ? 'var(--error)' : 'var(--success)',
-                                  borderRadius: '6px',
-                                  transition: 'width 0.8s ease'
-                                }} />
-                              </div>
-                            </div>
-                          );
-                        })}
+                      <div style={{ padding: '15px', borderRadius: '6px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '12.5px', textAlign: 'center', fontWeight: 600 }}>
+                        ℹ️ Faltan datos de otras sedes para realizar comparativas (Actualmente solo opera la sede <strong>28 de Julio Miraflores</strong>).
                       </div>
                     </div>
                   );
