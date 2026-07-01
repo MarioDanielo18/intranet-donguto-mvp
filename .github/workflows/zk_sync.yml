@@ -1,6 +1,8 @@
 name: Sincronización Automática ZKBio Zlink
 
 on:
+  push:
+    branches: [ main ]
   schedule:
     # Se ejecuta de forma automática:
     # A las 07:00 AM, 11:00 AM, 03:00 PM, 06:00 PM y 10:00 PM (Hora de Perú, UTC-5)
