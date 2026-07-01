@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     const { cleanup } = req.query;
     if (cleanup === 'true') {
       try {
-        console.log('[cleanup] Wiping checklists and attendance logs from Supabase...');
+        console.log('[cleanup] Wiping checklists, attendance logs, and legacy mocks from Supabase...');
         await supabase
           .from('checklists_completados')
           .delete()
@@ -36,9 +36,24 @@ export default async function handler(req, res) {
           .delete()
           .neq('timestamp', '1970-01-01');
 
+        // Clean up legacy mock accounts in Supabase
+        await supabase
+          .from('usuarios')
+          .delete()
+          .in('username', [
+            'vrojasdg', 'sgomezdg', 'dongutodg', 'mquispedg', 'tecnicodg', 'auditordg',
+            'mcastrodg', 'aruizdg', 'rguerradg', 'fpinedodg', 'dortizdg', 'mortizdg', 'tsalasdg', 'sramosdg'
+          ]);
+
+        // Insert Mario Quispe Gerente and Técnico accounts
+        await supabase.from('usuarios').upsert([
+          { username: 'mquispedg', password: 'dg.mari.Q9008', name: 'Mario Quispe', role: 'Gerente', store: 'Todas' },
+          { username: 'mquispetec', password: 'dg.mari.T8997', name: 'Mario Quispe (Técnico)', role: 'Técnico', store: 'Todas' }
+        ], { onConflict: 'username' });
+
         return res.status(200).json({
           status: 'success',
-          message: 'Base de datos Supabase limpiada correctamente. Checklists y asistencias vaciados para producción.'
+          message: 'Base de datos Supabase limpiada correctamente. Checklists, asistencias y usuarios demo depurados; cuentas de Mario Quispe creadas.'
         });
       } catch (cleanupErr) {
         console.error('[cleanup] Error:', cleanupErr);
@@ -62,7 +77,10 @@ export default async function handler(req, res) {
         await supabase
           .from('usuarios')
           .delete()
-          .in('username', ['vrojasdg', 'sgomezdg', 'dongutodg', 'mquispedg', 'tecnicodg', 'auditordg']);
+          .in('username', [
+            'vrojasdg', 'sgomezdg', 'dongutodg', 'mquispedg', 'tecnicodg', 'auditordg',
+            'mcastrodg', 'aruizdg', 'rguerradg', 'fpinedodg', 'dortizdg', 'mortizdg', 'tsalasdg', 'sramosdg'
+          ]);
 
         const usersToSeed = [
           { username: 'onavarrodg', password: 'dg.osca.N9405', name: 'Oscar Navarro', role: 'Gerente', store: 'Todas' },
@@ -72,6 +90,8 @@ export default async function handler(req, res) {
           { username: 'ccuevadg', password: 'dg.chri.C9458', name: 'Christian Cueva', role: 'Administrador', store: 'Todas' },
           { username: 'woviedodg', password: 'dg.wilf.O9580', name: 'Wilfredo Oviedo', role: 'Auditor', store: 'Todas' },
           { username: 'jortizdg', password: 'dg.juan.O9040', name: 'Juan Ortiz', role: 'Administrador', store: 'Todas' },
+          { username: 'mquispedg', password: 'dg.mari.Q9008', name: 'Mario Quispe', role: 'Gerente', store: 'Todas' },
+          { username: 'mquispetec', password: 'dg.mari.T8997', name: 'Mario Quispe (Técnico)', role: 'Técnico', store: 'Todas' },
           
           { username: 'avasquezdg', password: 'dg.alex.V38314', name: 'Alexander Vásquez Villalobos', role: 'Servicio', store: '28 de Julio Miraflores', email: 'Alexito1836@gmail.com', telefono: '992838314' },
           { username: 'ddazadg', password: 'dg.daye.D65912', name: 'Dayerlin Carolina Daza Vargas', role: 'Barista', store: '28 de Julio Miraflores', email: 'dayerlincarolina.dv@gmail.com', telefono: '963365912' },

@@ -189,6 +189,24 @@ const INITIAL_MOCK_TEAM = [
     trainingProgress: {},
     arrivalLogs: []
   },
+  {
+    username: 'mquispedg',
+    password: 'dg.mari.Q9008',
+    name: 'Mario Quispe',
+    role: 'Gerente',
+    store: 'Todas',
+    trainingProgress: {},
+    arrivalLogs: []
+  },
+  {
+    username: 'mquispetec',
+    password: 'dg.mari.T8997',
+    name: 'Mario Quispe (Técnico)',
+    role: 'Técnico',
+    store: 'Todas',
+    trainingProgress: {},
+    arrivalLogs: []
+  },
 
   // COLABORADORES REALES
   {
@@ -298,12 +316,12 @@ const INITIAL_INCIDENTS = [];
 
 export default function App() {
   // Clear old mock data once on production startup to ensure clean slate
-  if (!localStorage.getItem('donguto-prod-v4')) {
+  if (!localStorage.getItem('donguto-prod-v5')) {
     localStorage.removeItem('donguto-team');
     localStorage.removeItem('donguto-incidents');
     localStorage.removeItem('donguto-biometric-devices');
     localStorage.removeItem('donguto-biometric-logs');
-    localStorage.setItem('donguto-prod-v4', 'true');
+    localStorage.setItem('donguto-prod-v5', 'true');
   }
 
   const [user, setUser] = useState(() => {
