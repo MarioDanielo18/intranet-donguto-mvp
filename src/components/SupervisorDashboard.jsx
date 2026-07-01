@@ -67,42 +67,41 @@ const getWeekIdFromDateStr = (dateStr) => {
   return 'W5';
 };
 
+const COLLABORATOR_ROLES = {
+  'Alexander Vásquez Villalobos': 'Servicio',
+  'Dayerlin Carolina Daza Vargas': 'Barista',
+  'Mónica Daniela Bravo Rodríguez': 'Servicio',
+  'Alexis Ocampo Rodríguez': 'Cocina',
+  'Franchesca Giovana Soto Chávez': 'Cocina',
+  'Emily Egocheaga Ormeño': 'Cocina',
+  'Patrick Silva Chávez': 'Barista',
+  'Jesus Ayma Chaparro': 'Barista',
+  'Ruth Sarahi Laurente Olivera': 'Barista'
+};
+
 const isTaskAssignedTo = (taskId, collaboratorName) => {
   if (!collaboratorName || collaboratorName === 'TODOS') return true;
   
-  if (collaboratorName === 'Mateo Quispe') {
-    return taskId.startsWith('B-AP-') || taskId.startsWith('B-RL-');
-  }
-  if (collaboratorName === 'Carlos Mendoza') {
-    return taskId.startsWith('B-CI-');
-  }
+  const role = COLLABORATOR_ROLES[collaboratorName];
+  if (!role) return true;
   
-  if (collaboratorName === 'Gabriela Alva') {
-    return taskId.startsWith('K-AP-') || taskId.startsWith('K-RL-');
+  if (role === 'Barista') {
+    return taskId.startsWith('B-') || taskId.startsWith('CL-') && !['CL-K1', 'CL-K2', 'CL-K3', 'CL-K4', 'CL-M2', 'CL-S1', 'CL-S2', 'CL-S3', 'CL-S4'].includes(taskId);
   }
-  if (collaboratorName === 'Elena Rojas') {
-    return taskId.startsWith('K-CI-');
+  if (role === 'Cocina') {
+    return taskId.startsWith('K-') || ['CL-K1', 'CL-K2', 'CL-K3', 'CL-K4', 'CL-M2'].includes(taskId);
   }
-  
-  if (collaboratorName === 'Rodrigo Flores') {
-    return taskId.startsWith('S-AP-');
-  }
-  if (collaboratorName === 'Lucía Díaz') {
-    return taskId.startsWith('S-RL-') || taskId.startsWith('S-CI-');
+  if (role === 'Servicio') {
+    return taskId.startsWith('S-') || ['CL-S1', 'CL-S2', 'CL-S3', 'CL-S4'].includes(taskId);
   }
   
   return true;
 };
 
 const getTaskResponsible = (taskId) => {
-  if (taskId.startsWith('B-AP-') || taskId.startsWith('B-RL-')) return 'Mateo Quispe';
-  if (taskId.startsWith('B-CI-')) return 'Carlos Mendoza';
-  
-  if (taskId.startsWith('K-AP-') || taskId.startsWith('K-RL-')) return 'Gabriela Alva';
-  if (taskId.startsWith('K-CI-')) return 'Elena Rojas';
-  
-  if (taskId.startsWith('S-AP-')) return 'Rodrigo Flores';
-  if (taskId.startsWith('S-RL-') || taskId.startsWith('S-CI-')) return 'Lucía Díaz';
+  if (taskId.startsWith('B-AP-') || taskId.startsWith('B-RL-') || taskId.startsWith('B-CI-')) return 'Equipo Barra';
+  if (taskId.startsWith('K-AP-') || taskId.startsWith('K-RL-') || taskId.startsWith('K-CI-')) return 'Equipo Cocina';
+  if (taskId.startsWith('S-AP-') || taskId.startsWith('S-RL-') || taskId.startsWith('S-CI-')) return 'Equipo Servicio';
   
   return 'Sin asignar';
 };
@@ -1972,17 +1971,17 @@ export default function SupervisorDashboard({
       
       cleaningTasks.forEach(t => {
         let area = 'BARRA';
-        let responsible = 'Mateo Quispe';
+        let responsible = 'Equipo Barra';
         
         if (['CL-K1', 'CL-K2', 'CL-K3', 'CL-K4', 'CL-M2'].includes(t.id)) {
           area = 'COCINA';
-          responsible = ['CL-K2', 'CL-K4', 'CL-M2'].includes(t.id) ? 'Elena Rojas' : 'Gabriela Alva';
+          responsible = 'Equipo Cocina';
         } else if (['CL-S1', 'CL-S2', 'CL-S3', 'CL-S4'].includes(t.id)) {
           area = 'SALON';
-          responsible = ['CL-S2', 'CL-S4'].includes(t.id) ? 'Lucía Díaz' : 'Rodrigo Flores';
+          responsible = 'Equipo Servicio';
         } else {
           area = 'BARRA';
-          responsible = ['CL-3', 'CL-9', 'CL-13', 'CL-14', 'CL-17', 'CL-M3'].includes(t.id) ? 'Carlos Mendoza' : 'Mateo Quispe';
+          responsible = 'Equipo Barra';
         }
         
         allTasks.push({
