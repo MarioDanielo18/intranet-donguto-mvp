@@ -316,6 +316,25 @@ const INITIAL_AUDIT_LOGS = [];
 
 const INITIAL_INCIDENTS = [];
 
+// Helper to convert time strings (AM/PM or 24h) to minutes from midnight for sorting
+const timeToMinutes = (timeStr) => {
+  if (!timeStr) return 0;
+  const clean = timeStr.trim().toUpperCase();
+  const is12Hour = clean.endsWith('AM') || clean.endsWith('PM');
+  if (is12Hour) {
+    const parts = clean.split(' ');
+    const timePart = parts[0];
+    const ampm = parts[1];
+    let [h, m] = timePart.split(':').map(Number);
+    if (ampm === 'PM' && h < 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    return h * 60 + (m || 0);
+  } else {
+    const [h, m] = clean.split(':').map(Number);
+    return h * 60 + (m || 0);
+  }
+};
+
 export default function App() {
   // Clear old mock data once on production startup to ensure clean slate
   if (!localStorage.getItem('donguto-prod-v7')) {
@@ -441,16 +460,98 @@ export default function App() {
         if (!res.ok) return;
         const data = await res.json();
         if (data && data.status === 'success' && data.users && data.users.length > 0) {
-          setTeamMembers(prev => {
-            return data.users.map(u => {
-              const localCopy = prev.find(p => p.username === u.username);
-              return {
-                ...u,
-                trainingProgress: localCopy ? (localCopy.trainingProgress || {}) : {},
-                arrivalLogs: localCopy ? (localCopy.arrivalLogs || []) : []
-              };
-            });
+          // 1. Map users from database
+          const databaseUsers = data.users.map(u => {
+            const localCopy = teamMembers.find(p => p.username === u.username);
+            return {
+              ...u,
+              trainingProgress: localCopy ? (localCopy.trainingProgress || {}) : {},
+              arrivalLogs: localCopy ? (localCopy.arrivalLogs || []) : []
+            };
           });
+          
+          // 2. Fetch the punches and rebuild logs directly on the databaseUsers list to prevent race condition
+          const punchesRes = await fetch('/api/sync-zk', {
+            headers: { 'Cache-Control': 'no-cache' }
+          });
+          if (punchesRes.ok) {
+            const punchesData = await punchesRes.json();
+            if (punchesData && punchesData.status === 'success' && punchesData.punches) {
+              const updatedUsers = databaseUsers.map(m => {
+                const bioId = String(m.biometricId || m.biometric_id || '').trim();
+                if (bioId) {
+                  const userPunches = punchesData.punches.filter(p => String(p.biometric_id) === bioId);
+                  if (userPunches.length === 0) return { ...m, arrivalLogs: [] };
+                  
+                  const punchesByDate = {};
+                  userPunches.forEach(p => {
+                    let finalTime = p.time;
+                    let finalDate = p.date;
+                    if (p.timestamp) {
+                      const pTime = new Date(p.timestamp);
+                      if (pTime && !isNaN(pTime.getTime())) {
+                        const hours = pTime.getHours();
+                        const minutes = pTime.getMinutes();
+                        const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+                        const displayMinutes = minutes.toString().padStart(2, '0');
+                        const ampm = hours >= 12 ? 'PM' : 'AM';
+                        finalTime = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
+                        
+                        const year = pTime.getFullYear();
+                        const month = String(pTime.getMonth() + 1).padStart(2, '0');
+                        const day = String(pTime.getDate()).padStart(2, '0');
+                        finalDate = `${year}-${month}-${day}`;
+                      }
+                    }
+                    if (!punchesByDate[finalDate]) punchesByDate[finalDate] = [];
+                    if (!punchesByDate[finalDate].includes(finalTime)) punchesByDate[finalDate].push(finalTime);
+                  });
+                  
+                  let expectedTimeStr = '07:00 AM';
+                  if (m.role === 'Servicio') expectedTimeStr = '08:00 AM';
+                  else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico', 'Auditor'].includes(m.role)) expectedTimeStr = '08:00 AM';
+                  
+                  const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
+                  let [eh, em] = expTimePart.split(':').map(Number);
+                  if (expAmpmPart === 'PM' && eh < 12) eh += 12;
+                  if (expAmpmPart === 'AM' && eh === 12) eh = 0;
+                  const expectedMins = eh * 60 + em;
+                  
+                  const newLogs = Object.keys(punchesByDate).map(dateStr => {
+                    const uniqueTimes = punchesByDate[dateStr];
+                    uniqueTimes.sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
+                    const earliestTime = uniqueTimes[0];
+                    const latestTime = uniqueTimes.length > 1 ? uniqueTimes[uniqueTimes.length - 1] : null;
+                    
+                    const [timePart, ampmPart] = earliestTime.split(' ');
+                    let [h, mPart] = timePart.split(':').map(Number);
+                    if (ampmPart === 'PM' && h < 12) h += 12;
+                    if (ampmPart === 'AM' && h === 12) h = 0;
+                    const earliestMins = h * 60 + mPart;
+                    const delayMin = Math.max(0, earliestMins - expectedMins);
+                    
+                    return {
+                      date: dateStr,
+                      time: earliestTime,
+                      expectedTime: expectedTimeStr,
+                      delayMin: delayMin,
+                      checkOutTime: latestTime,
+                      totalPunches: uniqueTimes.length,
+                      allPunches: uniqueTimes
+                    };
+                  });
+                  newLogs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                  return { ...m, arrivalLogs: newLogs };
+                }
+                return m;
+              });
+              
+              setTeamMembers(updatedUsers);
+              return;
+            }
+          }
+          
+          setTeamMembers(databaseUsers);
         }
       } catch (err) {
         console.warn('[App] Failed to load users from Supabase, using localStorage fallback:', err);
@@ -963,24 +1064,6 @@ export default function App() {
     );
   };
 
-  // Helper to convert time strings (AM/PM or 24h) to minutes from midnight for sorting
-  const timeToMinutes = (timeStr) => {
-    if (!timeStr) return 0;
-    const clean = timeStr.trim().toUpperCase();
-    const is12Hour = clean.endsWith('AM') || clean.endsWith('PM');
-    if (is12Hour) {
-      const parts = clean.split(' ');
-      const timePart = parts[0];
-      const ampm = parts[1];
-      let [h, m] = timePart.split(':').map(Number);
-      if (ampm === 'PM' && h < 12) h += 12;
-      if (ampm === 'AM' && h === 12) h = 0;
-      return h * 60 + (m || 0);
-    } else {
-      const [h, m] = clean.split(':').map(Number);
-      return h * 60 + (m || 0);
-    }
-  };
 
   // Clock-in attendance registration
   const handleClockIn = (username, date, time, expectedTime, delayMin) => {
