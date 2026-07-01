@@ -31,12 +31,21 @@ def install_dependencies():
         subprocess.check_call([sys.executable, "-m", "pip", "install", "selenium", "pandas", "openpyxl", "webdriver-manager"])
         print("[Bot] Instalación completada con éxito.")
 
-def get_latest_downloaded_file(download_dir):
-    # Buscar archivos .xlsx o .csv en la carpeta de descargas ordenados por fecha
-    files = glob.glob(os.path.join(download_dir, "*.xlsx")) + glob.glob(os.path.join(download_dir, "*.xls")) + glob.glob(os.path.join(download_dir, "*.csv"))
-    if not files:
-        return None
-    return max(files, key=os.path.getmtime)
+def wait_for_download(download_dir, timeout=20):
+    print(f"[Bot] Esperando a que se complete la descarga en {download_dir}...")
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        # Buscar archivos temporales de descarga de Chrome
+        temp_files = glob.glob(os.path.join(download_dir, "*.crdownload")) + glob.glob(os.path.join(download_dir, "*.tmp"))
+        # Buscar archivos válidos finalizados
+        valid_files = glob.glob(os.path.join(download_dir, "*.xlsx")) + glob.glob(os.path.join(download_dir, "*.xls")) + glob.glob(os.path.join(download_dir, "*.csv"))
+        
+        if valid_files and not temp_files:
+            latest = max(valid_files, key=os.path.getmtime)
+            print(f"[Bot] Descarga completada con éxito: {os.path.basename(latest)}")
+            return latest
+        time.sleep(2)
+    return None
 
 def parse_and_upload(file_path):
     print(f"[Bot] Analizando el archivo descargado: {os.path.basename(file_path)}")
@@ -314,12 +323,33 @@ def run_rpa_flow():
             print(f"[Bot] Error haciendo clic normal, intentando clic por JavaScript: {click_err}")
             driver.execute_script("arguments[0].click();", export_buttons[0])
             print("[Bot] Clic por JavaScript ejecutado.")
+            
+        # Esperar 2 segundos por si abre un dropdown o menú de exportación (ej: Excel / PDF)
+        time.sleep(2)
         
+        # Buscar opciones de formato en dropdowns/menús (ej: "Excel", "Exportar a Excel", "XLSX", etc.)
+        dropdown_options = driver.find_elements(By.XPATH, "//*[contains(text(), 'Excel') or contains(text(), 'xlsx') or contains(text(), 'Exportar a Excel')]")
+        if dropdown_options:
+            print(f"[Bot] Se detectó un menú de exportación con {len(dropdown_options)} opciones. Clickeando la opción Excel...")
+            clicked_option = False
+            for opt in dropdown_options:
+                try:
+                    if opt.is_displayed():
+                        print(f"[Bot] Clickeando opción de exportación visible: '{opt.text}'")
+                        opt.click()
+                        clicked_option = True
+                        break
+                except:
+                    continue
+            if not clicked_option:
+                try:
+                    driver.execute_script("arguments[0].click();", dropdown_options[0])
+                    print("[Bot] Clic por JavaScript ejecutado en la primera opción del menú.")
+                except Exception as opt_err:
+                    print(f"[Bot] No se pudo hacer clic en la opción del menú: {opt_err}")
+
         # Esperar a que se procese la descarga del archivo en el directorio temporal
-        print("[Bot] Esperando a que termine la descarga del archivo...")
-        time.sleep(10)
-        
-        downloaded_file = get_latest_downloaded_file(download_dir)
+        downloaded_file = wait_for_download(download_dir, timeout=25)
         if downloaded_file:
             # Procesar y enviar
             parse_and_upload(downloaded_file)
@@ -330,7 +360,8 @@ def run_rpa_flow():
             except:
                 pass
         else:
-            print("[Bot] Error: No se detectó ningún archivo nuevo en la carpeta de descargas.")
+            driver.save_screenshot(os.path.join(current_dir, "zlink_error_debug.png"))
+            print("[Bot] Error: No se detectó ningún archivo nuevo completado en la carpeta de descargas.")
             
     except Exception as e:
         print(f"[Bot] Ocurrió un error durante la simulación de navegación: {e}")
