@@ -130,15 +130,39 @@ export default async function handler(req, res) {
         }
       }
 
-      // Ensure Christian Cueva has the correct Administrador role if previously seeded
+      // Ensure Christian Cueva and Jesus Ayma have correct biometric_id and role mapped in database
+      let needsRefresh = false;
       const ccueva = (users || []).find(u => u.username === 'ccuevadg');
+      const jayma = (users || []).find(u => u.username === 'jaymadg');
+
       if (ccueva && ccueva.role === 'Cocina') {
         console.log('[seeder] Updating Christian Cueva role to Administrador in Supabase...');
         await supabase
           .from('usuarios')
           .update({ role: 'Administrador' })
           .eq('username', 'ccuevadg');
-        
+        needsRefresh = true;
+      }
+
+      if (ccueva && (!ccueva.biometric_id || ccueva.biometric_id !== '71608726')) {
+        console.log('[seeder] Updating Christian Cueva biometric_id to 71608726 in Supabase...');
+        await supabase
+          .from('usuarios')
+          .update({ biometric_id: '71608726' })
+          .eq('username', 'ccuevadg');
+        needsRefresh = true;
+      }
+
+      if (jayma && (!jayma.biometric_id || jayma.biometric_id !== '60979426')) {
+        console.log('[seeder] Updating Jesus Ayma biometric_id to 60979426 in Supabase...');
+        await supabase
+          .from('usuarios')
+          .update({ biometric_id: '60979426' })
+          .eq('username', 'jaymadg');
+        needsRefresh = true;
+      }
+
+      if (needsRefresh) {
         // Re-fetch users to keep local array up to date
         const { data: refreshedUsers } = await supabase
           .from('usuarios')

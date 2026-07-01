@@ -168,6 +168,7 @@ const INITIAL_MOCK_TEAM = [
     name: 'Christian Cueva',
     role: 'Administrador',
     store: 'Todas',
+    biometricId: '71608726',
     trainingProgress: {},
     arrivalLogs: []
   },
@@ -294,6 +295,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'jesusaymachaparro@gmail.com',
     telefono: '912322582',
+    biometricId: '60979426',
     trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   },
@@ -316,12 +318,12 @@ const INITIAL_INCIDENTS = [];
 
 export default function App() {
   // Clear old mock data once on production startup to ensure clean slate
-  if (!localStorage.getItem('donguto-prod-v6')) {
+  if (!localStorage.getItem('donguto-prod-v7')) {
     localStorage.removeItem('donguto-team');
     localStorage.removeItem('donguto-incidents');
     localStorage.removeItem('donguto-biometric-devices');
     localStorage.removeItem('donguto-biometric-logs');
-    localStorage.setItem('donguto-prod-v6', 'true');
+    localStorage.setItem('donguto-prod-v7', 'true');
   }
 
   const [user, setUser] = useState(() => {
