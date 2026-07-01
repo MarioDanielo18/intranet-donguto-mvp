@@ -217,7 +217,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'Alexito1836@gmail.com',
     telefono: '992838314',
-    trainingProgress: {},
+    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   },
   {
@@ -228,7 +228,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'dayerlincarolina.dv@gmail.com',
     telefono: '963365912',
-    trainingProgress: {},
+    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   },
   {
@@ -239,7 +239,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'Monikbrav7@gmail.com',
     telefono: '908757732',
-    trainingProgress: {},
+    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   },
   {
@@ -250,7 +250,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'Alexisjo@gmail.com',
     telefono: '945837809',
-    trainingProgress: {},
+    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   },
   {
@@ -261,7 +261,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'fgschavez@gmail.com',
     telefono: '958004464',
-    trainingProgress: {},
+    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   },
   {
@@ -272,7 +272,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'egocheaga888@gmail.com',
     telefono: '904054227',
-    trainingProgress: {},
+    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   },
   {
@@ -283,7 +283,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'murciegus@gmail.com',
     telefono: '979526393',
-    trainingProgress: {},
+    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   },
   {
@@ -294,7 +294,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'jesusaymachaparro@gmail.com',
     telefono: '912322582',
-    trainingProgress: {},
+    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   },
   {
@@ -305,7 +305,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'Sarahilaurente.7@gmail.com',
     telefono: '982953898',
-    trainingProgress: {},
+    trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   }
 ];
@@ -316,12 +316,12 @@ const INITIAL_INCIDENTS = [];
 
 export default function App() {
   // Clear old mock data once on production startup to ensure clean slate
-  if (!localStorage.getItem('donguto-prod-v5')) {
+  if (!localStorage.getItem('donguto-prod-v6')) {
     localStorage.removeItem('donguto-team');
     localStorage.removeItem('donguto-incidents');
     localStorage.removeItem('donguto-biometric-devices');
     localStorage.removeItem('donguto-biometric-logs');
-    localStorage.setItem('donguto-prod-v5', 'true');
+    localStorage.setItem('donguto-prod-v6', 'true');
   }
 
   const [user, setUser] = useState(() => {
