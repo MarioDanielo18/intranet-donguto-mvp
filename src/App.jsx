@@ -1263,22 +1263,6 @@ export default function App() {
               {theme === 'light' ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}
             </button>
 
-            {/* Desktop Simulator Trigger Button */}
-            <button
-              onClick={() => setIsDrawerOpen(true)}
-              className="btn btn-secondary"
-              style={{
-                padding: '6px 12px',
-                fontSize: '11px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-              }}
-              title="Abrir simulador de roles"
-            >
-              ⚙️ Simulador
-            </button>
 
             {user && (
               <div className="user-widget" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -1529,37 +1513,6 @@ export default function App() {
                   </button>
                 </>
               )}
-            </div>
-
-            <div className="drawer-section-title">Simulador de Roles (Pruebas)</div>
-            <div className="drawer-list">
-              {[
-                { username: 'mquispedg', name: 'Mario Quispe', role: 'Gerente', label: '👑 Mario Quispe (Gerente)' },
-                { username: 'qlopezdg', name: 'Mateo Quispe López', role: 'Barista', label: '☕ Barista (Barra)' },
-                { username: 'aruizdg', name: 'Gabriela Alva Ruiz', role: 'Cocina', label: '🍳 Cocina' },
-                { username: 'fpinedodg', name: 'Rodrigo Flores Pinedo', role: 'Servicio', label: '🍽️ Servicio (Salón)' },
-                { username: 'vrojasdg', name: 'Diana Valdivia Rojas', role: 'Administrador', label: '💼 Administrador' },
-                { username: 'sgomezdg', name: 'Pedro Supervisor Gómez', role: 'Supervisor', label: '🔍 Supervisor' },
-                { username: 'dongutodg', name: 'Don Guto', role: 'Gerente', label: '👑 Gerente General' },
-                { username: 'tecnicodg', name: 'Técnico de Sistemas', role: 'Técnico', label: '🛠️ Técnico' },
-                { username: 'auditordg', name: 'Auditor de Operaciones', role: 'Auditor', label: '📋 Auditor de Operaciones' }
-              ].map(r => (
-                <button
-                  key={r.username}
-                  className={`drawer-btn ${user.role === r.role ? 'active' : ''}`}
-                  onClick={() => {
-                    setUser({ username: r.username, name: r.name, role: r.role, store: ['Supervisor', 'Gerente', 'Técnico', 'Auditor'].includes(r.role) ? 'Todas' : '28 de Julio Miraflores' });
-                    if (['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(r.role)) {
-                      setActiveTab(r.role === 'Técnico' ? 'technical_panel' : 'monitoring');
-                    } else {
-                      setActiveTab('checklist');
-                    }
-                    setIsDrawerOpen(false);
-                  }}
-                >
-                  {r.label}
-                </button>
-              ))}
             </div>
           </div>
         </div>

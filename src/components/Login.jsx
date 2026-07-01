@@ -175,60 +175,7 @@ export default function Login({ onLogin }) {
           </button>
         </form>
 
-        <div style={{ marginTop: '25px', borderTop: '1px solid var(--border)', paddingTop: '20px', textAlign: 'center' }}>
-          <h5 style={{ margin: '0 0 8px 0', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>CUENTAS DEMO DE PRUEBA:</h5>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
-            <button
-              onClick={() => { setUsername('qlopezdg'); setPassword('baristadg'); }}
-              className="btn btn-secondary"
-              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
-            >
-              Barista (qlopezdg)
-            </button>
-            <button
-              onClick={() => { setUsername('aruizdg'); setPassword('cocinadg'); }}
-              className="btn btn-secondary"
-              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
-            >
-              Cocina (aruizdg)
-            </button>
-            <button
-              onClick={() => { setUsername('fpinedodg'); setPassword('serviciodg'); }}
-              className="btn btn-secondary"
-              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
-            >
-              Servicio (fpinedodg)
-            </button>
-            <button
-              onClick={() => { setUsername('vrojasdg'); setPassword('admindg'); }}
-              className="btn btn-secondary"
-              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
-            >
-              Admin (vrojasdg)
-            </button>
-            <button
-              onClick={() => { setUsername('mquispedg'); setPassword('gerentedg'); }}
-              className="btn btn-secondary"
-              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
-            >
-              Gerente (mquispedg)
-            </button>
-            <button
-              onClick={() => { setUsername('tecnicodg'); setPassword('tecnicodg'); }}
-              className="btn btn-secondary"
-              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
-            >
-              Técnico (tecnicodg)
-            </button>
-            <button
-              onClick={() => { setUsername('auditordg'); setPassword('auditordg'); }}
-              className="btn btn-secondary"
-              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
-            >
-              Auditor (auditordg)
-            </button>
-          </div>
-        </div>
+
       </div>
     </div>
   );
