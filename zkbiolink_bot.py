@@ -45,75 +45,131 @@ def parse_and_upload(file_path):
         
         # Leer archivo según extensión
         if file_path.endswith('.csv'):
-            # Detectar separador común en CSVs de ZKTeco
             df = pd.read_csv(file_path, sep=None, engine='python')
         else:
             df = pd.read_excel(file_path)
             
-        print("[Bot] Vista previa de las columnas leídas:")
-        print(list(df.columns))
+        print("[Bot] Columnas leídas:")
+        columns = [str(c).strip() for c in df.columns]
+        print(columns)
         
-        # Intentar identificar las columnas de DNI/ID y Fecha/Hora
-        id_col = None
-        time_col = None
-        
-        for col in df.columns:
-            col_lower = str(col).lower().strip()
-            if any(x in col_lower for x in ['dni', 'biometric_id', 'personal_id', 'user_id', 'no.', 'no', 'código', 'codigo', 'code', 'id', 'documento']):
-                id_col = col
-            if any(x in col_lower for x in ['fecha/hora', 'timestamp', 'punch_time', 'time', 'datetime', 'date_time', 'marcación', 'marcacion', 'fecha y hora']):
-                time_col = col
+        def find_col(patterns, exclude_patterns=[]):
+            for col in columns:
+                lower_c = col.lower()
+                if any(p in lower_c for p in patterns) and not any(ep in lower_c for ep in exclude_patterns):
+                    return col
+            return None
 
-        if not id_col or not time_col:
-            # Fallback a posiciones si los nombres no coinciden
-            print("[Bot] Advertencia: No se encontraron nombres estándar de columnas. Usando mapeo por posición.")
-            id_col = df.columns[0]
-            time_col = df.columns[1] if len(df.columns) > 1 else None
-            
-        if not id_col or not time_col:
-            raise ValueError("No se pudieron identificar las columnas de ID/DNI o Fecha/Hora en el reporte.")
+        # Identificar columnas con las mismas reglas del intranet
+        id_col = find_col(['dni', 'biometric_id', 'personal_id', 'user_id', 'no.', 'no', 'código', 'codigo', 'code', 'id', 'documento', 'número de personal', 'numero de personal', 'colaborador', 'usuario'])
+        punch_list_col = find_col(['registros de perforación', 'registros de perforacion', 'punch_list', 'lista_marcaciones', 'marcajes'])
+        date_time_col = find_col(
+            ['fecha/hora', 'fechayhora', 'timestamp', 'punch_time', 'punchtime', 'time', 'datetime', 'date_time', 'marcación', 'marcacion', 'fecha y hora', 'reloj', 'registro'],
+            ['registros de perforación', 'registros de perforacion', 'número de', 'numero de', 'cantidad de']
+        )
+        date_col = find_col(['fecha', 'date', 'día', 'dia'], ['fecha/hora', 'fechayhora', 'fecha y hora'])
+        time_col = find_col(['hora', 'time', 'tiempo'], ['fecha/hora', 'fechayhora', 'fecha y hora', 'registros de perforación', 'registros de perforacion'])
 
-        print(f"[Bot] Mapeando columnas -> ID: '{id_col}', Fecha/Hora: '{time_col}'")
-        
+        print(f"[Bot] Columnas identificadas -> ID: '{id_col}', DateTime: '{date_time_col}', Date: '{date_col}', Time: '{time_col}', PunchList: '{punch_list_col}'")
+
+        if not id_col:
+            raise ValueError("No se pudo identificar la columna de DNI/ID de usuario.")
+
         punches = []
+
         for index, row in df.iterrows():
             bio_id = str(row[id_col]).strip()
-            raw_time = row[time_col]
-            
-            if not bio_id or pd.isna(raw_time):
+            if not bio_id or bio_id == 'nan' or bio_id == 'None':
                 continue
-                
-            # Limpiar DNI del formato flotante si aplica (ej: 12345678.0)
+            
+            # Limpiar flotantes
             if bio_id.endswith('.0'):
                 bio_id = bio_id[:-2]
+
+            # Caso A: Lista de perforaciones agrupadas por fecha
+            if date_col and row[date_col] and punch_list_col and str(row[punch_list_col]).strip() != 'nan':
+                d_val = row[date_col]
+                list_val = str(row[punch_list_col]).strip()
                 
-            # Convertir fecha/hora a formato ISO string
-            try:
-                if isinstance(raw_time, datetime):
-                    dt_obj = raw_time
+                # Parsear fecha
+                if isinstance(d_val, datetime):
+                    date_str = d_val.strftime("%Y-%m-%d")
+                elif hasattr(d_val, 'strftime'):
+                    date_str = d_val.strftime("%Y-%m-%d")
                 else:
-                    # Intentar parsear strings comunes
-                    dt_str = str(raw_time).strip()
-                    # Formatos comunes: YYYY-MM-DD HH:MM:SS o DD/MM/YYYY HH:MM:SS
-                    for fmt in ('%Y-%m-%d %H:%M:%S', '%d/%m/%Y %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%d-%m-%m %H:%M:%S'):
-                        try:
-                            dt_obj = datetime.strptime(dt_str, fmt)
-                            break
-                        except ValueError:
-                            continue
+                    dt_str = str(d_val).split(' ')[0].strip()
+                    # Convertir dd/mm/yyyy o yyyy-mm-dd
+                    if '/' in dt_str:
+                        parts = dt_str.split('/')
+                        if len(parts) == 3:
+                            if len(parts[0]) == 4:
+                                date_str = f"{parts[0]}-{parts[1].zfill(2)}-{parts[2].zfill(2)}"
+                            else:
+                                date_str = f"{parts[2]}-{parts[1].zfill(2)}-{parts[0].zfill(2)}"
                     else:
-                        dt_obj = pd.to_datetime(dt_str)
+                        date_str = dt_str
                 
-                iso_timestamp = dt_obj.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-                punches.append({
-                    "biometric_id": bio_id,
-                    "timestamp": iso_timestamp,
-                    "device_id": "ZLINK-CLOUD-BOT",
-                    "device_name": "Minerva Cloud RPA Bot"
-                })
-            except Exception as e:
-                print(f"[Bot] No se pudo procesar la fecha '{raw_time}' para la fila {index}: {e}")
-                
+                # Parsear lista de horas (ej: "07:36" o "09:19, 18:10")
+                times = [t.strip() for t in list_val.split(',') if t.strip()]
+                for t_val in times:
+                    # Combinar fecha y hora
+                    try:
+                        combined_str = f"{date_str} {t_val}"
+                        for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%d %I:%M %p', '%Y-%m-%d %I:%M%p'):
+                            try:
+                                dt_obj = datetime.strptime(combined_str, fmt)
+                                break
+                            except ValueError:
+                                continue
+                        else:
+                            dt_obj = pd.to_datetime(combined_str)
+                            
+                        iso_timestamp = dt_obj.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+                        punches.append({
+                            "biometric_id": bio_id,
+                            "timestamp": iso_timestamp,
+                            "device_id": "ZLINK-CLOUD-BOT",
+                            "device_name": "Minerva Cloud RPA Bot"
+                        })
+                    except Exception as ex:
+                        print(f"[Bot] Error combinando {date_str} {t_val}: {ex}")
+
+            # Caso B: Columna combinada de Fecha y Hora o fecha/hora separadas individuales
+            elif date_time_col or (date_col and (time_col or date_time_col)):
+                raw_time = row[date_time_col] if date_time_col else row[date_col]
+                # Si están separadas, combinamos
+                if date_col and time_col and not date_time_col:
+                    raw_time = f"{row[date_col]} {row[time_col]}"
+                    
+                if pd.isna(raw_time):
+                    continue
+
+                try:
+                    if isinstance(raw_time, datetime):
+                        dt_obj = raw_time
+                    elif hasattr(raw_time, 'strftime'):
+                        dt_obj = raw_time
+                    else:
+                        dt_str = str(raw_time).strip()
+                        for fmt in ('%Y-%m-%d %H:%M:%S', '%d/%m/%Y %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M'):
+                            try:
+                                dt_obj = datetime.strptime(dt_str, fmt)
+                                break
+                            except ValueError:
+                                continue
+                        else:
+                            dt_obj = pd.to_datetime(dt_str)
+                    
+                    iso_timestamp = dt_obj.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+                    punches.append({
+                        "biometric_id": bio_id,
+                        "timestamp": iso_timestamp,
+                        "device_id": "ZLINK-CLOUD-BOT",
+                        "device_name": "Minerva Cloud RPA Bot"
+                    })
+                except Exception as e:
+                    print(f"[Bot] No se pudo procesar fecha/hora '{raw_time}': {e}")
+                    
         if not punches:
             print("[Bot] No se encontraron marcaciones válidas para cargar.")
             return
