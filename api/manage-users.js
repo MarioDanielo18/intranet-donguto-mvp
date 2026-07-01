@@ -22,6 +22,30 @@ export default async function handler(req, res) {
 
   // 1. GET ALL USERS (GET /api/manage-users)
   if (req.method === 'GET') {
+    const { cleanup } = req.query;
+    if (cleanup === 'true') {
+      try {
+        console.log('[cleanup] Wiping checklists and attendance logs from Supabase...');
+        await supabase
+          .from('checklists_completados')
+          .delete()
+          .neq('date', '1970-01-01');
+
+        await supabase
+          .from('asistencia_biometrica')
+          .delete()
+          .neq('timestamp', '1970-01-01');
+
+        return res.status(200).json({
+          status: 'success',
+          message: 'Base de datos Supabase limpiada correctamente. Checklists y asistencias vaciados para producción.'
+        });
+      } catch (cleanupErr) {
+        console.error('[cleanup] Error:', cleanupErr);
+        return res.status(500).json({ error: cleanupErr.message });
+      }
+    }
+
     try {
       let { data: users, error } = await supabase
         .from('usuarios')
