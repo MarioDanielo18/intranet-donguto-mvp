@@ -261,20 +261,59 @@ def run_rpa_flow():
         # Navegar a los reportes de asistencia
         print("[Bot] Navegando a la sección de reportes de marcaciones...")
         driver.get("https://zlink.minervaiot.com/#/attendance/punch-records")
-        time.sleep(5)
+        time.sleep(8)
         
-        # Buscar botón de descarga o exportación
-        print("[Bot] Buscando botón de exportación...")
+        # DEBUG: Imprimir URL actual y título de página
+        current_url = driver.current_url
+        print(f"[Bot] URL actual tras navegación: {current_url}")
+        print(f"[Bot] Título de la página: {driver.title}")
+        driver.save_screenshot(os.path.join(current_dir, "zlink_page_debug.png"))
+        
+        # Listar todos los botones para encontrar el botón de exportación
+        print("[Bot] Listando todos los botones (button) de la página:")
+        buttons = driver.find_elements(By.TAG_NAME, "button")
+        for idx, btn in enumerate(buttons):
+            try:
+                print(f"  Botón {idx}: text='{btn.text}', class='{btn.get_attribute('class')}', html='{btn.get_attribute('outerHTML')[:180]}'")
+            except Exception as e:
+                print(f"  Botón {idx}: Error: {e}")
+
+        # Listar todos los íconos/elementos clickeables cerca de "Historial de exportación"
+        print("[Bot] Listando elementos con textos comunes (Export, Descargar, Informes, etc.):")
+        elements = driver.find_elements(By.XPATH, "//*[contains(text(), 'Export') or contains(text(), 'Exportar') or contains(text(), 'Descargar') or contains(text(), 'Informes') or contains(text(), 'Marcajes')]")
+        for idx, el in enumerate(elements):
+            try:
+                print(f"  Elemento {idx}: tag='{el.tag_name}', text='{el.text}', html='{el.get_attribute('outerHTML')[:180]}'")
+            except Exception as e:
+                print(f"  Elemento {idx}: Error: {e}")
+
+        # Intentar clickear el botón de exportación por íconos comunes de Minerva (el-icon-download u otros)
+        print("[Bot] Buscando botón de exportación por iconos/clases...")
         export_buttons = driver.find_elements(By.XPATH, "//*[contains(text(), 'Export') or contains(text(), 'Exportar') or contains(text(), 'Descargar')]")
         
         if not export_buttons:
-            # Capturar pantalla en caso de no encontrar para debug en la nube
+            # Si no se encontró por texto, buscar botones que tengan clases de descarga (ej: el-icon-download, icon-download, etc.)
+            print("[Bot] No se encontró por texto, intentando buscar por clase de icono el-icon-download...")
+            export_buttons = driver.find_elements(By.CSS_SELECTOR, ".el-icon-download, .icon-download, button .download, button[title*='Export'], button[title*='descarg']")
+            
+        if not export_buttons:
+            # Buscar botones que contengan un SVG
+            print("[Bot] Intentando buscar botones que contengan un SVG o elementos de icono...")
+            export_buttons = driver.find_elements(By.XPATH, "//button[./svg] | //button[descendant::i]")
+            
+        if not export_buttons:
             driver.save_screenshot(os.path.join(current_dir, "zlink_error_debug.png"))
-            print("[Bot] Error: No se encontró el botón de exportación. Verifique 'zlink_error_debug.png'.")
+            print("[Bot] Error: No se encontró el botón de exportación. Verifique 'zlink_error_debug.png' y la lista de botones arriba.")
             return
             
-        print("[Bot] Ejecutando clic en botón de exportación...")
-        export_buttons[0].click()
+        print(f"[Bot] Se encontraron {len(export_buttons)} posibles botones de exportación. Intentando hacer clic en el primero...")
+        try:
+            export_buttons[0].click()
+            print("[Bot] Clic ejecutado en el primer botón de exportación.")
+        except Exception as click_err:
+            print(f"[Bot] Error haciendo clic normal, intentando clic por JavaScript: {click_err}")
+            driver.execute_script("arguments[0].click();", export_buttons[0])
+            print("[Bot] Clic por JavaScript ejecutado.")
         
         # Esperar a que se procese la descarga del archivo en el directorio temporal
         print("[Bot] Esperando a que termine la descarga del archivo...")

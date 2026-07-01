@@ -40,3 +40,14 @@ jobs:
         ZLINK_PASSWORD: ${{ secrets.ZLINK_PASSWORD }}
       run: |
         python zkbiolink_bot.py
+
+    - name: Subir Capturas de Depuración
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: zlink-debug-screenshots
+        path: |
+          zlink_page_debug.png
+          zlink_error_debug.png
+          **/zlink_page_debug.png
+          **/zlink_error_debug.png
