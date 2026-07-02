@@ -494,7 +494,7 @@ export default function App() {
             if (punchesData && punchesData.status === 'success' && punchesData.punches) {
               const updatedUsers = databaseUsers.map(m => {
                 const bioId = String(m.biometricId || m.biometric_id || '').trim();
-                if (bioId) {
+                if (bioId && m.role !== 'Gerente') {
                   const userPunches = punchesData.punches.filter(p => String(p.biometric_id) === bioId);
                   if (userPunches.length === 0) return { ...m, arrivalLogs: [] };
                   
@@ -774,7 +774,7 @@ export default function App() {
       
       return prev.map(m => {
         const bioId = String(m.biometricId || m.biometric_id || '').trim();
-        if (bioId) {
+        if (bioId && m.role !== 'Gerente') {
           // Rebuild arrivalLogs from scratch for this biometric user using punchesList
           const userPunches = punchesList.filter(p => String(p.biometric_id) === bioId);
           if (userPunches.length === 0) {
