@@ -253,15 +253,99 @@ def run_rpa_flow():
         
         # Iniciar Sesión
         print(f"[Bot] Ingresando credenciales para {ZLINK_EMAIL}...")
-        email_input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email']")))
+        
+        # Eliminar cualquier popup modal molesto (como Mobile App Upgrade Notification) que tape la pantalla
+        try:
+            time.sleep(3) # Esperar un momento a que aparezca el popup
+            driver.execute_script("""
+                let dialogs = document.querySelectorAll('.el-dialog__wrapper, .el-dialog, .el-overlay, .modal, [class*="dialog"]');
+                for (let d of dialogs) {
+                    if (d.textContent.includes('Mobile App') || d.textContent.includes('Upgrade') || d.textContent.includes('Notification') || d.textContent.includes('smartphone')) {
+                        console.log('Removing popup modal:', d);
+                        d.remove();
+                    }
+                }
+                let backdrops = document.querySelectorAll('.v-modal, .el-loading-mask, .modal-backdrop, [class*="backdrop"]');
+                for (let b of backdrops) {
+                    b.remove();
+                }
+                document.body.style.overflow = 'auto';
+            """)
+            print("[Bot] Se eliminaron los popups modales de la página con éxito.")
+        except Exception as pop_err:
+            print(f"[Bot] Advertencia: No se pudo ejecutar el limpiador de popups: {pop_err}")
+            
+        # Localizar el campo de correo/usuario usando selectores alternativos
+        email_selectors = [
+            "input[type='email']",
+            "input[placeholder*='mail']",
+            "input[placeholder*='Mail']",
+            "input[placeholder*='correo']",
+            "input[placeholder*='usuario']",
+            "input[placeholder*='Usuario']",
+            "input.el-input__inner"
+        ]
+        
+        email_input = None
+        for sel in email_selectors:
+            try:
+                email_input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, sel)))
+                print(f"[Bot] Selector de email exitoso: '{sel}'")
+                break
+            except:
+                continue
+                
+        if not email_input:
+            raise ValueError("No se pudo localizar el campo de correo electrónico.")
+            
         email_input.clear()
         email_input.send_keys(ZLINK_EMAIL)
         
-        password_input = driver.find_element(By.CSS_SELECTOR, "input[type='password']")
+        # Localizar el campo de contraseña usando selectores alternativos
+        password_selectors = [
+            "input[type='password']",
+            "input[placeholder*='contrase']",
+            "input[placeholder*='Password']",
+            "input[placeholder*='password']"
+        ]
+        
+        password_input = None
+        for sel in password_selectors:
+            try:
+                password_input = driver.find_element(By.CSS_SELECTOR, sel)
+                print(f"[Bot] Selector de password exitoso: '{sel}'")
+                break
+            except:
+                continue
+                
+        if not password_input:
+            raise ValueError("No se pudo localizar el campo de contraseña.")
+            
         password_input.clear()
         password_input.send_keys(ZLINK_PASSWORD)
         
-        submit_btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+        # Localizar el botón de submit/login usando selectores alternativos
+        submit_selectors = [
+            "button[type='submit']",
+            "button.el-button--primary",
+            "//button[contains(text(), 'Login') or contains(text(), 'Iniciar') or contains(text(), 'Sign In') or contains(text(), 'Ingresar')]"
+        ]
+        
+        submit_btn = None
+        for sel in submit_selectors:
+            try:
+                if sel.startswith("//"):
+                    submit_btn = driver.find_element(By.XPATH, sel)
+                else:
+                    submit_btn = driver.find_element(By.CSS_SELECTOR, sel)
+                print(f"[Bot] Selector de botón submit exitoso: '{sel}'")
+                break
+            except:
+                continue
+                
+        if not submit_btn:
+            raise ValueError("No se pudo localizar el botón de submit.")
+            
         submit_btn.click()
         
         print("[Bot] Esperando carga del Dashboard...")
