@@ -3396,6 +3396,216 @@ export default function SupervisorDashboard({
     );
   };
 
+  const renderStaffAttendanceTab = () => {
+    // 1. Get filtered logs for the selected date
+    const dateLogs = [];
+    approvedMembers.forEach(member => {
+      if (member.role === 'Gerente') return; // Exclude managers
+      
+      const log = (member.arrivalLogs || []).find(l => l.date === selectedDateStr);
+      
+      let expectedTimeStr = '07:00 AM';
+      if (member.role === 'Servicio') expectedTimeStr = '08:00 AM';
+      else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico', 'Auditor', 'Operaciones'].includes(member.role)) expectedTimeStr = '08:00 AM';
+      
+      if (log) {
+        dateLogs.push({
+          member,
+          expectedTime: log.expectedTime || expectedTimeStr,
+          time: log.time,
+          checkOutTime: log.checkOutTime,
+          delayMin: log.delayMin || 0,
+          totalPunches: log.totalPunches || 1,
+          status: log.delayMin > 0 ? 'Con Retraso' : 'Puntual'
+        });
+      } else {
+        dateLogs.push({
+          member,
+          expectedTime: expectedTimeStr,
+          time: null,
+          checkOutTime: null,
+          delayMin: 0,
+          totalPunches: 0,
+          status: 'Sin registrar'
+        });
+      }
+    });
+
+    const totalCount = dateLogs.length;
+    const presentCount = dateLogs.filter(l => l.time).length;
+    const lateCount = dateLogs.filter(l => l.time && l.delayMin > 0).length;
+    const punctualCount = dateLogs.filter(l => l.time && l.delayMin === 0).length;
+    const missingCount = totalCount - presentCount;
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
+        
+        {/* DATE SELECTOR TOOLBAR */}
+        <div className="card" style={{ padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <div>
+            <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '16px', fontWeight: 800 }}>⏰ Registro de Control de Asistencia del Personal</h3>
+            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+              Monitorea el ingreso, salida y tardanzas en vivo de todos los colaboradores de Don Guto.
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button
+              onClick={() => handleNavigateDate('prev')}
+              className="btn btn-secondary"
+              style={{ padding: '6px 12px', borderRadius: 'var(--radius-sm)' }}
+            >
+              ← Anterior
+            </button>
+            
+            <input
+              type="date"
+              value={selectedDateStr}
+              onChange={(e) => {
+                if (e.target.value) {
+                  setSelectedDateStr(e.target.value);
+                }
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--bg-card)',
+                color: 'var(--text-main)',
+                fontFamily: 'inherit',
+                fontWeight: 700,
+                fontSize: '13px',
+                textAlign: 'center',
+                width: '150px'
+              }}
+            />
+
+            <button
+              onClick={() => handleNavigateDate('next')}
+              className="btn btn-secondary"
+              style={{ padding: '6px 12px', borderRadius: 'var(--radius-sm)' }}
+              disabled={selectedDateStr === new Date().toISOString().split('T')[0]}
+            >
+              Siguiente →
+            </button>
+          </div>
+        </div>
+
+        {/* SUMMARY STATS */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '15px'
+        }}>
+          <div className="card" style={{ padding: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '24px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', width: '45px', height: '45px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>👥</span>
+            <div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>TOTAL PLANILLA</div>
+              <div style={{ fontSize: '20px', fontWeight: 800 }}>{totalCount} Empleados</div>
+            </div>
+          </div>
+          <div className="card" style={{ padding: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '24px', backgroundColor: 'var(--success-light)', color: 'var(--success)', width: '45px', height: '45px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🟢</span>
+            <div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>PUNTUALES</div>
+              <div style={{ fontSize: '20px', fontWeight: 800 }}>{punctualCount} Presentes</div>
+            </div>
+          </div>
+          <div className="card" style={{ padding: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '24px', backgroundColor: 'var(--warning-light)', color: 'var(--warning)', width: '45px', height: '45px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🟡</span>
+            <div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>CON RETRASO</div>
+              <div style={{ fontSize: '20px', fontWeight: 800 }}>{lateCount} Tardanzas</div>
+            </div>
+          </div>
+          <div className="card" style={{ padding: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '24px', backgroundColor: 'var(--error-light)', color: 'var(--error)', width: '45px', height: '45px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🔴</span>
+            <div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>AUSENTES</div>
+              <div style={{ fontSize: '20px', fontWeight: 800 }}>{missingCount} Faltas</div>
+            </div>
+          </div>
+        </div>
+
+        {/* DETAILED ATTENDANCE FEED TABLE */}
+        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>📋 Planilla del día {new Date(selectedDateStr + 'T12:00:00').toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+          
+          <div className="table-responsive" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ backgroundColor: 'var(--bg-main)', borderBottom: '2px solid var(--border)', color: 'var(--text-muted)' }}>
+                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>Colaborador</th>
+                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>Rol</th>
+                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>DNI / ID Biométrico</th>
+                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>Entrada Programada</th>
+                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>Hora Llegada</th>
+                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>Hora Salida</th>
+                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>Retraso</th>
+                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dateLogs.map((log, idx) => {
+                  let statusBg = 'var(--bg-main)';
+                  let statusColor = 'var(--text-muted)';
+                  if (log.time) {
+                    if (log.delayMin > 0) {
+                      statusBg = 'var(--warning-light)';
+                      statusColor = 'var(--warning)';
+                    } else {
+                      statusBg = 'var(--success-light)';
+                      statusColor = 'var(--success)';
+                    }
+                  } else {
+                    statusBg = 'var(--error-light)';
+                    statusColor = 'var(--error)';
+                  }
+
+                  return (
+                    <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '12px 15px', fontWeight: 'bold' }}>{log.member.name}</td>
+                      <td style={{ padding: '12px 15px' }}>
+                        <span style={{ fontSize: '11px', backgroundColor: 'var(--bg-main)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border)', fontWeight: 600 }}>
+                          {log.member.role}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 15px', color: 'var(--text-muted)' }}>{log.member.biometricId || 'No asignado'}</td>
+                      <td style={{ padding: '12px 15px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
+                      <td style={{ padding: '12px 15px', fontWeight: log.time ? 'bold' : 'normal', color: log.time ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                        {log.time ? `🚪 ${log.time}` : '—'}
+                      </td>
+                      <td style={{ padding: '12px 15px', fontWeight: log.checkOutTime ? 'bold' : 'normal', color: log.checkOutTime ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                        {log.checkOutTime ? `🚪 ${log.checkOutTime}` : '—'}
+                      </td>
+                      <td style={{ padding: '12px 15px', fontWeight: 'bold', color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
+                        {log.time ? (log.delayMin > 0 ? `+${log.delayMin} min` : 'Sin retraso') : '—'}
+                      </td>
+                      <td style={{ padding: '12px 15px' }}>
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          padding: '4px 10px',
+                          borderRadius: '12px',
+                          backgroundColor: statusBg,
+                          color: statusColor,
+                          border: '1px solid currentColor',
+                          display: 'inline-block'
+                        }}>
+                          {log.time ? (log.delayMin > 0 ? '🔴 Tardanza' : '🟢 Puntual') : '⚪ Ausente'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderMyAttendanceTab = () => {
     const todayStr = new Date().toISOString().split('T')[0];
     const memberObj = approvedMembers.find(m => m.username === user.username);
@@ -4671,6 +4881,22 @@ main();`}
           Equipo y Capacitación
         </button>
         <button
+          onClick={() => setActiveTab('staff_attendance')}
+          style={{
+            padding: '14px 20px',
+            border: 'none',
+            borderBottom: activeTab === 'staff_attendance' ? '3px solid var(--primary)' : '3px solid transparent',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: activeTab === 'staff_attendance' ? 'var(--primary)' : 'var(--text-muted)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          Control de Asistencia
+        </button>
+        <button
           onClick={() => setActiveTab('logs')}
           style={{
             padding: '14px 20px',
@@ -5276,6 +5502,8 @@ main();`}
         )}
 
         {activeTab === 'audits' && <OperationAudit user={user} teamMembers={approvedMembers} onSaveAudit={onSaveAudit} />}
+
+        {activeTab === 'staff_attendance' && renderStaffAttendanceTab()}
 
         {activeTab === 'team' && (
           <div className="mobile-stack" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>

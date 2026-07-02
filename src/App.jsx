@@ -1541,6 +1541,12 @@ export default function App() {
                     👥 Equipo y Capacitación
                   </button>
                   <button
+                    className={`drawer-btn ${activeTab === 'staff_attendance' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('staff_attendance'); setIsDrawerOpen(false); }}
+                  >
+                    ⏰ Control de Asistencia
+                  </button>
+                  <button
                     className={`drawer-btn ${activeTab === 'logs' ? 'active' : ''}`}
                     onClick={() => { setActiveTab('logs'); setIsDrawerOpen(false); }}
                   >
