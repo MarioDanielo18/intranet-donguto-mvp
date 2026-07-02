@@ -10,6 +10,9 @@ on:
     - cron: '0 3,12,16,20,23 * * *'
   workflow_dispatch: # Permite ejecutar el bot manualmente desde GitHub con un botón
 
+permissions:
+  contents: write
+
 jobs:
   sync-biometric:
     runs-on: ubuntu-latest
@@ -51,3 +54,15 @@ jobs:
           zlink_error_debug.png
           **/zlink_page_debug.png
           **/zlink_error_debug.png
+
+    - name: Commit y Push de Capturas de Pantalla a GitHub
+      if: always()
+      run: |
+        git config --global user.name "RPA Bot"
+        git config --global user.email "bot@donguto.com"
+        # Mover capturas a la raíz si estuvieran en carpetas internas
+        mv intranet/zlink_page_debug.png ./ 2>/dev/null || true
+        mv intranet/zlink_error_debug.png ./ 2>/dev/null || true
+        git add zlink_page_debug.png zlink_error_debug.png || true
+        git commit -m "debug: capturas de pantalla de la corrida mas reciente [skip ci]" || true
+        git push origin main || true
