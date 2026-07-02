@@ -278,6 +278,28 @@ def run_rpa_flow():
         print(f"[Bot] Título de la página: {driver.title}")
         driver.save_screenshot(os.path.join(current_dir, "zlink_page_debug.png"))
         
+        # Hacer clic en el botón de Buscar (Search) para cargar las marcaciones en la tabla
+        print("[Bot] Buscando el botón 'Buscar' o 'Search' para poblar la tabla...")
+        search_buttons = driver.find_elements(By.XPATH, "//*[contains(text(), 'Buscar') or contains(text(), 'Search') or contains(text(), 'Inquiry') or contains(text(), 'Consultar')]")
+        
+        if not search_buttons:
+            # Buscar por clase primaria de Element UI
+            print("[Bot] No se encontró por texto, intentando por clase el-button--primary...")
+            search_buttons = driver.find_elements(By.CSS_SELECTOR, "button.el-button--primary")
+            
+        if search_buttons:
+            print("[Bot] Haciendo clic en el botón de búsqueda para cargar los registros...")
+            try:
+                search_buttons[0].click()
+                print("[Bot] Clic exitoso en el botón de búsqueda.")
+            except:
+                driver.execute_script("arguments[0].click();", search_buttons[0])
+                print("[Bot] Clic por JS ejecutado en el botón de búsqueda.")
+            # Esperar a que la tabla se recargue con los datos
+            time.sleep(6)
+        else:
+            print("[Bot] Advertencia: No se encontró el botón de búsqueda. Continuando...")
+
         # Listar todos los botones para encontrar el botón de exportación
         print("[Bot] Listando todos los botones (button) de la página:")
         buttons = driver.find_elements(By.TAG_NAME, "button")
