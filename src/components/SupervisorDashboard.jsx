@@ -245,6 +245,8 @@ export default function SupervisorDashboard({
       onUpdateDevices(updated);
     }
   };
+  
+
 
   const toggleDeviceStatus = (id) => {
     const updated = techDevices.map(d => {
@@ -4250,8 +4252,135 @@ main();`}
         )}
 
         {techTabSub === 'punches' && (
-          /* Consolidated table for technician (always shows raw punches column) */
-          <div className="card animate-scale-in" style={{ padding: '24px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '10px' }}>
+            
+            {/* MANUAL IMPORT CARD */}
+            <div className="card animate-scale-in" style={{
+              padding: '24px',
+              border: '2px dashed var(--primary)',
+              backgroundColor: 'var(--primary-light)',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '15px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '28px' }}>📥</span>
+                <div>
+                  <h4 style={{ margin: 0, color: 'var(--primary)', fontWeight: 800, fontSize: '15px' }}>Importación Manual de Reporte Biométrico</h4>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: 'var(--text-main)' }}>
+                    Carga el archivo Excel o CSV exportado de ZKBio Zlink para poblar las asistencias de los colaboradores manualmente.
+                  </p>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap', marginTop: '5px' }}>
+                <input 
+                  type="file" 
+                  accept=".xlsx, .xls, .csv" 
+                  onChange={handleZlinkFileImport} 
+                  style={{ display: 'none' }} 
+                  id="manual-excel-upload-punches-tab"
+                />
+                <label 
+                  htmlFor="manual-excel-upload-punches-tab" 
+                  className="btn" 
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '12px',
+                    backgroundColor: 'var(--primary)',
+                    color: '#fff',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    display: 'inline-block'
+                  }}
+                >
+                  📁 Seleccionar Archivo (.xlsx, .csv)
+                </label>
+                
+                {importingFile && (
+                  <span style={{ fontSize: '12.5px', fontWeight: 'bold', color: 'var(--primary)' }}>
+                    ⏳ Procesando archivo...
+                  </span>
+                )}
+                {importSuccess && (
+                  <span style={{ fontSize: '12.5px', fontWeight: 'bold', color: 'var(--success)' }}>
+                    ✅ Archivo procesado correctamente.
+                  </span>
+                )}
+                {importError && (
+                  <span style={{ fontSize: '12.5px', fontWeight: 'bold', color: 'var(--error)' }}>
+                    🔴 {importError}
+                  </span>
+                )}
+              </div>
+              
+              {parsedPunches.length > 0 && (
+                <div style={{
+                  backgroundColor: 'var(--bg-card)',
+                  padding: '15px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  marginTop: '10px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <h5 style={{ margin: 0, fontWeight: 800, fontSize: '13px', color: 'var(--text-main)' }}>👁️ Vista Previa ({parsedPunches.length} marcaciones detectadas)</h5>
+                    <button 
+                      onClick={handleConfirmImport}
+                      className="btn btn-success"
+                      disabled={importingFile}
+                      style={{
+                        padding: '6px 14px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        backgroundColor: 'var(--success)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🚀 Confirmar e Importar marcaciones
+                    </button>
+                  </div>
+                  
+                  <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '5px', paddingRight: '5px' }}>
+                    {parsedPunches.slice(0, 100).map((p, idx) => {
+                      const collab = approvedMembers.find(m => String(m.biometricId) === String(p.biometric_id));
+                      const collabName = collab ? collab.name : `DNI/Código Biométrico: ${p.biometric_id}`;
+                      return (
+                        <div key={idx} style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '6px 10px',
+                          backgroundColor: 'var(--bg-main)',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          border: '1px solid var(--border)'
+                        }}>
+                          <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{collabName}</span>
+                          <span style={{ color: 'var(--text-muted)' }}>
+                            📅 {new Date(p.timestamp).toLocaleString('es-PE')}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {parsedPunches.length > 100 && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', padding: '5px' }}>
+                        ... y {parsedPunches.length - 100} marcaciones más.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Consolidated table for technician (always shows raw punches column) */}
+            <div className="card animate-scale-in" style={{ padding: '24px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid var(--border)', paddingBottom: '15px' }}>
               <div>
                 <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
@@ -4482,6 +4611,7 @@ main();`}
                 </div>
               );
             })()}
+            </div>
           </div>
         )}
       </div>
