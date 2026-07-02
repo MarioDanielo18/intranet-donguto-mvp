@@ -4,6 +4,8 @@ import ColaboradorDashboard from './components/ColaboradorDashboard';
 import SupervisorDashboard from './components/SupervisorDashboard';
 import IncidentDetailStandalone from './components/IncidentDetailStandalone';
 
+const SUPERVISORY_ROLES = ['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor', 'Operaciones'];
+
 // Initialize mock data directly from Don Guto excel specs
 const INITIAL_CHECKLISTS = [
   // BARISTAS - APERTURA
@@ -447,7 +449,7 @@ export default function App() {
     const saved = localStorage.getItem('donguto-user');
     if (saved) {
       const u = JSON.parse(saved);
-      if (['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(u.role)) {
+      if (SUPERVISORY_ROLES.includes(u.role)) {
         return (u.username === 'mquispetec' || u.username === 'mquispedg') ? 'technical_panel' : 'monitoring';
       }
     }
@@ -522,7 +524,7 @@ export default function App() {
                   
                   let expectedTimeStr = '07:00 AM';
                   if (m.role === 'Servicio') expectedTimeStr = '08:00 AM';
-                  else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico', 'Auditor'].includes(m.role)) expectedTimeStr = '08:00 AM';
+                  else if (SUPERVISORY_ROLES.includes(m.role)) expectedTimeStr = '08:00 AM';
                   
                   const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
                   let [eh, em] = expTimePart.split(':').map(Number);
@@ -702,7 +704,7 @@ export default function App() {
     // Expected time based on employee role
     let expectedTimeStr = '07:00 AM';
     if (employee.role === 'Servicio') expectedTimeStr = '08:00 AM';
-    else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico', 'Auditor'].includes(employee.role)) expectedTimeStr = '08:00 AM';
+    else if (SUPERVISORY_ROLES.includes(employee.role)) expectedTimeStr = '08:00 AM';
 
     const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
     let [eh, em] = expTimePart.split(':').map(Number);
@@ -813,7 +815,7 @@ export default function App() {
           // Expected time based on employee role
           let expectedTimeStr = '07:00 AM';
           if (m.role === 'Servicio') expectedTimeStr = '08:00 AM';
-          else if (['Administrador', 'Supervisor', 'Gerente', 'Técnico', 'Auditor'].includes(m.role)) expectedTimeStr = '08:00 AM';
+          else if (SUPERVISORY_ROLES.includes(m.role)) expectedTimeStr = '08:00 AM';
           
           const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
           let [eh, em] = expTimePart.split(':').map(Number);
@@ -998,7 +1000,7 @@ export default function App() {
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
-    if (['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(loggedInUser.role)) {
+    if (SUPERVISORY_ROLES.includes(loggedInUser.role)) {
       setActiveTab((loggedInUser.username === 'mquispetec' || loggedInUser.username === 'mquispedg') ? 'technical_panel' : 'monitoring');
     } else {
       setActiveTab('checklist');
@@ -1417,7 +1419,7 @@ export default function App() {
         ) : (
           <div className="animate-fade-in">
             {/* Show view based on user role */}
-            {['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(user.role) ? (
+            {SUPERVISORY_ROLES.includes(user.role) ? (
               <SupervisorDashboard
                 user={user}
                 activeTab={activeTab}
@@ -1518,7 +1520,7 @@ export default function App() {
 
             <div className="drawer-section-title">Secciones</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '15px' }}>
-              {['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor'].includes(user.role) ? (
+              {SUPERVISORY_ROLES.includes(user.role) ? (
                 <>
                   <button
                     className={`drawer-btn ${activeTab === 'monitoring' ? 'active' : ''}`}

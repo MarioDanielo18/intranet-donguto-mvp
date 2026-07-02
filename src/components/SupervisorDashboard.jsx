@@ -171,7 +171,7 @@ export default function SupervisorDashboard({
   const isCueva = user && user.username === 'ccuevadg';
 
   const teamMembers = isCueva
-    ? (rawTeamMembers || []).filter(m => m.role === 'Cocina' || m.username === 'ccuevadg')
+    ? (rawTeamMembers || []).filter(m => ['Cocina', 'Servicio', 'Barista'].includes(m.role) || m.username === 'ccuevadg')
     : rawTeamMembers;
 
   const checklists = isCueva
@@ -5280,7 +5280,7 @@ main();`}
         {activeTab === 'team' && (
           <div className="mobile-stack" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
             {/* Pending Approvals Section for Supervisor / Gerente */}
-            {['Supervisor', 'Gerente', 'Auditor'].includes(user.role) && (teamMembers || []).filter(m => m.pendingApproval).length > 0 && (
+            {['Supervisor', 'Gerente', 'Auditor', 'Operaciones'].includes(user.role) && (teamMembers || []).filter(m => m.pendingApproval).length > 0 && (
               <div className="card glass animate-scale-in" style={{ flex: '1 1 100%', border: '1px solid var(--warning)', display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: 'var(--bg-card)' }}>
                 <div style={{ borderBottom: '1px solid var(--warning-light)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                   <div>
