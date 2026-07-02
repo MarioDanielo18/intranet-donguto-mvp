@@ -245,6 +245,13 @@ def run_rpa_flow():
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
+    # OVERRIDE TIMEZONE: Establecer la zona horaria del navegador a Lima, Perú (America/Lima)
+    try:
+        driver.execute_cdp_cmd('Emulation.setTimezoneOverride', {'timezoneId': 'America/Lima'})
+        print("[Bot] Zona horaria del navegador configurada a America/Lima con éxito.")
+    except Exception as tz_err:
+        print(f"[Bot] No se pudo configurar la zona horaria a America/Lima: {tz_err}")
+    
     try:
         print("[Bot] Conectando a ZKBio Zlink...")
         driver.get("https://zlink.minervaiot.com")

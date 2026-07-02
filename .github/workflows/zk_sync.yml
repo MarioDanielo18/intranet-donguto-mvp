@@ -65,4 +65,5 @@ jobs:
         mv intranet/zlink_error_debug.png ./ 2>/dev/null || true
         git add zlink_page_debug.png zlink_error_debug.png || true
         git commit -m "debug: capturas de pantalla de la corrida mas reciente [skip ci]" || true
+        git pull --rebase origin main || true
         git push origin main || true
