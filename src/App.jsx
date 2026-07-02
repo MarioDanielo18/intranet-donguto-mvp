@@ -218,6 +218,7 @@ const INITIAL_MOCK_TEAM = [
     store: '28 de Julio Miraflores',
     email: 'Alexito1836@gmail.com',
     telefono: '992838314',
+    biometricId: '61096401',
     trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
     arrivalLogs: []
   },
@@ -308,6 +309,18 @@ const INITIAL_MOCK_TEAM = [
     email: 'Sarahilaurente.7@gmail.com',
     telefono: '982953898',
     trainingProgress: { D1: 'Completado', D2: 'Completado', D3: 'Completado', D4: 'Completado', D5: 'Completado', D6: 'Completado', D7: 'Completado', D8: 'Completado' },
+    arrivalLogs: []
+  },
+  {
+    username: 'amosqueradg',
+    password: 'dg.anto.M43801',
+    name: 'Antonio Mosquera',
+    role: 'Operaciones',
+    store: 'Todas',
+    email: 'antonio.mosquera@donguto.com',
+    telefono: '999943801',
+    biometricId: '43801971',
+    trainingProgress: {},
     arrivalLogs: []
   }
 ];
