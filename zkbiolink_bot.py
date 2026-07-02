@@ -245,13 +245,6 @@ def run_rpa_flow():
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
-    # OVERRIDE TIMEZONE: Establecer la zona horaria del navegador a Lima, Perú (America/Lima)
-    try:
-        driver.execute_cdp_cmd('Emulation.setTimezoneOverride', {'timezoneId': 'America/Lima'})
-        print("[Bot] Zona horaria del navegador configurada a America/Lima con éxito.")
-    except Exception as tz_err:
-        print(f"[Bot] No se pudo configurar la zona horaria a America/Lima: {tz_err}")
-    
     try:
         print("[Bot] Conectando a ZKBio Zlink...")
         driver.get("https://zlink.minervaiot.com")
@@ -284,6 +277,32 @@ def run_rpa_flow():
         print(f"[Bot] URL actual tras navegación: {current_url}")
         print(f"[Bot] Título de la página: {driver.title}")
         driver.save_screenshot(os.path.join(current_dir, "zlink_page_debug.png"))
+        
+        # Configurar rango de fechas de manera explícita (últimos 3 días en hora de Perú, UTC-5)
+        from datetime import datetime, timedelta, timezone
+        tz_pe = timezone(timedelta(hours=-5))
+        now_pe = datetime.now(tz_pe)
+        hoy_str = now_pe.strftime("%Y-%m-%d")
+        hace_3_dias_str = (now_pe - timedelta(days=3)).strftime("%Y-%m-%d")
+        
+        print(f"[Bot] Rango de fechas a configurar (Perú): {hace_3_dias_str} a {hoy_str}")
+        
+        try:
+            date_inputs = driver.find_elements(By.CSS_SELECTOR, "input.el-range-input")
+            if len(date_inputs) >= 2:
+                print(f"[Bot] Se encontraron {len(date_inputs)} campos de rango de fechas. Estableciendo valores...")
+                driver.execute_script("arguments[0].value = arguments[1];", date_inputs[0], hace_3_dias_str)
+                driver.execute_script("arguments[0].value = arguments[1];", date_inputs[1], hoy_str)
+                driver.execute_script("arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", date_inputs[0])
+                driver.execute_script("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", date_inputs[0])
+                driver.execute_script("arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", date_inputs[1])
+                driver.execute_script("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", date_inputs[1])
+                print("[Bot] Rango de fechas establecido en la interfaz con éxito.")
+                time.sleep(2)
+            else:
+                print("[Bot] No se encontraron inputs el-range-input. Intentando continuar...")
+        except Exception as date_err:
+            print(f"[Bot] Error al configurar rango de fechas: {date_err}")
         
         # Hacer clic en el botón de Buscar (Search) para cargar las marcaciones en la tabla
         print("[Bot] Buscando el botón 'Buscar' o 'Search' para poblar la tabla...")
@@ -391,6 +410,7 @@ def run_rpa_flow():
         else:
             driver.save_screenshot(os.path.join(current_dir, "zlink_error_debug.png"))
             print("[Bot] Error: No se detectó ningún archivo nuevo completado en la carpeta de descargas.")
+            sys.exit(1)
             
     except Exception as e:
         print(f"[Bot] Ocurrió un error durante la simulación de navegación: {e}")
@@ -399,6 +419,7 @@ def run_rpa_flow():
             print("[Bot] Se guardó captura del error en 'zlink_error_debug.png'.")
         except:
             pass
+        sys.exit(1)
     finally:
         driver.quit()
         print("[Bot] Navegador cerrado.")
