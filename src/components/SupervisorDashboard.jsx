@@ -1379,9 +1379,24 @@ export default function SupervisorDashboard({
     fetchChecklistsFromDb(selectedDateStr, checklistStoreFilter);
   }, [selectedDateStr, checklistStoreFilter]);
 
-  const visibleMembers = user.role === 'Administrador'
-    ? approvedMembers.filter(m => m.store === user.store && ['Barista', 'Cocina', 'Servicio'].includes(m.role))
-    : approvedMembers;
+  const visibleMembers = (() => {
+    const isSuperUser = ['Técnico', 'Gerente'].includes(user.role);
+    if (isSuperUser) {
+      return approvedMembers;
+    }
+    return approvedMembers.filter(m => {
+      const isSelf = m.username === user.username;
+      const isCollaborator = ['Barista', 'Cocina', 'Servicio', 'Operaciones'].includes(m.role);
+      
+      if (!isSelf && !isCollaborator) return false;
+      
+      // Store filter: if user is restricted to a specific store, they only see their own store's collaborators (or themselves)
+      if (user.store && user.store !== 'Todas') {
+        return m.store === user.store || isSelf;
+      }
+      return true;
+    });
+  })();
 
   const visibleLogs = user.role === 'Administrador'
     ? auditLogs.filter(log => log.tienda === user.store)
@@ -3399,7 +3414,7 @@ export default function SupervisorDashboard({
   const renderStaffAttendanceTab = () => {
     // 1. Get filtered logs for the selected date
     const dateLogs = [];
-    approvedMembers.forEach(member => {
+    visibleMembers.forEach(member => {
       if (member.role === 'Gerente') return; // Exclude managers
       
       const log = (member.arrivalLogs || []).find(l => l.date === selectedDateStr);
