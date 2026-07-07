@@ -457,7 +457,10 @@ export default function App() {
   });
 
   const [checklists, setChecklists] = useState(INITIAL_CHECKLISTS);
-  const [cleaningTasks, setCleaningTasks] = useState(INITIAL_CLEANING_TASKS);
+  const [cleaningTasks, setCleaningTasks] = useState(() => {
+    const saved = localStorage.getItem('donguto-cleaning-tasks');
+    return saved ? JSON.parse(saved) : INITIAL_CLEANING_TASKS;
+  });
   const [teamMembers, setTeamMembers] = useState(() => {
     const saved = localStorage.getItem('donguto-team');
     return saved ? JSON.parse(saved) : INITIAL_MOCK_TEAM;
@@ -466,6 +469,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('donguto-team', JSON.stringify(teamMembers));
   }, [teamMembers]);
+
+  useEffect(() => {
+    localStorage.setItem('donguto-cleaning-tasks', JSON.stringify(cleaningTasks));
+  }, [cleaningTasks]);
 
   // Load team members from Supabase database if configured
   useEffect(() => {
@@ -1062,7 +1069,7 @@ export default function App() {
   };
 
   // Toggle monthly cleaning calendar days
-  const handleSaveCleaning = (taskId, day, completed) => {
+  const handleSaveCleaning = (taskId, day, completed, evidence = null) => {
     setCleaningTasks(prev =>
       prev.map(t => {
         if (t.id === taskId) {
@@ -1071,6 +1078,10 @@ export default function App() {
             completedDays: {
               ...t.completedDays,
               [day]: completed,
+            },
+            evidenciaDays: {
+              ...(t.evidenciaDays || {}),
+              [day]: evidence,
             },
           };
         }

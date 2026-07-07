@@ -313,6 +313,30 @@ export default function ColaboradorDashboard({
     }
   };
 
+  const handleWeeklyCameraChange = async (e, taskId, weekId) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const compressedDataUrl = await compressImage(file, 800, 800, 0.7);
+      onSaveCleaning(taskId, weekId, true, compressedDataUrl);
+    } catch (err) {
+      console.warn('[Weekly Image Compression] Failed, falling back to raw image:', err);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onSaveCleaning(taskId, weekId, true, reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveWeeklyEvidence = (e, taskId, weekId) => {
+    e.stopPropagation();
+    if (confirm('¿Estás seguro de eliminar la foto de evidencia? Esto desmarcará la tarea.')) {
+      onSaveCleaning(taskId, weekId, false, null);
+    }
+  };
+
   // Auto-select device based on user's store
   useEffect(() => {
     if (biometricDevices && biometricDevices.length > 0) {
@@ -1255,12 +1279,9 @@ export default function ColaboradorDashboard({
               if (isFuture) {
                 badgeText = '🔒 Bloqueada';
                 badgeColor = 'var(--text-muted)';
-              } else if (currentDay >= week.startDay && currentDay < week.endDay) {
-                badgeText = '⏳ Solo Domingo';
-                badgeColor = 'var(--text-muted)';
-              } else if (currentDay === week.endDay) {
-                badgeText = `⚡ Hoy Domingo (${weekProgress.toFixed(0)}%)`;
-                badgeColor = '#d97706';
+              } else if (currentDay >= week.startDay && currentDay <= week.endDay) {
+                badgeText = `⚡ Activa (${weekProgress.toFixed(0)}%)`;
+                badgeColor = '#7c3aed';
               } else if (weekProgress === 100) {
                 badgeText = '✅ 100%';
                 badgeColor = 'var(--success)';
@@ -1341,7 +1362,7 @@ export default function ColaboradorDashboard({
             if (!selectedWeek) return null;
             const isFuture = currentDay < selectedWeek.startDay;
             const isPast = currentDay > selectedWeek.endDay;
-            const isCurrentPendingSunday = currentDay >= selectedWeek.startDay && currentDay < selectedWeek.endDay;
+            const isCurrent = currentDay >= selectedWeek.startDay && currentDay <= selectedWeek.endDay;
             
             if (isFuture) {
               return (
@@ -1361,25 +1382,7 @@ export default function ColaboradorDashboard({
                 </div>
               );
             }
-            if (isCurrentPendingSunday) {
-              return (
-                <div style={{
-                  padding: '12px 15px',
-                  borderRadius: '6px',
-                  backgroundColor: '#eff6ff',
-                  border: '1px solid #dbeafe',
-                  color: '#1e40af',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <span>🔒 El registro está inhabilitado. De acuerdo a las reglas de Don Guto, las tareas de limpieza profunda semanal solo se pueden marcar el último día de la semana (Domingo {selectedWeek.endDay} de Jun).</span>
-                </div>
-              );
-            }
-            if (currentDay === selectedWeek.endDay) {
+            if (isCurrent) {
               return (
                 <div style={{
                   padding: '12px 15px',
@@ -1393,7 +1396,7 @@ export default function ColaboradorDashboard({
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <span>⚡ Registro Habilitado. Hoy es Domingo ({selectedWeek.endDay} de Jun). Por favor, marca las tareas de limpieza completadas.</span>
+                  <span>⚡ <strong>Registro Habilitado:</strong> Puedes completar las tareas de limpieza profunda semanal durante toda esta semana. Recuerda subir una foto como evidencia para cada tarea.</span>
                 </div>
               );
             }
@@ -1422,20 +1425,30 @@ export default function ColaboradorDashboard({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {weeklyTasks.map((task) => {
               const isCompletedInSelectedWeek = !!task.completedDays[selectedWeekId];
+              const evidenceUrl = task.evidenciaDays ? task.evidenciaDays[selectedWeekId] : null;
+              const hasEvidence = !!evidenceUrl;
               const selectedWeekObj = monthWeeks.find(w => w.id === selectedWeekId);
-              const isLocked = selectedWeekObj ? currentDay !== selectedWeekObj.endDay : true;
+              
+              // Only active week can be completed (past and future are locked)
+              const isLocked = selectedWeekObj 
+                ? (currentDay < selectedWeekObj.startDay || currentDay > selectedWeekObj.endDay) 
+                : true;
               
               return (
                 <div
                   key={task.id}
                   onClick={() => {
                     if (isLocked) return;
-                    onSaveCleaning(task.id, selectedWeekId, !isCompletedInSelectedWeek);
+                    if (!hasEvidence) {
+                      document.getElementById(`weekly-camera-input-${task.id}`).click();
+                    } else {
+                      onSaveCleaning(task.id, selectedWeekId, !isCompletedInSelectedWeek, evidenceUrl);
+                    }
                   }}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
+                    flexDirection: 'column',
+                    gap: '8px',
                     padding: '12px',
                     borderRadius: 'var(--radius-sm)',
                     border: isCompletedInSelectedWeek ? '1px solid var(--success)' : '1px solid var(--border)',
@@ -1449,37 +1462,120 @@ export default function ColaboradorDashboard({
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <div style={{
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '50%',
-                    border: isCompletedInSelectedWeek ? 'none' : '2px solid var(--border)',
-                    backgroundColor: isCompletedInSelectedWeek ? 'var(--success)' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                    fontSize: '11px',
-                    flexShrink: 0,
-                  }}>
-                    {isCompletedInSelectedWeek ? '✓' : ''}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {/* Checkbox */}
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      border: isCompletedInSelectedWeek ? 'none' : '2px solid var(--border)',
+                      backgroundColor: isCompletedInSelectedWeek ? 'var(--success)' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      fontSize: '11px',
+                      flexShrink: 0,
+                    }}>
+                      {isCompletedInSelectedWeek ? '✓' : ''}
+                    </div>
+
+                    <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', color: isLocked ? 'var(--text-muted)' : 'var(--text-main)', textAlign: 'left' }}>
+                        {task.descripcion}
+                      </span>
+                      <span style={{
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        backgroundColor: hasEvidence ? 'var(--success-light)' : 'var(--primary-light)',
+                        color: hasEvidence ? 'var(--success)' : 'var(--primary)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        marginLeft: '8px',
+                        display: 'inline-block',
+                        border: '1px solid currentColor',
+                      }}>
+                        {hasEvidence ? 'EVIDENCIA CARGADA ✓' : 'FOTO EVIDENCIA REQUERIDA'}
+                      </span>
+                    </div>
                   </div>
 
-                  <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', color: isLocked ? 'var(--text-muted)' : 'var(--text-main)', textAlign: 'left' }}>{task.descripcion}</span>
-                    <span style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      backgroundColor: 'var(--bg-main)',
-                      color: 'var(--text-muted)',
-                      padding: '3px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid var(--border)'
-                    }}>
-                      {task.frecuencia}
-                    </span>
-                  </div>
+                  {/* Hidden camera input and Photo evidence preview */}
+                  {!isLocked && (
+                    <div 
+                      onClick={(e) => e.stopPropagation()} 
+                      style={{ marginLeft: '32px', display: 'flex', alignItems: 'center', gap: '15px' }}
+                    >
+                      <input
+                        id={`weekly-camera-input-${task.id}`}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleWeeklyCameraChange(e, task.id, selectedWeekId)}
+                      />
+
+                      {!hasEvidence ? (
+                        <button
+                          onClick={() => document.getElementById(`weekly-camera-input-${task.id}`).click()}
+                          className="btn btn-secondary"
+                          style={{
+                            padding: '5px 12px',
+                            fontSize: '11px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            borderStyle: 'solid',
+                            borderWidth: '1px',
+                            borderColor: 'var(--primary)',
+                            color: '#fff',
+                            backgroundColor: 'var(--primary)',
+                            borderRadius: '4px',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          📸 Abrir Cámara
+                        </button>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ position: 'relative', width: '64px', height: '64px' }}>
+                            <img 
+                              src={evidenceUrl} 
+                              alt="Evidencia Semanal" 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
+                            />
+                            <button
+                              onClick={(e) => handleRemoveWeeklyEvidence(e, task.id, selectedWeekId)}
+                              style={{
+                                position: 'absolute',
+                                top: '-6px',
+                                right: '-6px',
+                                backgroundColor: 'var(--error)',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '18px',
+                                height: '18px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '9px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                boxShadow: 'var(--shadow-sm)',
+                              }}
+                              title="Eliminar evidencia"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <span style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 600 }}>Foto tomada con éxito</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
