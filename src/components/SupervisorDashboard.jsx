@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import BiometricScanner from './attendance/BiometricScanner';
+import AttendanceLogs from './attendance/AttendanceLogs';
 import { createPortal } from 'react-dom';
 import OperationAudit from './OperationAudit';
 
@@ -304,9 +306,6 @@ export default function SupervisorDashboard({
   };
 
   // States for my biometric attendance (moved to top level to satisfy Rules of Hooks)
-  const [myBioState, setMyBioState] = useState('idle');
-  const [myBioFeedback, setMyBioFeedback] = useState('Por favor, coloque su dedo en el lector biométrico.');
-  const [myBioProgress, setMyBioProgress] = useState(0);
 
   // States for technical panel tab (moved to top level to satisfy Rules of Hooks)
   const [techTabSub, setTechTabSub] = useState('users'); // 'users' | 'devices' | 'docs' | 'punches'
@@ -3623,80 +3622,37 @@ export default function SupervisorDashboard({
 
   const renderMyAttendanceTab = () => {
     const todayStr = new Date().toISOString().split('T')[0];
-    const memberObj = approvedMembers.find(m => m.username === user.username);
-    const logs = memberObj?.arrivalLogs || [];
+    
+    // Find supervisor's own employee record from team members
+    const myRecord = rawTeamMembers.find(m => m.username === user.username);
+    const logs = myRecord ? (myRecord.arrivalLogs || []) : [];
     const clockedInToday = logs.some(l => l.date === todayStr);
     const todaysLog = logs.find(l => l.date === todayStr);
-
-
-    const triggerMyBioScan = () => {
-      if (myBioState !== 'idle') return;
-      
-      setMyBioState('scanning');
-      setMyBioFeedback('Leyendo huella... Mantenga el dedo en el lector.');
-      setMyBioProgress(0);
-
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 10;
-        setMyBioProgress(progress);
-        if (progress >= 100) {
-          clearInterval(interval);
-          setMyBioState('verifying');
-          setMyBioFeedback('Verificando firma digital...');
-
-          setTimeout(() => {
-            const device = biometricDevices.find(d => (user.store === 'Todas' || d.store === user.store) && d.status === 'Online') || biometricDevices[0];
-            const res = onBiometricScan(user.username, device ? device.id : 'DEV-001');
-            
-            if (res && res.success) {
-              setMyBioState('success');
-              setMyBioFeedback('¡Acceso Autorizado! Asistencia registrada con éxito.');
-              setTimeout(() => {
-                setMyBioState('idle');
-                setMyBioFeedback('Por favor, coloque su dedo en el lector biométrico.');
-              }, 3000);
-            } else {
-              setMyBioState('error');
-              setMyBioFeedback(res ? res.message : 'Error en la verificación.');
-              setTimeout(() => {
-                setMyBioState('idle');
-                setMyBioFeedback('Por favor, coloque su dedo en el lector biométrico.');
-              }, 3000);
-            }
-          }, 1000);
-        }
-      }, 150);
-    };
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
         <div style={{ borderBottom: '2px solid var(--border)', paddingBottom: '10px' }}>
-          <h3 style={{ margin: 0, color: 'var(--primary)' }}>Registro de Entrada Biométrica (Mi Rol: {user.role})</h3>
-          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-            Marca tu asistencia diaria utilizando el escáner biométrico conectado en tu sede ({user.store}).
+          <h3 style={{ margin: 0, color: 'var(--primary)' }}>Mi Asistencia y Fichaje</h3>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+            Registra tu entrada y salida biométrica diaria y consulta tu historial.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '25px', alignItems: 'start' }}>
-          {/* Biometric Scan Card */}
-          <div className="card" style={{ padding: '25px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', border: '1px solid var(--border)' }}>
-            <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>Escáner de Huella Digital Táctil</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          {/* Lector Card */}
+          <div className="card" style={{ padding: '20px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)' }}>🕒 Fichaje del Día</h4>
             
             {clockedInToday && (
               <div style={{
-                padding: '12px 20px',
-                borderRadius: '8px',
+                padding: '10px 15px',
+                borderRadius: '6px',
                 backgroundColor: 'var(--success-light)',
-                border: '1px solid var(--success)',
                 color: 'var(--success)',
-                textAlign: 'center',
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px'
+                border: '1px solid var(--success)',
+                fontSize: '12.5px'
               }}>
-                <strong style={{ fontSize: '13px' }}>🟢 Asistencia Activa</strong>
+                <strong>🟢 Turno Registrado Activo</strong>
                 <div style={{ fontSize: '12px', display: 'flex', justifyContent: 'space-between', marginTop: '4px', borderTop: '1px solid rgba(22, 163, 74, 0.2)', paddingTop: '4px' }}>
                   <span>Entrada: <strong>{todaysLog?.time}</strong></span>
                   <span>Salida: <strong>{todaysLog?.checkOutTime || '--'}</strong></span>
@@ -3705,121 +3661,23 @@ export default function SupervisorDashboard({
               </div>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', width: '100%' }}>
-              {/* Fingerprint scan circle */}
-              <div 
-                onClick={triggerMyBioScan}
-                style={{
-                  width: '120px',
-                  height: '120px',
-                  borderRadius: '50%',
-                  border: `4px solid ${
-                    myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : myBioState === 'scanning' ? 'var(--primary)' : 'var(--border)'
-                  }`,
-                  backgroundColor: myBioState === 'scanning' ? 'rgba(139,26,26,0.05)' : 'var(--bg-main)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: myBioState === 'idle' ? 'pointer' : 'not-allowed',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                {myBioState === 'scanning' && (
-                  <div style={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: '3px',
-                    backgroundColor: 'var(--primary)',
-                    boxShadow: '0 0 8px var(--primary)',
-                    top: `${myBioProgress}%`,
-                    left: 0,
-                    transition: 'top 0.15s linear',
-                  }} />
-                )}
-
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={
-                  myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : myBioState === 'scanning' ? 'var(--primary)' : 'var(--text-muted)'
-                } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 10a2 2 0 0 0-2 2M14 14a4 4 0 0 0-4-4M2 12a10 10 0 0 1 18 0M10 17v-1a2 2 0 1 1 4 0v1" />
-                  <path d="M12 2a10 10 0 0 0-10 10M12 22a10 10 0 0 0 10-10" />
-                  <path d="M6 12a6 6 0 0 1 12 0M8 12a4 4 0 0 1 8 0" />
-                </svg>
-              </div>
-
-              <button
-                onClick={triggerMyBioScan}
-                disabled={myBioState !== 'idle'}
-                className="btn"
-                style={{
-                  padding: '8px 20px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  backgroundColor: myBioState === 'idle' ? 'var(--primary)' : 'var(--bg-main)',
-                  color: myBioState === 'idle' ? '#fff' : 'var(--text-muted)',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: myBioState === 'idle' ? 'pointer' : 'not-allowed'
-                }}
-              >
-                {myBioState === 'idle' ? '☝️ Registrar Marcación Directa' : 'Procesando Marcación...'}
-              </button>
-
-              <div style={{ fontSize: '12px', color: myBioState === 'success' ? 'var(--success)' : myBioState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px' }}>
-                {myBioFeedback}
-              </div>
-            </div>
+            <BiometricScanner
+              user={user}
+              biometricDevices={biometricDevices}
+              onBiometricScan={onBiometricScan}
+            />
           </div>
 
           {/* History Card */}
           <div className="card" style={{ padding: '20px', border: '1px solid var(--border)' }}>
             <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-main)' }}>Mi Historial de Marcaciones Biométricas</h4>
-            {logs.length === 0 ? (
-              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>Aún no has registrado marcaciones en el sistema.</p>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '6px' }}>Fecha</th>
-                      <th style={{ padding: '6px' }}>Hora de Entrada</th>
-                      <th style={{ padding: '6px' }}>Hora de Salida</th>
-                      <th style={{ padding: '6px' }}>Hora Esperada</th>
-                      <th style={{ padding: '6px' }}>Tardanza</th>
-                      <th style={{ padding: '6px', textAlign: 'center' }}>Total Marcajes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...logs].reverse().map((log, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
-                        <td style={{ padding: '8px 6px', fontWeight: 600 }}>{log.date}</td>
-                        <td style={{ padding: '8px 6px' }}>{log.time}</td>
-                        <td style={{ padding: '8px 6px' }}>{log.checkOutTime || '--'}</td>
-                        <td style={{ padding: '8px 6px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
-                        <td style={{ padding: '8px 6px', fontWeight: 700, color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
-                          {log.delayMin > 0 
-                            ? (log.delayMin >= 60 
-                                ? `+${Math.floor(log.delayMin / 60)}h ${log.delayMin % 60}min` 
-                                : `+${log.delayMin} min`) 
-                            : '0 min'}
-                        </td>
-                        <td style={{ padding: '8px 6px', textAlign: 'center', fontWeight: 600 }}>
-                          {log.totalPunches || 1}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <AttendanceLogs arrivalLogs={logs} />
           </div>
         </div>
       </div>
     );
   };
-
-  const renderTechnicalPanelTab = () => {
+    const renderTechnicalPanelTab = () => {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">

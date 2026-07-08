@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import IncidentForm from './incidents/IncidentForm';
+import IncidentList from './incidents/IncidentList';
+import BiometricScanner from './attendance/BiometricScanner';
+import AttendanceLogs from './attendance/AttendanceLogs';
 import { createPortal } from 'react-dom';
 import SensoryProfile from './SensoryProfile';
 import CartaDigital from './CartaDigital';
@@ -254,87 +258,9 @@ export default function ColaboradorDashboard({
   activeTab,
   setActiveTab,
 }) {
-  const [bioScanState, setBioScanState] = useState('idle'); // 'idle' | 'scanning' | 'verifying' | 'success' | 'error'
-  const [bioFeedback, setBioFeedback] = useState('Por favor, coloque su dedo en el lector biométrico.');
-  const [bioProgress, setBioProgress] = useState(0);
-  const [bioDevice, setBioDevice] = useState('');
-
-
-
-  // Auto-select device based on user's store
-  useEffect(() => {
-    if (biometricDevices && biometricDevices.length > 0) {
-      const match = biometricDevices.find(d => d.store === user.store && d.status === 'Online');
-      if (match) {
-        setBioDevice(match.id);
-      } else {
-        setBioDevice(biometricDevices[0].id);
-      }
-    }
-  }, [biometricDevices, user.store]);
-
-  const triggerFingerprintScan = () => {
-    if (bioScanState !== 'idle') return;
-    if (!bioDevice) {
-      setBioFeedback('Error: No se encontró ningún dispositivo biométrico activo.');
-      return;
-    }
-
-    setBioScanState('scanning');
-    setBioFeedback('Leyendo huella dactilar... Mantenga su dedo sobre el escáner.');
-    setBioProgress(0);
-
-    let progress = 0;
-    const scanInterval = setInterval(() => {
-      progress += 10;
-      setBioProgress(progress);
-      if (progress >= 100) {
-        clearInterval(scanInterval);
-        
-        setBioScanState('verifying');
-        setBioFeedback('Verificando coincidencia en el servidor biométrico...');
-        
-        setTimeout(() => {
-          if (onBiometricScan) {
-            const res = onBiometricScan(user.username, bioDevice);
-            if (res && res.success) {
-              setBioScanState('success');
-              setBioFeedback(`¡Identidad Verificada! Bienvenido, ${user.name}. Asistencia registrada.`);
-              setTimeout(() => {
-                setBioScanState('idle');
-                setBioFeedback('Por favor, coloque su dedo en el lector biométrico.');
-              }, 3000);
-            } else {
-              setBioScanState('error');
-              setBioFeedback(res ? res.message : 'Error en la verificación biométrica.');
-              setTimeout(() => {
-                setBioScanState('idle');
-                setBioFeedback('Por favor, coloque su dedo en el lector biométrico.');
-              }, 3000);
-            }
-          } else {
-            setBioScanState('success');
-            setBioFeedback('¡Identidad Verificada (Modo Demo)! Asistencia registrada.');
-            setTimeout(() => {
-              setBioScanState('idle');
-              setBioFeedback('Por favor, coloque su dedo en el lector biométrico.');
-            }, 3000);
-          }
-        }, 1200);
-      }
-    }, 150);
-  };
-
   const [selectedDayMaterial, setSelectedDayMaterial] = useState(null);
   const [cleaningSubTab, setCleaningSubTab] = useState('semanal'); // 'semanal' | 'mensual'
   const [eduSubTab, setEduSubTab] = useState('general');
-
-  const [incTitle, setIncTitle] = useState('');
-  const [incType, setIncType] = useState('Mantenimiento');
-  const [incUrgency, setIncUrgency] = useState('Normal');
-  const [incDesc, setIncDesc] = useState('');
-  const [incSuccessMsg, setIncSuccessMsg] = useState('');
-  const [incidentSubTab, setIncidentSubTab] = useState('instructions'); // 'instructions' | 'register' | 'my_reports' | 'store_history'
 
   const [userIp, setUserIp] = useState('Obteniendo IP...');
   const [selectedWifi, setSelectedWifi] = useState('external'); // '28 de Julio Miraflores' | 'external'
@@ -531,402 +457,6 @@ export default function ColaboradorDashboard({
     setExamSubmitted(false);
     setExamScore(0);
   };
-
-  const handleIncidentSubmit = (e) => {
-    e.preventDefault();
-    if (!incTitle.trim() || !incDesc.trim()) return;
-
-    const newInc = {
-      id: `INC-${Date.now().toString().slice(-4)}`,
-      date: new Date().toISOString(),
-      reporterUsername: user.username,
-      reporterName: user.name,
-      reporterRole: user.role,
-      store: user.store,
-      type: incType,
-      title: incTitle.trim(),
-      description: incDesc.trim(),
-      urgency: incUrgency,
-      status: 'Pendiente',
-      adminResponse: '',
-      adminResponseAt: '',
-      supervisorResponse: '',
-      supervisorResponseAt: '',
-      resolvedBy: '',
-      resolvedAt: ''
-    };
-
-    onAddIncident(newInc);
-    setIncTitle('');
-    setIncDesc('');
-    setIncSuccessMsg('¡Incidencia registrada con éxito y notificada al Administrador!');
-    setTimeout(() => setIncSuccessMsg(''), 5000);
-  };
-
-  const renderIncidentsSection = () => {
-    const sortedStoreIncidents = [...(incidents || [])]
-      .filter(inc => inc.store === user.store)
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    const myIncidents = [...(incidents || [])]
-      .filter(inc => inc.reporterUsername === user.username || inc.reporterEmail === user.username)
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    const renderIncidentList = (list, noDataMsg) => {
-      if (list.length === 0) {
-        return (
-          <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', backgroundColor: 'var(--bg-main)', border: '1px dashed var(--border)', borderRadius: '8px' }}>
-            {noDataMsg}
-          </div>
-        );
-      }
-
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '550px', overflowY: 'auto', paddingRight: '5px' }}>
-          {list.map(inc => {
-            let statusBg = 'var(--bg-main)';
-            let statusColor = 'var(--text-muted)';
-            
-            if (inc.status === 'Pendiente') {
-              statusBg = 'var(--warning-light)';
-              statusColor = 'var(--warning)';
-            } else if (inc.status === 'En Proceso') {
-              statusBg = 'var(--primary-light)';
-              statusColor = 'var(--primary)';
-            } else if (inc.status === 'Escalado') {
-              statusBg = 'var(--warning-light)';
-              statusColor = '#d97706';
-            } else if (inc.status === 'Resuelto') {
-              statusBg = 'var(--success-light)';
-              statusColor = 'var(--success)';
-            }
-
-            const formattedDate = new Date(inc.date).toLocaleString('es-PE', {
-              day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-            });
-
-            return (
-              <div
-                key={inc.id}
-                className="card"
-                style={{
-                  padding: '16px',
-                  border: `1px solid ${inc.status === 'Resuelto' ? 'var(--success)' : 'var(--border)'}`,
-                  backgroundColor: inc.status === 'Resuelto' ? 'var(--success-light)' : 'var(--bg-card)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                  fontSize: '12.5px'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '5px' }}>
-                  <div>
-                    <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '11px', display: 'block' }}>{inc.id} • {inc.type.toUpperCase()}</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--text-main)', display: 'block', marginTop: '2px' }}>{inc.title}</strong>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '5px' }}>
-                    {inc.urgency === 'Urgente' && (
-                      <span style={{ backgroundColor: 'var(--error-light)', color: 'var(--error)', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 800, border: '1px solid var(--error)' }}>🚨 URGENTE</span>
-                    )}
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: '10px',
-                      backgroundColor: statusBg,
-                      color: statusColor,
-                      fontWeight: 800,
-                      fontSize: '9px',
-                      border: '1px solid currentColor',
-                      textTransform: 'uppercase'
-                    }}>
-                      {inc.status}
-                    </span>
-                  </div>
-                </div>
-
-                <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: 1.4, fontSize: '12px', backgroundColor: 'rgba(0,0,0,0.02)', padding: '8px 10px', borderRadius: '4px' }}>
-                  {inc.description}
-                </p>
-
-                <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Por: <strong>{inc.reporterName} ({inc.reporterRole})</strong></span>
-                  <span>{formattedDate}</span>
-                </div>
-
-                {(inc.adminResponse || inc.supervisorResponse || inc.status === 'Resuelto') && (
-                  <div style={{
-                    borderTop: '1px dashed var(--border)',
-                    paddingTop: '10px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                    backgroundColor: 'rgba(0,0,0,0.01)',
-                    padding: '10px',
-                    borderRadius: '6px'
-                  }}>
-                    {inc.adminResponse ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                        <span style={{ fontWeight: 800, color: 'var(--secondary)', fontSize: '11px' }}>💬 Respuesta del Administrador (Sede):</span>
-                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-main)', lineHeight: 1.4 }}>
-                          {inc.adminResponse}
-                        </p>
-                        <span style={{ fontSize: '9px', color: 'var(--text-muted)', textAlign: 'right' }}>
-                          {new Date(inc.adminResponseAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    ) : (
-                      inc.status !== 'Resuelto' && (
-                        <div style={{ fontSize: '11px', fontStyle: 'italic', color: 'var(--text-muted)' }}>
-                          ⏳ Esperando respuesta del Administrador de tienda...
-                        </div>
-                      )
-                    )}
-
-                    {inc.supervisorResponse && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', borderTop: inc.adminResponse ? '1px dotted var(--border)' : 'none', paddingTop: inc.adminResponse ? '8px' : 0 }}>
-                        <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '11px' }}>👤 Respuesta de Supervisión (General):</span>
-                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-main)', lineHeight: 1.4 }}>
-                          {inc.supervisorResponse}
-                        </p>
-                        <span style={{ fontSize: '9px', color: 'var(--text-muted)', textAlign: 'right' }}>
-                          {new Date(inc.supervisorResponseAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    )}
-
-                    {inc.status === 'Resuelto' && (
-                      <div style={{
-                        marginTop: '5px',
-                        padding: '6px 8px',
-                        borderRadius: '4px',
-                        backgroundColor: 'var(--success-light)',
-                        color: 'var(--success)',
-                        fontWeight: 700,
-                        fontSize: '11px',
-                        textAlign: 'center',
-                        border: '1px solid var(--success)'
-                      }}>
-                        ✓ Resuelto por {inc.resolvedBy} el {new Date(inc.resolvedAt).toLocaleDateString('es-PE')}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      );
-    };
-
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
-        <div style={{ borderBottom: '2px solid var(--border)', paddingBottom: '10px' }}>
-          <h3 style={{ margin: 0, color: 'var(--primary)' }}>Centro de Reportes & Incidencias ({user.store})</h3>
-          <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: 'var(--text-muted)' }}>
-            Reporta fallos mecánicos, insumos faltantes o incidencias en tienda. Solo el Administrador de tu sede y Supervisión verán estos reportes.
-          </p>
-        </div>
-
-        {/* Sub-Tab Navigation Bar */}
-        <div className="card glass" style={{ padding: '0 10px', display: 'flex', gap: '5px', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
-          {[
-            { id: 'instructions', label: '📖 Instrucciones de Uso' },
-            { id: 'register', label: '📝 Registrar Nueva' },
-            { id: 'my_reports', label: '👤 Mis Incidencias Generadas' },
-            { id: 'store_history', label: '📋 Historial de la Sede' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setIncidentSubTab(tab.id)}
-              style={{
-                padding: '12px 16px',
-                border: 'none',
-                borderBottom: incidentSubTab === tab.id ? '3px solid var(--primary)' : '3px solid transparent',
-                backgroundColor: 'transparent',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 700,
-                color: incidentSubTab === tab.id ? 'var(--primary)' : 'var(--text-muted)',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {incSuccessMsg && (
-          <div style={{
-            backgroundColor: 'var(--success-light)',
-            color: 'var(--success)',
-            padding: '12px 15px',
-            borderRadius: '6px',
-            border: '1px solid var(--success)',
-            fontSize: '13px',
-            fontWeight: 'bold',
-          }}>
-            {incSuccessMsg}
-          </div>
-        )}
-
-        <div style={{ width: '100%' }}>
-          {incidentSubTab === 'instructions' && (
-            <div className="card" style={{ padding: '25px', border: '1px solid var(--border)', maxWidth: '750px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <h4 style={{ margin: 0, fontSize: '15px', color: 'var(--primary)', fontWeight: 800, borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
-                📖 Guía e Instrucciones de Uso para Reportar Incidencias
-              </h4>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '12.5px', lineHeight: 1.5 }}>
-                <p style={{ margin: 0 }}>
-                  Este módulo permite reportar fallos, carencias o problemas operativos de forma directa al Administrador de tu sede y a la mesa técnica. Por favor, lee atentamente los siguientes estándares para garantizar una atención rápida y eficiente:
-                </p>
-
-                {/* Urgency section */}
-                <div style={{ padding: '12px 15px', borderRadius: '6px', backgroundColor: 'var(--bg-main)', borderLeft: '4px solid var(--primary)' }}>
-                  <strong style={{ color: 'var(--text-main)', fontSize: '13px', display: 'block', marginBottom: '6px' }}>🔴 Niveles de Urgencia:</strong>
-                  <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <li>
-                      <strong>⚠️ Normal (Impacto leve/moderado)</strong>: Problemas que no detienen la operación de la tienda de forma inmediata. Se atienden en los plazos estándar de mantenimiento o reabastecimiento (ej. focos parpadeando, repisas flojas, requerimiento de útiles de limpieza, desgaste de utensilios).
-                    </li>
-                    <li>
-                      <strong>🚨 Urgente (Impacto crítico/operativo)</strong>: Situaciones que impiden vender o producir de manera correcta, afectando directamente la experiencia del cliente o la seguridad del local. Se atienden con máxima prioridad de forma inmediata (ej. máquina de café espresso rota, campana extractora o cocina inoperativa, corte de luz local, terminales de pago caídos, fugas de gas o agua severas).
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Title standard section */}
-                <div style={{ padding: '12px 15px', borderRadius: '6px', backgroundColor: 'var(--bg-main)', borderLeft: '4px solid var(--secondary)' }}>
-                  <strong style={{ color: 'var(--text-main)', fontSize: '13px', display: 'block', marginBottom: '6px' }}>📝 Estándar Obligatorio para Títulos:</strong>
-                  <p style={{ margin: '0 0 6px 0' }}>
-                    Para que la administración identifique de un vistazo el origen y tipo de fallo, debes redactar los títulos siguiendo esta plantilla estándar:
-                  </p>
-                  <div style={{
-                    padding: '8px 12px',
-                    borderRadius: '4px',
-                    backgroundColor: 'rgba(0,0,0,0.03)',
-                    fontFamily: 'monospace',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    textAlign: 'center',
-                    border: '1px dashed var(--border)',
-                    color: 'var(--primary)',
-                    marginBottom: '8px'
-                  }}>
-                    [ÁREA / ESTACIÓN] - [Problema principal resumido]
-                  </div>
-                  <strong style={{ display: 'block', marginBottom: '4px', fontSize: '11.5px' }}>Ejemplos correctos:</strong>
-                  <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', fontStyle: 'italic', color: 'var(--text-muted)' }}>
-                    <li>"BARRA - Fuga de agua en manguera de vapor La Marzocco"</li>
-                    <li>"COCINA - Freidora de papas no calienta el aceite"</li>
-                    <li>"SALÓN - Tablet de comandas no se conecta al Wi-Fi"</li>
-                    <li>"SSHH - Pérdida de agua constante en inodoro de caballeros"</li>
-                  </ul>
-                </div>
-              </div>
-
-              <button 
-                onClick={() => setIncidentSubTab('register')}
-                className="btn btn-primary" 
-                style={{ alignSelf: 'center', padding: '10px 25px', fontSize: '12.5px', marginTop: '10px' }}
-              >
-                Ir a Registrar Incidencia ✍️
-              </button>
-            </div>
-          )}
-
-          {incidentSubTab === 'register' && (
-            <form onSubmit={handleIncidentSubmit} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', border: '1px solid var(--border)', maxWidth: '650px', margin: '0 auto' }}>
-              <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📝 Formulario de Registro de Incidencia
-              </h4>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Título de Incidencia:</label>
-                  <span style={{ fontSize: '10px', color: 'var(--primary)', fontWeight: 600 }}>Formato estándar: [ÁREA] - [Problema]</span>
-                </div>
-                <input
-                  type="text"
-                  required
-                  className="input"
-                  placeholder="Ej: [BARRA] - Fuga de agua en manguera de vapor"
-                  value={incTitle}
-                  onChange={(e) => setIncTitle(e.target.value)}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Categoría:</label>
-                  <select
-                    className="input"
-                    value={incType}
-                    onChange={(e) => setIncType(e.target.value)}
-                    style={{ padding: '9px 12px' }}
-                  >
-                    <option value="Mantenimiento">🛠️ Mantenimiento</option>
-                    <option value="Insumos">📦 Insumos / Stock 86</option>
-                    <option value="Operaciones">📋 Operaciones</option>
-                    <option value="Otros">❓ Otros / Dudas</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Urgencia:</label>
-                  <select
-                    className="input"
-                    value={incUrgency}
-                    onChange={(e) => setIncUrgency(e.target.value)}
-                    style={{ padding: '9px 12px' }}
-                  >
-                    <option value="Normal">⚠️ Normal</option>
-                    <option value="Urgente">🚨 Urgente</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Descripción Detallada:</label>
-                <textarea
-                  required
-                  className="input"
-                  rows="4"
-                  placeholder="Describe qué ocurrió, en qué estación y cuál es el impacto (ej: no podemos preparar jugos frozen, afecta el servicio)..."
-                  value={incDesc}
-                  onChange={(e) => setIncDesc(e.target.value)}
-                  style={{ resize: 'vertical', minHeight: '80px', fontFamily: 'inherit' }}
-                />
-              </div>
-
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '10px', marginTop: '5px' }}>
-                🚀 Enviar Reporte a Administración
-              </button>
-            </form>
-          )}
-
-          {incidentSubTab === 'my_reports' && (
-            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-              <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', color: 'var(--text-main)' }}>
-                👤 Mis Incidencias Generadas (Reportadas por Mí)
-              </h4>
-              {renderIncidentList(myIncidents, 'No has registrado ninguna incidencia personal aún.')}
-            </div>
-          )}
-
-          {incidentSubTab === 'store_history' && (
-            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-              <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', color: 'var(--text-main)' }}>
-                📋 Historial Operativo de la Sede ({user.store})
-              </h4>
-              {renderIncidentList(sortedStoreIncidents, 'No hay incidencias registradas en esta sede.')}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-
 
   const renderCleaningCalendar = () => {
     return (
@@ -1364,10 +894,6 @@ export default function ColaboradorDashboard({
           const clockedInToday = arrivalLogs.some(log => log.date === todayStr);
           const todaysLog = arrivalLogs.find(log => log.date === todayStr);
 
-          const allowedIp = STORE_WIFI_IPS[user.store] || '';
-          const currentIp = selectedWifi === 'external' ? userIp : STORE_WIFI_IPS[selectedWifi];
-          const isConnectedToStoreWifi = currentIp === allowedIp;
-
           // Punctuality calculations for this collaborator
           const totalLogs = arrivalLogs.length;
 
@@ -1404,45 +930,6 @@ export default function ColaboradorDashboard({
             punctLevel = 'Tolerable ⚠️';
             punctColor = '#d97706';
           }
-
-          const handleClockInClick = () => {
-            let finalTimeStr = '';
-            let finalExpectedTimeStr = expectedTime;
-            
-            if (expectedTime === 'CUSTOM') {
-              finalExpectedTimeStr = convert24hTo12h(customExpectedTime);
-            }
-
-            if (timeMode === 'realtime') {
-              const hours = currentTime.getHours();
-              const minutes = currentTime.getMinutes();
-              const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
-              const displayMinutes = minutes.toString().padStart(2, '0');
-              const ampm = hours >= 12 ? 'PM' : 'AM';
-              finalTimeStr = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
-            } else {
-              finalTimeStr = convert24hTo12h(simulatedTime);
-            }
-
-            // Calculate delayMin
-            const [timePart, ampmPart] = finalTimeStr.split(' ');
-            let [h, m] = timePart.split(':').map(Number);
-            if (ampmPart === 'PM' && h < 12) h += 12;
-            if (ampmPart === 'AM' && h === 12) h = 0;
-            const currentMins = h * 60 + m;
-
-            const [expTimePart, expAmpmPart] = finalExpectedTimeStr.split(' ');
-            let [eh, em] = expTimePart.split(':').map(Number);
-            if (expAmpmPart === 'PM' && eh < 12) eh += 12;
-            if (expAmpmPart === 'AM' && eh === 12) eh = 0;
-            const expectedMins = eh * 60 + em;
-
-            const delay = Math.max(0, currentMins - expectedMins);
-
-            if (onClockIn) {
-              onClockIn(user.username, todayStr, finalTimeStr, finalExpectedTimeStr, delay);
-            }
-          };
 
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
@@ -1503,61 +990,11 @@ export default function ColaboradorDashboard({
                   </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '10px', width: '100%' }}>
-                  <h5 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', fontWeight: 700 }}>
-                    ☝️ Registro Asistencia con Lector Biométrico
-                  </h5>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', maxWidth: '380px' }}>
-                    Coloca tu dedo en el lector biométrico físico (ZKTeco K40) conectado en tu sede para registrar tu ingreso o salida.
-                  </p>
-                  
-                  {/* Fingerprint scan circle */}
-                  <div 
-                    style={{
-                      width: '130px',
-                      height: '130px',
-                      borderRadius: '50%',
-                      border: `4px solid ${
-                        bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--border)'
-                      }`,
-                      backgroundColor: bioScanState === 'scanning' ? 'rgba(139,26,26,0.05)' : 'var(--bg-main)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'default',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      transition: 'all 0.3s ease',
-                      marginTop: '10px',
-                      boxShadow: 'var(--shadow-md)',
-                    }}
-                  >
-                    {bioScanState === 'scanning' && (
-                      <div style={{
-                        position: 'absolute',
-                        width: '100%',
-                        height: '3px',
-                        backgroundColor: 'var(--primary)',
-                        boxShadow: '0 0 8px var(--primary)',
-                        top: `${bioProgress}%`,
-                        left: 0,
-                        transition: 'top 0.15s linear',
-                      }} />
-                    )}
-
-                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={
-                      bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : bioScanState === 'scanning' ? 'var(--primary)' : 'var(--text-muted)'
-                    } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 10a2 2 0 0 0-2 2M14 14a4 4 0 0 0-4-4M2 12a10 10 0 0 1 18 0M10 17v-1a2 2 0 1 1 4 0v1" />
-                      <path d="M12 2a10 10 0 0 0-10 10M12 22a10 10 0 0 0 10-10" />
-                      <path d="M6 12a6 6 0 0 1 12 0M8 12a4 4 0 0 1 8 0" />
-                    </svg>
-                  </div>
-
-                  <div style={{ fontSize: '12px', color: bioScanState === 'success' ? 'var(--success)' : bioScanState === 'error' ? 'var(--error)' : 'var(--text-muted)', fontWeight: 600, textAlign: 'center', minHeight: '34px', maxWidth: '340px', marginTop: '15px' }}>
-                    {bioFeedback}
-                  </div>
-                </div>
+                <BiometricScanner
+                  user={user}
+                  biometricDevices={biometricDevices}
+                  onBiometricScan={onBiometricScan}
+                />
               </div>
 
               {/* Attendance Logs History Table */}
@@ -1565,83 +1002,166 @@ export default function ColaboradorDashboard({
                 <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', color: 'var(--text-main)' }}>
                   📋 Historial de Asistencia
                 </h4>
-                {arrivalLogs.length === 0 ? (
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>No tienes marcaciones de asistencia registradas.</p>
-                ) : (
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '8px 10px' }}>Fecha</th>
-                          <th style={{ padding: '8px 10px' }}>Hora de Entrada</th>
-                          <th style={{ padding: '8px 10px' }}>Hora de Salida</th>
-                          <th style={{ padding: '8px 10px' }}>Hora Esperada</th>
-                          <th style={{ padding: '8px 10px' }}>Retraso (Min)</th>
-                          <th style={{ padding: '8px 10px', textAlign: 'center' }}>Total Marcajes</th>
-                          <th style={{ padding: '8px 10px' }}>Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...arrivalLogs].reverse().map((log, idx) => {
-                          let statusText = 'Puntual';
-                          let statusBg = 'var(--success-light)';
-                          let statusColor = 'var(--success)';
-                          
-                          if (log.delayMin > 15) {
-                            statusText = 'Crítico';
-                            statusBg = 'var(--error-light)';
-                            statusColor = 'var(--error)';
-                          } else if (log.delayMin > 0) {
-                            statusText = 'Tolerable';
-                            statusBg = 'var(--warning-light)';
-                            statusColor = '#d97706';
-                          }
+                <AttendanceLogs arrivalLogs={arrivalLogs} />
+              </div>
+            </div>
+          );
+        })()}        {activeTab === 'incidents' && (() => {
+          const sortedStoreIncidents = [...(incidents || [])]
+            .filter(inc => inc.store === user.store)
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-                          return (
-                            <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
-                              <td style={{ padding: '10px 10px', fontWeight: 600 }}>{log.date}</td>
-                              <td style={{ padding: '10px 10px' }}>{log.time}</td>
-                              <td style={{ padding: '10px 10px' }}>{log.checkOutTime || '--'}</td>
-                              <td style={{ padding: '10px 10px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
-                              <td style={{ padding: '10px 10px', fontWeight: 700, color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
-                                {log.delayMin > 0 
-                                  ? (log.delayMin >= 60 
-                                      ? `+${Math.floor(log.delayMin / 60)}h ${log.delayMin % 60}min` 
-                                      : `+${log.delayMin} min`) 
-                                  : '0 min'}
-                              </td>
-                              <td style={{ padding: '10px 10px', textAlign: 'center', fontWeight: 600 }}>
-                                {log.totalPunches || 1}
-                              </td>
-                              <td style={{ padding: '10px 10px' }}>
-                                <span style={{
-                                  padding: '3px 8px',
-                                  borderRadius: '4px',
-                                  fontSize: '10.5px',
-                                  fontWeight: 700,
-                                  backgroundColor: statusBg,
-                                  color: statusColor,
-                                  border: '1px solid currentColor',
-                                  display: 'inline-block'
-                                }}>
-                                  {statusText}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+          const myIncidents = [...(incidents || [])]
+            .filter(inc => inc.reporterUsername === user.username || inc.reporterEmail === user.username)
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
+              <div style={{ borderBottom: '2px solid var(--border)', paddingBottom: '10px' }}>
+                <h3 style={{ margin: 0, color: 'var(--primary)' }}>Control de Incidencias y Mantenimiento</h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Reporta averías de equipos, necesidades de insumos o problemas del local al Administrador.
+                </p>
+              </div>
+
+              {/* Sub-Tab Navigation Bar */}
+              <div className="card glass" style={{ padding: '0 10px', display: 'flex', gap: '5px', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'instructions', label: '📖 Instrucciones de Uso' },
+                  { id: 'register', label: '📝 Registrar Nueva' },
+                  { id: 'my_reports', label: '👤 Mis Incidencias Generadas' },
+                  { id: 'store_history', label: '📋 Historial de la Sede' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setIncidentSubTab(tab.id)}
+                    style={{
+                      padding: '12px 16px',
+                      border: 'none',
+                      borderBottom: incidentSubTab === tab.id ? '3px solid var(--primary)' : '3px solid transparent',
+                      backgroundColor: 'transparent',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: incidentSubTab === tab.id ? 'var(--primary)' : 'var(--text-muted)',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {incSuccessMsg && (
+                <div style={{
+                  backgroundColor: 'var(--success-light)',
+                  color: 'var(--success)',
+                  padding: '12px 15px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--success)',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                }}>
+                  {incSuccessMsg}
+                </div>
+              )}
+
+              <div style={{ width: '100%' }}>
+                {incidentSubTab === 'instructions' && (
+                  <div className="card" style={{ padding: '25px', border: '1px solid var(--border)', maxWidth: '750px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <h4 style={{ margin: 0, fontSize: '15px', color: 'var(--primary)', fontWeight: 800, borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+                      📖 Guía e Instrucciones de Uso para Reportar Incidencias
+                    </h4>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '12.5px', lineHeight: 1.5 }}>
+                      <p style={{ margin: 0 }}>
+                        Este módulo permite reportar fallos, carencias o problemas operativos de forma directa al Administrador de tu sede y a la mesa técnica. Por favor, lee atentamente los siguientes estándares para garantizar una atención rápida y eficiente:
+                      </p>
+
+                      <div style={{ padding: '12px 15px', borderRadius: '6px', backgroundColor: 'var(--bg-main)', borderLeft: '4px solid var(--primary)' }}>
+                        <strong style={{ color: 'var(--text-main)', fontSize: '13px', display: 'block', marginBottom: '6px' }}>🔴 Niveles de Urgencia:</strong>
+                        <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <li>
+                            <strong>⚠️ Normal (Impacto leve/moderado)</strong>: Problemas que no detienen la operación de la tienda de forma inmediata. Se atienden en los plazos estándar de mantenimiento o reabastecimiento (ej. focos parpadeando, repisas flojas, requerimiento de útiles de limpieza, desgaste de utensilios).
+                          </li>
+                          <li>
+                            <strong>🚨 Urgente (Impacto crítico/operativo)</strong>: Situaciones que impiden vender o producir de manera correcta, afectando directamente la experiencia del cliente o la seguridad del local. Se atienden con máxima prioridad de forma inmediata (ej. máquina de café espresso rota, campana extractora o cocina inoperativa, corte de luz local, terminales de pago caídos, fugas de gas o agua severas).
+                          </li>
+                        </ul>
+                      </div>
+
+                      <div style={{ padding: '12px 15px', borderRadius: '6px', backgroundColor: 'var(--bg-main)', borderLeft: '4px solid var(--secondary)' }}>
+                        <strong style={{ color: 'var(--text-main)', fontSize: '13px', display: 'block', marginBottom: '6px' }}>📝 Estándar Obligatorio para Títulos:</strong>
+                        <p style={{ margin: '0 0 6px 0' }}>
+                          Para que la administración identifique de un vistazo el origen y tipo de fallo, debes redactar los títulos siguiendo esta plantilla estándar:
+                        </p>
+                        <div style={{
+                          padding: '8px 12px',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(0,0,0,0.03)',
+                          fontFamily: 'monospace',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          textAlign: 'center',
+                          border: '1px dashed var(--border)',
+                          color: 'var(--primary)',
+                          marginBottom: '8px'
+                        }}>
+                          [ÁREA / ESTACIÓN] - [Problema principal resumido]
+                        </div>
+                        <strong style={{ display: 'block', marginBottom: '4px', fontSize: '11.5px' }}>Ejemplos correctos:</strong>
+                        <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', fontStyle: 'italic', color: 'var(--text-muted)' }}>
+                          <li>"BARRA - Fuga de agua en manguera de vapor La Marzocco"</li>
+                          <li>"COCINA - Freidora de papas no calienta el aceite"</li>
+                          <li>"SALÓN - Tablet de comandas no se conecta al Wi-Fi"</li>
+                          <li>"SSHH - Pérdida de agua constante en inodoro de caballeros"</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => setIncidentSubTab('register')}
+                      className="btn btn-primary" 
+                      style={{ alignSelf: 'center', padding: '10px 25px', fontSize: '12.5px', marginTop: '10px' }}
+                    >
+                      Ir a Registrar Incidencia ✍️
+                    </button>
+                  </div>
+                )}
+
+                {incidentSubTab === 'register' && (
+                  <IncidentForm 
+                    user={user} 
+                    onAddIncident={onAddIncident} 
+                    onSubmitSuccess={() => {
+                      setIncSuccessMsg('¡Incidencia registrada con éxito y notificada al Administrador!');
+                      setTimeout(() => setIncSuccessMsg(''), 5000);
+                      setIncidentSubTab('my_reports');
+                    }}
+                  />
+                )}
+
+                {incidentSubTab === 'my_reports' && (
+                  <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                    <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', color: 'var(--text-main)' }}>
+                      👤 Mis Incidencias Generadas (Reportadas por Mí)
+                    </h4>
+                    <IncidentList list={myIncidents} noDataMsg="No has registrado ninguna incidencia personal aún." />
+                  </div>
+                )}
+
+                {incidentSubTab === 'store_history' && (
+                  <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                    <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', color: 'var(--text-main)' }}>
+                      📋 Historial Operativo de la Sede ({user.store})
+                    </h4>
+                    <IncidentList list={sortedStoreIncidents} noDataMsg="No hay incidencias registradas en esta sede." />
                   </div>
                 )}
               </div>
             </div>
           );
         })()}
-        {activeTab === 'menu' && (
-          <CartaDigital user={user} />
-        )}
-        {activeTab === 'incidents' && renderIncidentsSection()}
       </div>
 
       {/* Modal de Capacitación (PDF + Video) */}
