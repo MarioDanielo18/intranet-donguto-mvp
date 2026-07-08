@@ -102,7 +102,9 @@ export default async function handler(req, res) {
           { username: 'psilvadg', password: 'dg.patr.S26393', name: 'Patrick Silva Chávez', role: 'Barista', store: '28 de Julio Miraflores', email: 'murciegus@gmail.com', telefono: '979526393' },
           { username: 'jaymadg', password: 'dg.jesu.A22582', name: 'Jesus Ayma Chaparro', role: 'Barista', store: '28 de Julio Miraflores', email: 'jesusaymachaparro@gmail.com', telefono: '912322582', biometric_id: '60979426' },
           { username: 'rlaurentedg', password: 'dg.ruth.L53898', name: 'Ruth Sarahi Laurente Olivera', role: 'Barista', store: '28 de Julio Miraflores', email: 'Sarahilaurente.7@gmail.com', telefono: '982953898' },
-          { username: 'amosqueradg', password: 'dg.anto.M43801', name: 'Antonio Mosquera', role: 'Operaciones', store: 'Todas', biometric_id: '43801971' }
+          { username: 'amosqueradg', password: 'dg.anto.M43801', name: 'Antonio Mosquera', role: 'Operaciones', store: 'Todas', biometric_id: '43801971' },
+          { username: 'cvidaldg', password: 'dg.ciro.V85721', name: 'Ciro Svith Vidal Ignacio', role: 'Cocina', store: '28 de Julio Miraflores' },
+          { username: 'aolivosdg', password: 'dg.aria.O72619', name: 'Ariana Olivos', role: 'Servicio', store: '28 de Julio Miraflores' }
         ];
 
         for (const userToSeed of usersToSeed) {
