@@ -92,8 +92,24 @@ export default async function handler(req, res) {
 
     const { taskId, date, completado, evidencia, colaborador, store } = body;
 
-    if (!taskId || !date || !colaborador || !store) {
-      return res.status(400).json({ error: 'Missing required parameters: taskId, date, colaborador, store.' });
+    // Security Hardening: Server-side validation
+    if (!taskId || typeof taskId !== 'string' || taskId.length > 100) {
+      return res.status(400).json({ error: 'Invalid or missing parameter: taskId' });
+    }
+    if (!date || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'Invalid or missing parameter: date (expected YYYY-MM-DD)' });
+    }
+    if (typeof completado !== 'boolean') {
+      return res.status(400).json({ error: 'Invalid or missing parameter: completado' });
+    }
+    if (evidencia !== null && evidencia !== undefined && typeof evidencia !== 'string') {
+      return res.status(400).json({ error: 'Invalid parameter: evidencia' });
+    }
+    if (!colaborador || typeof colaborador !== 'string' || colaborador.length > 100) {
+      return res.status(400).json({ error: 'Invalid or missing parameter: colaborador' });
+    }
+    if (!store || typeof store !== 'string' || store.length > 100) {
+      return res.status(400).json({ error: 'Invalid or missing parameter: store' });
     }
 
     try {
