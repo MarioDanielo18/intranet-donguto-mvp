@@ -1,7 +1,7 @@
 import React from 'react';
 import Login from './components/Login';
-import ColaboradorDashboard from './components/ColaboradorDashboard';
-import SupervisorDashboard from './components/SupervisorDashboard';
+const ColaboradorDashboard = React.lazy(() => import('./components/ColaboradorDashboard'));
+const SupervisorDashboard = React.lazy(() => import('./components/SupervisorDashboard'));
 import IncidentDetailStandalone from './components/IncidentDetailStandalone';
 import { useApp, SUPERVISORY_ROLES } from './context/AppContext';
 
@@ -165,56 +165,63 @@ const App = () => {
           <Login onLogin={handleLogin} />
         ) : (
           <div className="animate-fade-in">
-            {/* Show view based on user role */}
-            {SUPERVISORY_ROLES.includes(user.role) ? (
-              <SupervisorDashboard
-                user={user}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                checklists={checklists}
-                cleaningTasks={cleaningTasks}
-                trainingRoute={INITIAL_TRAINING_ROUTE}
-                teamMembers={teamMembers}
-                auditLogs={auditLogs}
-                onApproveTrainingDay={handleApproveTrainingDay}
-                onAddTeamMember={handleAddTeamMember}
-                onSaveAudit={handleSaveAudit}
-                onClockIn={handleClockIn}
-                onUpdateCollaborator={handleUpdateCollaborator}
-                incidents={incidents}
-                onRespondIncident={handleRespondIncident}
-                onUpdateIncidentStatus={handleUpdateIncidentStatus}
-                onAddIncident={handleAddIncident}
-                biometricDevices={biometricDevices}
-                biometricLogs={biometricLogs}
-                onUpdateDevices={handleUpdateDevices}
-                onBiometricScan={handleBiometricScan}
-                onSelectIncident={handleSelectIncident}
-                onApproveCollaborator={handleApproveCollaborator}
-                onRejectCollaborator={handleRejectCollaborator}
-              />
-            ) : (
-              <ColaboradorDashboard
-                user={user}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                checklists={checklists}
-                cleaningTasks={cleaningTasks}
-                trainingRoute={INITIAL_TRAINING_ROUTE.map(d => ({
-                  ...d,
-                  estado: 'Completado'
-                }))}
-                arrivalLogs={teamMembers.find(m => m.username === user.username)?.arrivalLogs || []}
-                onSaveTask={handleSaveTask}
-                onSaveCleaning={handleSaveCleaning}
-                onApproveTrainingDay={handleApproveTrainingDay}
-                onClockIn={handleClockIn}
-                incidents={incidents}
-                onAddIncident={handleAddIncident}
-                biometricDevices={biometricDevices}
-                onBiometricScan={handleBiometricScan}
-              />
-            )}
+            {/* Show view based on user role (Lazy Loaded with Suspense) */}
+            <React.Suspense fallback={
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '50px', color: 'var(--text-muted)', gap: '15px' }}>
+                <div style={{ border: '4px solid rgba(0,0,0,0.1)', borderLeftColor: 'var(--primary)', borderRadius: '50%', width: '36px', height: '36px', animation: 'spin 1s linear infinite' }} />
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>Cargando Panel...</span>
+              </div>
+            }>
+              {SUPERVISORY_ROLES.includes(user.role) ? (
+                <SupervisorDashboard
+                  user={user}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  checklists={checklists}
+                  cleaningTasks={cleaningTasks}
+                  trainingRoute={INITIAL_TRAINING_ROUTE}
+                  teamMembers={teamMembers}
+                  auditLogs={auditLogs}
+                  onApproveTrainingDay={handleApproveTrainingDay}
+                  onAddTeamMember={handleAddTeamMember}
+                  onSaveAudit={handleSaveAudit}
+                  onClockIn={handleClockIn}
+                  onUpdateCollaborator={handleUpdateCollaborator}
+                  incidents={incidents}
+                  onRespondIncident={handleRespondIncident}
+                  onUpdateIncidentStatus={handleUpdateIncidentStatus}
+                  onAddIncident={handleAddIncident}
+                  biometricDevices={biometricDevices}
+                  biometricLogs={biometricLogs}
+                  onUpdateDevices={handleUpdateDevices}
+                  onBiometricScan={handleBiometricScan}
+                  onSelectIncident={handleSelectIncident}
+                  onApproveCollaborator={handleApproveCollaborator}
+                  onRejectCollaborator={handleRejectCollaborator}
+                />
+              ) : (
+                <ColaboradorDashboard
+                  user={user}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  checklists={checklists}
+                  cleaningTasks={cleaningTasks}
+                  trainingRoute={INITIAL_TRAINING_ROUTE.map(d => ({
+                    ...d,
+                    estado: 'Completado'
+                  }))}
+                  arrivalLogs={teamMembers.find(m => m.username === user.username)?.arrivalLogs || []}
+                  onSaveTask={handleSaveTask}
+                  onSaveCleaning={handleSaveCleaning}
+                  onApproveTrainingDay={handleApproveTrainingDay}
+                  onClockIn={handleClockIn}
+                  incidents={incidents}
+                  onAddIncident={handleAddIncident}
+                  biometricDevices={biometricDevices}
+                  onBiometricScan={handleBiometricScan}
+                />
+              )}
+            </React.Suspense>
           </div>
         )}
       </main>
