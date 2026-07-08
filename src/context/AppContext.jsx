@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import checklistsService from '../services/checklistsService';
+import attendanceService from '../services/attendanceService';
+import incidentsService from '../services/incidentsService';
 
 const AppContext = createContext(null);
 
@@ -246,9 +249,7 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const fetchCloudUsers = async () => {
       try {
-        const res = await fetch('/api/manage-users');
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = await attendanceService.fetchUsers();
         if (data && data.status === 'success' && data.users && data.users.length > 0) {
           const databaseUsers = data.users.map(u => {
             const localCopy = teamMembers.find(p => p.username === u.username);
@@ -259,11 +260,8 @@ export const AppProvider = ({ children }) => {
             };
           });
           
-          const punchesRes = await fetch('/api/sync-zk', {
-            headers: { 'Cache-Control': 'no-cache' }
-          });
-          if (punchesRes.ok) {
-            const punchesData = await punchesRes.json();
+          try {
+            const punchesData = await attendanceService.syncZKPunches();
             if (punchesData && punchesData.status === 'success' && punchesData.punches) {
               const updatedUsers = databaseUsers.map(m => {
                 const bioId = String(m.biometricId || m.biometric_id || '').trim();
@@ -333,7 +331,8 @@ export const AppProvider = ({ children }) => {
             } else {
               setTeamMembers(databaseUsers);
             }
-          } else {
+          } catch (punchErr) {
+            console.warn('[Supabase Sync Init] ZK punches sync error:', punchErr);
             setTeamMembers(databaseUsers);
           }
         }
@@ -352,13 +351,12 @@ export const AppProvider = ({ children }) => {
   const loadDailyChecklists = async (storeName) => {
     try {
       const todayStr = new Date().toISOString().split('T')[0];
-      const res = await fetch(`/api/checklists?store=${encodeURIComponent(storeName)}&date=${todayStr}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data && data.status === 'success' && data.checklists && data.checklists.length > 0) {
+      const data = await checklistsService.fetchChecklists(todayStr, storeName);
+      if (data && data.status === 'success') {
+        const list = data.records || data.checklists || [];
         setChecklists(prev =>
           prev.map(t => {
-            const dbCheck = data.checklists.find(item => item.task_id === t.id);
+            const dbCheck = list.find(item => (item.taskId || item.task_id) === t.id);
             if (dbCheck) {
               return {
                 ...t,
@@ -395,19 +393,14 @@ export const AppProvider = ({ children }) => {
     if (user) {
       try {
         const todayStr = new Date().toISOString().split('T')[0];
-        const res = await fetch('/api/checklists', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            taskId: taskId,
-            date: todayStr,
-            completado: completed,
-            evidencia: finalEvidencia,
-            colaborador: user.name,
-            store: user.store === 'Todas' ? '28 de Julio Miraflores' : user.store
-          })
+        const data = await checklistsService.saveChecklistTask({
+          taskId,
+          date: todayStr,
+          completado: completed,
+          evidencia: finalEvidencia,
+          colaborador: user.name,
+          store: user.store === 'Todas' ? '28 de Julio Miraflores' : user.store
         });
-        const data = await res.json();
         if (data.status === 'success') {
           console.log('[Checklist Sync] Saved successfully to Supabase');
         }
@@ -522,19 +515,8 @@ export const AppProvider = ({ children }) => {
       return updated;
     });
 
-    fetch('/api/manage-users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'create',
-        username: memberObj.username,
-        password: memberObj.password,
-        name: memberObj.name,
-        role: memberObj.role,
-        store: memberObj.store,
-        biometricId: memberObj.biometricId || null
-      })
-    }).catch(err => console.error('[App] Supabase create user error:', err));
+    attendanceService.createUser(memberObj)
+      .catch(err => console.error('[App] Supabase create user error:', err));
   };
 
   const handleApproveCollaborator = (username) => {
@@ -552,11 +534,8 @@ export const AppProvider = ({ children }) => {
       return updated;
     });
 
-    fetch('/api/manage-users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', username })
-    }).catch(err => console.error('[App] Supabase delete user error:', err));
+    attendanceService.deleteUser(username)
+      .catch(err => console.error('[App] Supabase delete user error:', err));
   };
 
   const handleSaveAudit = (auditData) => {
@@ -566,25 +545,14 @@ export const AppProvider = ({ children }) => {
   const handleUpdateCollaborator = (username, updatedFields) => {
     setTeamMembers(prev => prev.map(m => (m.username === username ? { ...m, ...updatedFields } : m)));
 
-    fetch('/api/manage-users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'update',
-        username,
-        password: updatedFields.password,
-        name: updatedFields.name,
-        role: updatedFields.role,
-        store: updatedFields.store,
-        biometricId: updatedFields.biometricId
-      })
-    }).catch(err => console.error('[App] Supabase update user error:', err));
+    attendanceService.updateUser(username, updatedFields)
+      .catch(err => console.error('[App] Supabase update user error:', err));
   };
 
   const handleAddIncident = (newIncident) => {
     setIncidents(prev => {
       const updated = [newIncident, ...prev];
-      localStorage.setItem('donguto-incidents', JSON.stringify(updated));
+      incidentsService.saveIncidents(updated).catch(e => console.error(e));
       return updated;
     });
   };
@@ -612,7 +580,7 @@ export const AppProvider = ({ children }) => {
         }
         return inc;
       });
-      localStorage.setItem('donguto-incidents', JSON.stringify(updated));
+      incidentsService.saveIncidents(updated).catch(e => console.error(e));
       return updated;
     });
   };
@@ -631,7 +599,7 @@ export const AppProvider = ({ children }) => {
         }
         return inc;
       });
-      localStorage.setItem('donguto-incidents', JSON.stringify(updated));
+      incidentsService.saveIncidents(updated).catch(e => console.error(e));
       return updated;
     });
   };
