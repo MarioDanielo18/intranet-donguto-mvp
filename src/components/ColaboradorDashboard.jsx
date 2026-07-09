@@ -261,7 +261,8 @@ export default function ColaboradorDashboard({
   const [selectedDayMaterial, setSelectedDayMaterial] = useState(null);
   const [cleaningSubTab, setCleaningSubTab] = useState('semanal'); // 'semanal' | 'mensual'
   const [eduSubTab, setEduSubTab] = useState('general');
-
+  const [incidentSubTab, setIncidentSubTab] = useState('instructions');
+  const [incSuccessMsg, setIncSuccessMsg] = useState('');
   const [userIp, setUserIp] = useState('Obteniendo IP...');
   const [selectedWifi, setSelectedWifi] = useState('external'); // '28 de Julio Miraflores' | 'external'
 
