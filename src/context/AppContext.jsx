@@ -134,6 +134,7 @@ const INITIAL_MOCK_TEAM = [
   { username: 'arianadg', password: 'dg.aria.A9928', name: 'Ariana', role: 'Auditor', store: '28 de Julio Miraflores', trainingProgress: {}, arrivalLogs: [] },
   { username: 'ccuevadg', password: 'dg.chri.C9458', name: 'Christian Cueva', role: 'Administrador', store: 'Todas', biometricId: '71608726', trainingProgress: {}, arrivalLogs: [] },
   { username: 'woviedodg', password: 'dg.wilf.O9580', name: 'Wilfredo Oviedo', role: 'Auditor', store: 'Todas', biometricId: '41670259', trainingProgress: {}, arrivalLogs: [] },
+  { username: 'jsisniegasdg', password: 'dg.john.S15832', name: 'John Sisniegas Toralba', role: 'Auditor', store: '28 de Julio Miraflores', email: 'john.sisniegas.t@gmail.com', trainingProgress: {}, arrivalLogs: [] },
   { username: 'jortizdg', password: 'dg.juan.O9040', name: 'Juan Ortiz', role: 'Administrador', store: 'Todas', trainingProgress: {}, arrivalLogs: [] },
   { username: 'mquispedg', password: 'dg.mari.Q9008', name: 'Mario Quispe', role: 'Gerente', store: 'Todas', trainingProgress: {}, arrivalLogs: [] },
   { username: 'mquispetec', password: 'dg.mari.T8997', name: 'Mario Quispe (Técnico)', role: 'Técnico', store: 'Todas', trainingProgress: {}, arrivalLogs: [] },

@@ -89,6 +89,7 @@ export default async function handler(req, res) {
           { username: 'arianadg', password: 'dg.aria.A9928', name: 'Ariana', role: 'Auditor', store: '28 de Julio Miraflores' },
           { username: 'ccuevadg', password: 'dg.chri.C9458', name: 'Christian Cueva', role: 'Administrador', store: 'Todas' },
           { username: 'woviedodg', password: 'dg.wilf.O9580', name: 'Wilfredo Oviedo', role: 'Auditor', store: 'Todas', biometric_id: '41670259' },
+          { username: 'jsisniegasdg', password: 'dg.john.S15832', name: 'John Sisniegas Toralba', role: 'Auditor', store: '28 de Julio Miraflores', email: 'john.sisniegas.t@gmail.com' },
           { username: 'jortizdg', password: 'dg.juan.O9040', name: 'Juan Ortiz', role: 'Administrador', store: 'Todas' },
           { username: 'mquispedg', password: 'dg.mari.Q9008', name: 'Mario Quispe', role: 'Gerente', store: 'Todas' },
           { username: 'mquispetec', password: 'dg.mari.T8997', name: 'Mario Quispe (Técnico)', role: 'Técnico', store: 'Todas' },
