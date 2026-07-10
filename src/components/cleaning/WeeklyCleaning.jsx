@@ -24,7 +24,7 @@ const getWeeksForMonth = (date) => {
   return weeks;
 };
 
-const WeeklyCleaning = ({ cleaningTasks, onSaveCleaning }) => {
+const WeeklyCleaning = ({ user, cleaningTasks, onSaveCleaning }) => {
   const today = new Date();
   const currentDay = today.getDate();
   const monthWeeks = getWeeksForMonth(today);
@@ -32,7 +32,7 @@ const WeeklyCleaning = ({ cleaningTasks, onSaveCleaning }) => {
 
   const [selectedWeekId, setSelectedWeekId] = useState(currentWeekObj.id);
 
-  const weeklyTasks = cleaningTasks.filter(t => t.frecuencia === 'SEMANAL');
+  const weeklyTasks = cleaningTasks.filter(t => t.frecuencia === 'SEMANAL').filter(t => !t.role || t.role === user.role);
 
   const selectedWeek = monthWeeks.find(w => w.id === selectedWeekId) || currentWeekObj;
   

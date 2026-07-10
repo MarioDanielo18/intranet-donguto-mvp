@@ -1,6 +1,6 @@
 import React from 'react';
 
-const MonthlyCleaning = ({ cleaningTasks, onSaveCleaning }) => {
+const MonthlyCleaning = ({ user, cleaningTasks, onSaveCleaning }) => {
   const today = new Date();
   const currentDay = today.getDate();
   
@@ -9,7 +9,7 @@ const MonthlyCleaning = ({ cleaningTasks, onSaveCleaning }) => {
   const isFutureW5 = currentDay < 29;
   const isW5 = today.getMonth() === 5 && currentDay >= 29 && currentDay <= 30;
 
-  const monthlyTasks = cleaningTasks.filter(t => t.frecuencia === 'MENSUAL');
+  const monthlyTasks = cleaningTasks.filter(t => t.frecuencia === 'MENSUAL').filter(t => !t.role || t.role === user.role);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>

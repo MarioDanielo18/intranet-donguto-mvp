@@ -500,11 +500,13 @@ export default function ColaboradorDashboard({
 
         {cleaningSubTab === 'semanal' ? (
           <WeeklyCleaning
+            user={user}
             cleaningTasks={cleaningTasks}
             onSaveCleaning={onSaveCleaning}
           />
         ) : (
           <MonthlyCleaning
+            user={user}
             cleaningTasks={cleaningTasks}
             onSaveCleaning={onSaveCleaning}
           />
