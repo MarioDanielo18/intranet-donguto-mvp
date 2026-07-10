@@ -194,7 +194,23 @@ export const AppProvider = ({ children }) => {
   const [checklists, setChecklists] = useState(INITIAL_CHECKLISTS);
   const [cleaningTasks, setCleaningTasks] = useState(() => {
     const saved = localStorage.getItem('donguto-cleaning-tasks');
-    return saved ? JSON.parse(saved) : INITIAL_CLEANING_TASKS;
+    if (!saved) return INITIAL_CLEANING_TASKS;
+    try {
+      const parsed = JSON.parse(saved);
+      return INITIAL_CLEANING_TASKS.map(initialTask => {
+        const savedTask = parsed.find(t => t.id === initialTask.id);
+        if (savedTask) {
+          return {
+            ...initialTask,
+            completedDays: savedTask.completedDays || {},
+            evidenciaDays: savedTask.evidenciaDays || {}
+          };
+        }
+        return initialTask;
+      });
+    } catch (e) {
+      return INITIAL_CLEANING_TASKS;
+    }
   });
   const [teamMembers, setTeamMembers] = useState(() => {
     const saved = localStorage.getItem('donguto-team');
