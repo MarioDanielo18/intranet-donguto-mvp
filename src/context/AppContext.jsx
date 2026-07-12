@@ -130,7 +130,7 @@ export const INITIAL_TRAINING_ROUTE = [
 const INITIAL_MOCK_TEAM = [
   { username: 'onavarrodg', password: 'dg.osca.N9405', name: 'Oscar Navarro', role: 'Gerente', store: 'Todas', trainingProgress: {}, arrivalLogs: [] },
   { username: 'gechevarriadg', password: 'dg.gabr.E9087', name: 'Gabriela Echevarría', role: 'Gerente', store: 'Todas', trainingProgress: {}, arrivalLogs: [] },
-  { username: 'cnizamadg', password: 'dg.chri.N9633', name: 'Christian Nizama', role: 'Administrador', store: '28 de Julio Miraflores', trainingProgress: {}, arrivalLogs: [] },
+  { username: 'cnizamadg', password: 'dg.chri.N9633', name: 'Christian Nizama', role: 'Administrador', store: '28 de Julio Miraflores', biometricId: '44179147', trainingProgress: {}, arrivalLogs: [] },
   { username: 'arianadg', password: 'dg.aria.A9928', name: 'Ariana', role: 'Auditor', store: '28 de Julio Miraflores', biometricId: '43588725', trainingProgress: {}, arrivalLogs: [] },
   { username: 'ccuevadg', password: 'dg.chri.C9458', name: 'Christian Cueva', role: 'Administrador', store: 'Todas', biometricId: '71608726', trainingProgress: {}, arrivalLogs: [] },
   { username: 'woviedodg', password: 'dg.wilf.O9580', name: 'Wilfredo Oviedo', role: 'Auditor', store: 'Todas', biometricId: '41670259', trainingProgress: {}, arrivalLogs: [] },
