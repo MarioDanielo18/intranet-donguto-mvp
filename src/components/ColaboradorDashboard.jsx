@@ -266,6 +266,7 @@ export default function ColaboradorDashboard({
   const [incSuccessMsg, setIncSuccessMsg] = useState('');
   const [userIp, setUserIp] = useState('Obteniendo IP...');
   const [selectedWifi, setSelectedWifi] = useState('external'); // '28 de Julio Miraflores' | 'external'
+  const [mySchedOffset, setMySchedOffset] = useState(0);
 
   useEffect(() => {
     fetch('https://api.ipify.org?format=json')
@@ -517,7 +518,6 @@ export default function ColaboradorDashboard({
   };
 
   const renderMyScheduleTab = () => {
-    const [mySchedOffset, setMySchedOffset] = useState(0);
 
     const getWeekRange = (offset) => {
       const current = new Date();

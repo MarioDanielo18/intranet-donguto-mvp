@@ -209,6 +209,60 @@ export default function SupervisorDashboard({
   const [schedulesMap, setSchedulesMap] = useState({});
   const [loadingScheds, setLoadingScheds] = useState(false);
   const [schedMsg, setSchedMsg] = useState('');
+
+  const getWeekRange = (offset) => {
+    const current = new Date();
+    const day = current.getDay();
+    const diff = current.getDate() - day + (day === 0 ? -6 : 1) + (offset * 7);
+    const monday = new Date(current.setDate(diff));
+    
+    const dates = [];
+    const names = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      dates.push({
+        dateStr: d.toISOString().split('T')[0],
+        name: names[i],
+        dayOfMonth: d.getDate()
+      });
+    }
+    return dates;
+  };
+
+  const loadSchedulesForWeek = async (offset) => {
+    const weekDays = getWeekRange(offset);
+    const startOfWeek = weekDays[0].dateStr;
+    const endOfWeek = weekDays[6].dateStr;
+
+    setLoadingScheds(true);
+    setSchedMsg('');
+    try {
+      const res = await schedulesService.fetchSchedules(startOfWeek, endOfWeek);
+      if (res && res.status === 'success') {
+        const map = {};
+        (res.schedules || []).forEach(s => {
+          map[`${s.username}_${s.fecha}`] = {
+            hora_entrada: s.hora_entrada,
+            hora_salida: s.hora_salida,
+            store: s.store
+          };
+        });
+        setSchedulesMap(map);
+      }
+    } catch (err) {
+      console.error(err);
+      setSchedMsg('❌ Error al cargar horarios.');
+    } finally {
+      setLoadingScheds(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'schedules') {
+      loadSchedulesForWeek(scheduleOffset);
+    }
+  }, [scheduleOffset, activeTab]);
   
   // Sync state with props
   useEffect(() => {
@@ -4716,59 +4770,7 @@ main();`}
   };
 
   const renderSchedulesTab = () => {
-    const getWeekRange = (offset) => {
-      const current = new Date();
-      const day = current.getDay();
-      const diff = current.getDate() - day + (day === 0 ? -6 : 1) + (offset * 7);
-      const monday = new Date(current.setDate(diff));
-      
-      const dates = [];
-      const names = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(monday);
-        d.setDate(monday.getDate() + i);
-        dates.push({
-          dateStr: d.toISOString().split('T')[0],
-          name: names[i],
-          dayOfMonth: d.getDate()
-        });
-      }
-      return dates;
-    };
-
     const weekDays = getWeekRange(scheduleOffset);
-    const startOfWeek = weekDays[0].dateStr;
-    const endOfWeek = weekDays[6].dateStr;
-
-    const loadSchedulesForWeek = async () => {
-      setLoadingScheds(true);
-      setSchedMsg('');
-      try {
-        const res = await schedulesService.fetchSchedules(startOfWeek, endOfWeek);
-        if (res && res.status === 'success') {
-          const map = {};
-          (res.schedules || []).forEach(s => {
-            map[`${s.username}_${s.fecha}`] = {
-              hora_entrada: s.hora_entrada,
-              hora_salida: s.hora_salida,
-              store: s.store
-            };
-          });
-          setSchedulesMap(map);
-        }
-      } catch (err) {
-        console.error(err);
-        setSchedMsg('❌ Error al cargar horarios.');
-      } finally {
-        setLoadingScheds(false);
-      }
-    };
-
-    useEffect(() => {
-      if (activeTab === 'schedules') {
-        loadSchedulesForWeek();
-      }
-    }, [scheduleOffset, activeTab]);
 
     const handleCellChange = (username, dateStr, field, value) => {
       setSchedulesMap(prev => {
