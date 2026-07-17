@@ -4790,8 +4790,9 @@ main();`}
       setLoadingScheds(true);
       setSchedMsg('');
       const toSave = [];
+      const schedulableMembers = approvedMembers.filter(m => ['Servicio', 'Cocina', 'Barista'].includes(m.role));
 
-      approvedMembers.forEach(m => {
+      schedulableMembers.forEach(m => {
         weekDays.forEach(day => {
           const key = `${m.username}_${day.dateStr}`;
           const sched = schedulesMap[key] || { hora_entrada: 'OFF', hora_salida: 'OFF', store: m.store === 'Todas' ? '28 de Julio Miraflores' : m.store };
@@ -4844,7 +4845,8 @@ main();`}
           }
 
           const newMap = { ...schedulesMap };
-          approvedMembers.forEach(m => {
+          const schedulableMembers = approvedMembers.filter(m => ['Servicio', 'Cocina', 'Barista'].includes(m.role));
+          schedulableMembers.forEach(m => {
             for (let i = 0; i < 7; i++) {
               const prevDate = prevWeekDays[i].dateStr;
               const currentDate = weekDays[i].dateStr;
@@ -4872,10 +4874,10 @@ main();`}
       }
     };
 
-    const salonMembers = approvedMembers.filter(m => ['Servicio', 'Auditor'].includes(m.role));
-    const cocinaMembers = approvedMembers.filter(m => ['Cocina'].includes(m.role));
-    const barraMembers = approvedMembers.filter(m => ['Barista'].includes(m.role));
-    const otherMembers = approvedMembers.filter(m => !['Servicio', 'Auditor', 'Cocina', 'Barista'].includes(m.role));
+    const schedulableMembers = approvedMembers.filter(m => ['Servicio', 'Cocina', 'Barista'].includes(m.role));
+    const salonMembers = schedulableMembers.filter(m => m.role === 'Servicio');
+    const cocinaMembers = schedulableMembers.filter(m => m.role === 'Cocina');
+    const barraMembers = schedulableMembers.filter(m => m.role === 'Barista');
 
     const renderCategoryRows = (title, membersList) => {
       if (membersList.length === 0) return null;
@@ -5103,7 +5105,6 @@ main();`}
                 {renderCategoryRows('BARISTAS (BARRA)', barraMembers)}
                 {renderCategoryRows('SERVICIOS / SALÓN', salonMembers)}
                 {renderCategoryRows('COCINA', cocinaMembers)}
-                {renderCategoryRows('ADMINISTRACIÓN / OTROS', otherMembers)}
               </tbody>
             </table>
           </div>
