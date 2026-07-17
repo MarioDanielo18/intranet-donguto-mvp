@@ -31,6 +31,7 @@ const App = () => {
     handleUpdateDevices, handleBiometricScan,
     handleSelectIncident, handleCloseIncidentDetail,
     loadDailyChecklists,
+    weeklySchedules, setWeeklySchedules,
     INITIAL_TRAINING_ROUTE
   } = useApp();
 
