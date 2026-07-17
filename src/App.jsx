@@ -198,6 +198,8 @@ const App = () => {
                   onSelectIncident={handleSelectIncident}
                   onApproveCollaborator={handleApproveCollaborator}
                   onRejectCollaborator={handleRejectCollaborator}
+                  weeklySchedules={weeklySchedules}
+                  setWeeklySchedules={setWeeklySchedules}
                 />
               ) : (
                 <ColaboradorDashboard
@@ -219,6 +221,7 @@ const App = () => {
                   onAddIncident={handleAddIncident}
                   biometricDevices={biometricDevices}
                   onBiometricScan={handleBiometricScan}
+                  weeklySchedules={weeklySchedules}
                 />
               )}
             </React.Suspense>
@@ -340,6 +343,14 @@ const App = () => {
                       onClick={() => { setActiveTab('managerial_kpis'); setIsDrawerOpen(false); }}
                     >
                       📈 Panel de Gerencia & KPIs
+                    </button>
+                  )}
+                  {['Gerente', 'Supervisor', 'Administrador', 'Auditor', 'Técnico', 'Operaciones'].includes(user.role) && (
+                    <button
+                      className={`drawer-btn ${activeTab === 'schedules' ? 'active' : ''}`}
+                      onClick={() => { setActiveTab('schedules'); setIsDrawerOpen(false); }}
+                    >
+                      📅 Planificador de Horarios
                     </button>
                   )}
                 </>

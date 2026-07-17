@@ -257,6 +257,7 @@ export default function ColaboradorDashboard({
   onBiometricScan,
   activeTab,
   setActiveTab,
+  weeklySchedules = [],
 }) {
   const [selectedDayMaterial, setSelectedDayMaterial] = useState(null);
   const [cleaningSubTab, setCleaningSubTab] = useState('semanal'); // 'semanal' | 'mensual'
@@ -511,6 +512,169 @@ export default function ColaboradorDashboard({
             onSaveCleaning={onSaveCleaning}
           />
         )}
+      </div>
+    );
+  };
+
+  const renderMyScheduleTab = () => {
+    const [mySchedOffset, setMySchedOffset] = useState(0);
+
+    const getWeekRange = (offset) => {
+      const current = new Date();
+      const day = current.getDay();
+      const diff = current.getDate() - day + (day === 0 ? -6 : 1) + (offset * 7);
+      const monday = new Date(current.setDate(diff));
+      
+      const dates = [];
+      const names = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        dates.push({
+          dateStr: d.toISOString().split('T')[0],
+          name: names[i],
+          dayStr: d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+        });
+      }
+      return dates;
+    };
+
+    const weekDays = getWeekRange(mySchedOffset);
+
+    const formatTime12h = (time24) => {
+      if (!time24 || time24 === 'OFF') return '';
+      const [hours, minutes] = time24.split(':').map(Number);
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const hours12 = hours % 12 || 12;
+      return `${hours12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    };
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
+        <div style={{ borderBottom: '2px solid var(--border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h3 style={{ margin: 0, color: 'var(--primary)' }}>📅 Mi Horario Semanal</h3>
+            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+              Revisa tus turnos de trabajo asignados y tus días de descanso para esta semana.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={() => setMySchedOffset(prev => prev - 1)}
+              className="btn btn-secondary"
+              style={{ padding: '6px 12px', fontSize: '12px' }}
+            >
+              ◀ Ant.
+            </button>
+            <span style={{ fontSize: '12.5px', fontWeight: 700, minWidth: '110px', textAlign: 'center' }}>
+              Semana {mySchedOffset === 0 ? 'Actual' : mySchedOffset > 0 ? `+${mySchedOffset}` : mySchedOffset}
+            </span>
+            <button
+              onClick={() => setMySchedOffset(prev => prev + 1)}
+              className="btn btn-secondary"
+              style={{ padding: '6px 12px', fontSize: '12px' }}
+            >
+              Sig. ▶
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px' }}>
+          {weekDays.map(day => {
+            const daySchedule = (weeklySchedules || []).find(s => s.username === user.username && s.fecha === day.dateStr);
+            const isOff = !daySchedule || daySchedule.hora_entrada === 'OFF';
+
+            return (
+              <div
+                key={day.dateStr}
+                className="card"
+                style={{
+                  padding: '20px',
+                  border: isOff ? '1px dashed var(--border)' : '1px solid var(--border)',
+                  backgroundColor: isOff ? 'rgba(239, 68, 68, 0.02)' : 'var(--bg-card)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  borderRadius: '12px',
+                  boxShadow: 'var(--shadow-sm)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: '5px',
+                  backgroundColor: isOff ? '#ef4444' : 'var(--primary)'
+                }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block' }}>
+                      {day.name}
+                    </span>
+                    <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>{day.dayStr}</strong>
+                  </div>
+                  {isOff ? (
+                    <span style={{
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      color: '#ef4444',
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: 700
+                    }}>
+                      🛌 DESCANSO
+                    </span>
+                  ) : (
+                    <span style={{
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      color: '#10b981',
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: 700
+                    }}>
+                      💼 TURNO ACTIVO
+                    </span>
+                  )}
+                </div>
+
+                {!isOff && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Horario:</span>
+                      <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>
+                        {formatTime12h(daySchedule.hora_entrada)} - {formatTime12h(daySchedule.hora_salida)}
+                      </strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Sede / Tienda:</span>
+                      <span style={{
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        color: '#3b82f6',
+                        padding: '2px 8px',
+                        borderRadius: '6px'
+                      }}>
+                        🏢 {daySchedule.store}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {isOff && (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '12px', fontStyle: 'italic', borderTop: '1px solid var(--border)', paddingTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>Día libre asignado. ¡A descansar!</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   };
@@ -807,7 +971,22 @@ export default function ColaboradorDashboard({
         >
           Reportar Incidencia
         </button>
-
+        <button
+          onClick={() => setActiveTab('my_schedule')}
+          style={{
+            padding: '14px 20px',
+            border: 'none',
+            borderBottom: activeTab === 'my_schedule' ? '3px solid var(--primary)' : '3px solid transparent',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: activeTab === 'my_schedule' ? 'var(--primary)' : 'var(--text-muted)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          📅 Mi Horario
+        </button>
       </div>
 
       {/* Main View Area */}
@@ -1165,6 +1344,8 @@ export default function ColaboradorDashboard({
             </div>
           );
         })()}
+        {activeTab === 'my_schedule' && renderMyScheduleTab()}
+        {activeTab === 'menu' && <CartaDigital />}
       </div>
 
       {/* Modal de Capacitación (PDF + Video) */}

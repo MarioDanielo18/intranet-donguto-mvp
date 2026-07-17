@@ -3,6 +3,7 @@ import BiometricScanner from './attendance/BiometricScanner';
 import AttendanceLogs from './attendance/AttendanceLogs';
 import { createPortal } from 'react-dom';
 import OperationAudit from './OperationAudit';
+import schedulesService from '../services/schedulesService';
 
 const AUDIT_CRITERIA_LOOKUP = {
   P1: { text: 'El calibrado de la molienda (18g in, 36g out) se realiza antes de abrir.', cat: 'PRECISIÓN' },
@@ -18,10 +19,16 @@ const AUDIT_CRITERIA_LOOKUP = {
   PR5: { text: 'La música ambiental y el volumen están en el nivel adecuado oficial.', cat: 'PRESENTACIÓN' },
   
   L1: { text: 'Se realiza la limpieza profunda de la máquina de espresso y molinos.', cat: 'LIMPIEZA' },
-  L2: { text: 'Los utensilios de barra (jarras, pitchers, spoons) están desinfectados.', cat: 'LIMPIEZA' },
-  L3: { text: 'Los servicios higiénicos se limpian y abastecen constantemente.', cat: 'LIMPIEZA' },
-  L4: { text: 'El back of store y los equipos operativos están limpios.', cat: 'LIMPIEZA' },
-  L5: { text: 'El sistema y cronograma de limpieza mensual está establecido y activo.', cat: 'LIMPIEZA' },
+  L2: { text: 'Los paños de limpieza están debidamente desinfectados y codificados por color.', cat: 'LIMPIEZA' },
+  L3: { text: 'El piso detrás de la barra está limpio, seco y libre de residuos.', cat: 'LIMPIEZA' },
+  L4: { text: 'Se limpia la bandeja de goteo de la máquina de espresso y se drena el desagüe.', cat: 'LIMPIEZA' },
+  L5: { text: 'Se lavan y desinfectan las licuadoras y jarras espumadoras constantemente.', cat: 'LIMPIEZA' },
+  
+  S1: { text: 'El hielo en el fabricador se maneja con la pala reglamentaria limpia.', cat: 'SEGURIDAD' },
+  S2: { text: 'Los productos químicos de limpieza están rotulados y lejos de los insumos.', cat: 'SEGURIDAD' },
+  S3: { text: 'Se respeta la rotulación PEPS (Primero en Entrar, Primero en Salir) de postres.', cat: 'SEGURIDAD' },
+  S4: { text: 'La temperatura de la vitrina refrigerada (4-7°C) está dentro del rango.', cat: 'SEGURIDAD' },
+  S5: { text: 'Se cuenta con botiquín de primeros auxilios completo y extintor vigente.', cat: 'SEGURIDAD' },
   
   I1: { text: 'Se corrobora una muestra de solo 10 productos y están correctamente subidos al sistema de restaurante.pe.', cat: 'INVENTARIO' },
   I2: { text: 'Verificar que el inventario físico esté alinea con el inventario en el sistema.', cat: 'INVENTARIO' },
@@ -166,9 +173,10 @@ export default function SupervisorDashboard({
   onBiometricScan,
   onSelectIncident,
   onApproveCollaborator,
-  onRejectCollaborator,
   activeTab,
   setActiveTab,
+  weeklySchedules = [],
+  setWeeklySchedules,
 }) {
   const isCueva = user && user.username === 'ccuevadg';
 
@@ -195,6 +203,12 @@ export default function SupervisorDashboard({
   const [newDevIp, setNewDevIp] = useState('192.168.1.');
   const [newDevPort, setNewDevPort] = useState('4370');
   const [newDevStore, setNewDevStore] = useState('28 de Julio Miraflores');
+  
+  // Weekly Schedules state hooks
+  const [scheduleOffset, setScheduleOffset] = useState(0);
+  const [schedulesMap, setSchedulesMap] = useState({});
+  const [loadingScheds, setLoadingScheds] = useState(false);
+  const [schedMsg, setSchedMsg] = useState('');
   
   // Sync state with props
   useEffect(() => {
@@ -4701,6 +4715,401 @@ main();`}
     );
   };
 
+  const renderSchedulesTab = () => {
+    const getWeekRange = (offset) => {
+      const current = new Date();
+      const day = current.getDay();
+      const diff = current.getDate() - day + (day === 0 ? -6 : 1) + (offset * 7);
+      const monday = new Date(current.setDate(diff));
+      
+      const dates = [];
+      const names = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        dates.push({
+          dateStr: d.toISOString().split('T')[0],
+          name: names[i],
+          dayOfMonth: d.getDate()
+        });
+      }
+      return dates;
+    };
+
+    const weekDays = getWeekRange(scheduleOffset);
+    const startOfWeek = weekDays[0].dateStr;
+    const endOfWeek = weekDays[6].dateStr;
+
+    const loadSchedulesForWeek = async () => {
+      setLoadingScheds(true);
+      setSchedMsg('');
+      try {
+        const res = await schedulesService.fetchSchedules(startOfWeek, endOfWeek);
+        if (res && res.status === 'success') {
+          const map = {};
+          (res.schedules || []).forEach(s => {
+            map[`${s.username}_${s.fecha}`] = {
+              hora_entrada: s.hora_entrada,
+              hora_salida: s.hora_salida,
+              store: s.store
+            };
+          });
+          setSchedulesMap(map);
+        }
+      } catch (err) {
+        console.error(err);
+        setSchedMsg('❌ Error al cargar horarios.');
+      } finally {
+        setLoadingScheds(false);
+      }
+    };
+
+    useEffect(() => {
+      if (activeTab === 'schedules') {
+        loadSchedulesForWeek();
+      }
+    }, [scheduleOffset, activeTab]);
+
+    const handleCellChange = (username, dateStr, field, value) => {
+      setSchedulesMap(prev => {
+        const key = `${username}_${dateStr}`;
+        const current = prev[key] || { hora_entrada: 'OFF', hora_salida: 'OFF', store: '28 de Julio Miraflores' };
+        return {
+          ...prev,
+          [key]: {
+            ...current,
+            [field]: value
+          }
+        };
+      });
+    };
+
+    const handleSaveWeekSchedules = async () => {
+      setLoadingScheds(true);
+      setSchedMsg('');
+      const toSave = [];
+
+      approvedMembers.forEach(m => {
+        weekDays.forEach(day => {
+          const key = `${m.username}_${day.dateStr}`;
+          const sched = schedulesMap[key] || { hora_entrada: 'OFF', hora_salida: 'OFF', store: m.store === 'Todas' ? '28 de Julio Miraflores' : m.store };
+          toSave.push({
+            username: m.username,
+            fecha: day.dateStr,
+            hora_entrada: sched.hora_entrada,
+            hora_salida: sched.hora_salida,
+            store: sched.store || (m.store === 'Todas' ? '28 de Julio Miraflores' : m.store)
+          });
+        });
+      });
+
+      try {
+        const res = await schedulesService.saveSchedules(toSave);
+        if (res && res.status === 'success') {
+          setSchedMsg('🟢 ¡Horarios guardados con éxito!');
+          if (setWeeklySchedules) {
+            setWeeklySchedules(prev => {
+              const filtered = prev.filter(s => s.fecha < startOfWeek || s.fecha > endOfWeek);
+              return [...filtered, ...toSave];
+            });
+          }
+        } else {
+          setSchedMsg('❌ Error: ' + (res.error || 'No se pudo guardar.'));
+        }
+      } catch (err) {
+        console.error(err);
+        setSchedMsg('❌ Error al conectar con el servidor.');
+      } finally {
+        setLoadingScheds(false);
+      }
+    };
+
+    const handleCopyPreviousWeek = async () => {
+      setLoadingScheds(true);
+      setSchedMsg('');
+      const prevWeekDays = getWeekRange(scheduleOffset - 1);
+      const prevStart = prevWeekDays[0].dateStr;
+      const prevEnd = prevWeekDays[6].dateStr;
+
+      try {
+        const res = await schedulesService.fetchSchedules(prevStart, prevEnd);
+        if (res && res.status === 'success') {
+          const prevSchedules = res.schedules || [];
+          if (prevSchedules.length === 0) {
+            setSchedMsg('⚠️ No se encontraron horarios en la semana anterior para copiar.');
+            setLoadingScheds(false);
+            return;
+          }
+
+          const newMap = { ...schedulesMap };
+          approvedMembers.forEach(m => {
+            for (let i = 0; i < 7; i++) {
+              const prevDate = prevWeekDays[i].dateStr;
+              const currentDate = weekDays[i].dateStr;
+              const match = prevSchedules.find(s => s.username === m.username && s.fecha === prevDate);
+              if (match) {
+                newMap[`${m.username}_${currentDate}`] = {
+                  hora_entrada: match.hora_entrada,
+                  hora_salida: match.hora_salida,
+                  store: match.store
+                };
+              }
+            }
+          });
+
+          setSchedulesMap(newMap);
+          setSchedMsg('🟢 Horarios copiados de la semana anterior (presiona Guardar para confirmar).');
+        } else {
+          setSchedMsg('❌ Error al buscar horarios de la semana anterior.');
+        }
+      } catch (err) {
+        console.error(err);
+        setSchedMsg('❌ Error al copiar horarios.');
+      } finally {
+        setLoadingScheds(false);
+      }
+    };
+
+    const salonMembers = approvedMembers.filter(m => ['Servicio', 'Auditor'].includes(m.role));
+    const cocinaMembers = approvedMembers.filter(m => ['Cocina'].includes(m.role));
+    const barraMembers = approvedMembers.filter(m => ['Barista'].includes(m.role));
+    const otherMembers = approvedMembers.filter(m => !['Servicio', 'Auditor', 'Cocina', 'Barista'].includes(m.role));
+
+    const renderCategoryRows = (title, membersList) => {
+      if (membersList.length === 0) return null;
+      return (
+        <>
+          <tr style={{ backgroundColor: 'var(--bg-card)' }}>
+            <td colSpan="8" style={{ fontWeight: 800, color: 'var(--primary)', padding: '10px', textTransform: 'uppercase', fontSize: '12px', letterSpacing: '0.5px' }}>
+              👤 {title}
+            </td>
+          </tr>
+          {membersList.map(member => (
+            <tr key={member.username} style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <td style={{ padding: '12px 10px', minWidth: '150px' }}>
+                <strong style={{ display: 'block', fontSize: '13px' }}>{member.name}</strong>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{member.role} • {member.store}</span>
+              </td>
+              {weekDays.map(day => {
+                const key = `${member.username}_${day.dateStr}`;
+                const sched = schedulesMap[key] || { hora_entrada: 'OFF', hora_salida: 'OFF', store: member.store === 'Todas' ? '28 de Julio Miraflores' : member.store };
+                const isOff = sched.hora_entrada === 'OFF';
+
+                return (
+                  <td key={day.dateStr} style={{ padding: '8px', minWidth: '130px', verticalAlign: 'middle' }}>
+                    {isOff ? (
+                      <button
+                        onClick={() => {
+                          const defaultIn = member.role === 'Servicio' ? '08:00' : '07:00';
+                          const defaultOut = member.role === 'Servicio' ? '16:00' : '15:00';
+                          handleCellChange(member.username, day.dateStr, 'hora_entrada', defaultIn);
+                          handleCellChange(member.username, day.dateStr, 'hora_salida', defaultOut);
+                        }}
+                        className="btn btn-secondary"
+                        style={{
+                          width: '100%',
+                          padding: '10px 5px',
+                          backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                          color: '#ef4444',
+                          border: '1px dashed rgba(239, 68, 68, 0.3)',
+                          fontSize: '11.5px',
+                          fontWeight: 700,
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        🛌 DESCANSO (OFF)
+                      </button>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <input
+                            type="time"
+                            value={sched.hora_entrada}
+                            onChange={(e) => handleCellChange(member.username, day.dateStr, 'hora_entrada', e.target.value)}
+                            style={{
+                              padding: '4px 6px',
+                              fontSize: '11.5px',
+                              borderRadius: '4px',
+                              border: '1px solid var(--border-color)',
+                              backgroundColor: 'var(--bg-main)',
+                              color: 'var(--text-main)',
+                              width: '56px',
+                              height: '24px'
+                            }}
+                          />
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>a</span>
+                          <input
+                            type="time"
+                            value={sched.hora_salida}
+                            onChange={(e) => handleCellChange(member.username, day.dateStr, 'hora_salida', e.target.value)}
+                            style={{
+                              padding: '4px 6px',
+                              fontSize: '11.5px',
+                              borderRadius: '4px',
+                              border: '1px solid var(--border-color)',
+                              backgroundColor: 'var(--bg-main)',
+                              color: 'var(--text-main)',
+                              width: '56px',
+                              height: '24px'
+                            }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <select
+                            value={sched.store}
+                            onChange={(e) => handleCellChange(member.username, day.dateStr, 'store', e.target.value)}
+                            style={{
+                              padding: '2px 4px',
+                              fontSize: '11px',
+                              borderRadius: '4px',
+                              border: '1px solid var(--border-color)',
+                              backgroundColor: 'var(--bg-main)',
+                              color: 'var(--text-main)',
+                              flex: 1,
+                              height: '24px'
+                            }}
+                          >
+                            <option value="28 de Julio Miraflores">28 de Julio Miraflores</option>
+                          </select>
+                          <button
+                            onClick={() => {
+                              handleCellChange(member.username, day.dateStr, 'hora_entrada', 'OFF');
+                              handleCellChange(member.username, day.dateStr, 'hora_salida', 'OFF');
+                            }}
+                            style={{
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              color: '#ef4444',
+                              fontSize: '14px',
+                              cursor: 'pointer',
+                              padding: '2px 4px',
+                              fontWeight: 'bold'
+                            }}
+                            title="Marcar como Descanso"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </>
+      );
+    };
+
+    return (
+      <div className="card glass" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              📅 Planificación de Horarios Semanales
+            </h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+              Define los turnos de entrada/salida y las sedes asignadas de lunes a domingo.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button
+              onClick={() => setScheduleOffset(prev => prev - 1)}
+              className="btn btn-secondary"
+              style={{ padding: '8px 12px', fontSize: '12px' }}
+            >
+              ◀ Ant.
+            </button>
+            <span style={{ fontSize: '13.5px', fontWeight: 700, minWidth: '180px', textAlign: 'center', color: 'var(--primary)' }}>
+              {weekDays[0].dayOfMonth} al {weekDays[6].dayOfMonth} de {new Date(weekDays[6].dateStr).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+            </span>
+            <button
+              onClick={() => setScheduleOffset(prev => prev + 1)}
+              className="btn btn-secondary"
+              style={{ padding: '8px 12px', fontSize: '12px' }}
+            >
+              Sig. ▶
+            </button>
+            <button
+              onClick={() => setScheduleOffset(0)}
+              className="btn btn-secondary"
+              style={{ padding: '8px 12px', fontSize: '12px', opacity: scheduleOffset === 0 ? 0.5 : 1 }}
+              disabled={scheduleOffset === 0}
+            >
+              Semana Actual
+            </button>
+          </div>
+        </div>
+
+        {schedMsg && (
+          <div style={{
+            padding: '12px 16px',
+            borderRadius: '8px',
+            fontSize: '12.5px',
+            fontWeight: 600,
+            backgroundColor: schedMsg.includes('error') || schedMsg.includes('❌') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+            color: schedMsg.includes('error') || schedMsg.includes('❌') ? '#ef4444' : '#10b981',
+            border: `1px solid ${schedMsg.includes('error') || schedMsg.includes('❌') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`
+          }}>
+            {schedMsg}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleCopyPreviousWeek}
+            disabled={loadingScheds}
+            className="btn btn-secondary"
+            style={{ fontSize: '12px', padding: '10px 16px' }}
+          >
+            📋 Copiar Horarios de la Semana Anterior
+          </button>
+
+          <button
+            onClick={handleSaveWeekSchedules}
+            disabled={loadingScheds}
+            className="btn btn-primary"
+            style={{ fontSize: '12.5px', padding: '10px 24px', minWidth: '150px' }}
+          >
+            {loadingScheds ? 'Guardando...' : '💾 Guardar Cambios'}
+          </button>
+        </div>
+
+        {loadingScheds ? (
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '60px', color: 'var(--text-muted)', gap: '12px' }}>
+            <div style={{ border: '4px solid rgba(0,0,0,0.1)', borderLeftColor: 'var(--primary)', borderRadius: '50%', width: '30px', height: '30px', animation: 'spin 1s linear infinite' }} />
+            <span style={{ fontSize: '12px', fontWeight: 600 }}>Cargando horarios de la semana...</span>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ backgroundColor: 'var(--bg-card)', borderBottom: '2px solid var(--border-color)' }}>
+                  <th style={{ padding: '12px 10px', color: 'var(--text-muted)', fontWeight: 700 }}>Colaborador</th>
+                  {weekDays.map(day => (
+                    <th key={day.dateStr} style={{ padding: '12px 10px', color: 'var(--text-muted)', fontWeight: 700, minWidth: '130px' }}>
+                      <span style={{ display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>{day.name}</span>
+                      <span style={{ fontSize: '14px', color: 'var(--text-main)', fontWeight: 800 }}>{day.dayOfMonth}</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {renderCategoryRows('BARISTAS (BARRA)', barraMembers)}
+                {renderCategoryRows('SERVICIOS / SALÓN', salonMembers)}
+                {renderCategoryRows('COCINA', cocinaMembers)}
+                {renderCategoryRows('ADMINISTRACIÓN / OTROS', otherMembers)}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Subtab menu */}
@@ -4872,6 +5281,24 @@ main();`}
             }}
           >
             📊 Panel de Gerencia & KPIs
+          </button>
+        )}
+        {['Supervisor', 'Gerente', 'Administrador', 'Auditor', 'Operaciones', 'Técnico'].includes(user.role) && (
+          <button
+            onClick={() => setActiveTab('schedules')}
+            style={{
+              padding: '14px 20px',
+              border: 'none',
+              borderBottom: activeTab === 'schedules' ? '3px solid var(--primary)' : '3px solid transparent',
+              backgroundColor: 'transparent',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 700,
+              color: activeTab === 'schedules' ? 'var(--primary)' : 'var(--text-muted)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            📅 Planificador de Horarios
           </button>
         )}
       </div>
@@ -5893,6 +6320,7 @@ main();`}
         {activeTab === 'my_attendance' && renderMyAttendanceTab()}
 
         {activeTab === 'technical_panel' && renderTechnicalPanelTab()}
+        {activeTab === 'schedules' && renderSchedulesTab()}
       </div>
       {/* Modal for previewing photo evidence */}
       {/* Modal for detailed audit log (Veridical Audit) */}

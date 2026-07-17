@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import checklistsService from '../services/checklistsService';
 import attendanceService from '../services/attendanceService';
 import incidentsService from '../services/incidentsService';
+import schedulesService from '../services/schedulesService';
 
 const AppContext = createContext(null);
 
@@ -232,6 +233,7 @@ export const AppProvider = ({ children }) => {
 
   // Date selection states
   const [selectedDateStr, setSelectedDateStr] = useState(() => new Date().toISOString().split('T')[0]);
+  const [weeklySchedules, setWeeklySchedules] = useState([]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -266,6 +268,19 @@ export const AppProvider = ({ children }) => {
       try {
         const data = await attendanceService.fetchUsers();
         if (data && data.status === 'success' && data.users && data.users.length > 0) {
+          let schedulesList = [];
+          try {
+            const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            const end = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            const schedRes = await schedulesService.fetchSchedules(start, end);
+            if (schedRes && schedRes.status === 'success' && schedRes.schedules) {
+              schedulesList = schedRes.schedules;
+              setWeeklySchedules(schedRes.schedules);
+            }
+          } catch (se) {
+            console.warn('Failed to fetch schedules:', se);
+          }
+
           const databaseUsers = data.users.map(u => {
             const localCopy = teamMembers.find(p => p.username === u.username);
             return {
@@ -310,23 +325,40 @@ export const AppProvider = ({ children }) => {
                     const earliest = sortedPunches[0];
                     const latest = sortedPunches.length > 1 ? sortedPunches[sortedPunches.length - 1] : null;
 
+                    // Dynamic schedule resolving
                     let expectedTimeStr = '07:00 AM';
-                    if (m.role === 'Servicio') expectedTimeStr = '08:00 AM';
-                    else if (SUPERVISORY_ROLES.includes(m.role)) expectedTimeStr = '08:00 AM';
+                    const userDaySchedule = (schedulesList || []).find(
+                      s => String(s.username).trim().toLowerCase() === String(m.username).trim().toLowerCase() && s.fecha === dateStr
+                    );
 
-                    const [timePart, ampmPart] = earliest.split(' ');
-                    let [h, minVal] = timePart.split(':').map(Number);
-                    if (ampmPart === 'PM' && h < 12) h += 12;
-                    if (ampmPart === 'AM' && h === 12) h = 0;
-                    const earliestMins = h * 60 + minVal;
+                    if (SUPERVISORY_ROLES.includes(m.role)) {
+                      expectedTimeStr = '--';
+                    } else if (userDaySchedule && userDaySchedule.hora_entrada && userDaySchedule.hora_entrada !== 'OFF') {
+                      const [hStr, mStr] = userDaySchedule.hora_entrada.split(':');
+                      const hourNum = parseInt(hStr);
+                      const ampm = hourNum >= 12 ? 'PM' : 'AM';
+                      const displayHour = hourNum > 12 ? hourNum - 12 : (hourNum === 0 ? 12 : hourNum);
+                      expectedTimeStr = `${displayHour.toString().padStart(2, '0')}:${mStr} ${ampm}`;
+                    } else {
+                      if (m.role === 'Servicio') expectedTimeStr = '08:00 AM';
+                    }
 
-                    const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
-                    let [eh, em] = expTimePart.split(':').map(Number);
-                    if (expAmpmPart === 'PM' && eh < 12) eh += 12;
-                    if (expAmpmPart === 'AM' && eh === 12) eh = 0;
-                    const expectedMins = eh * 60 + em;
+                    let delayMin = 0;
+                    if (!SUPERVISORY_ROLES.includes(m.role) && (!userDaySchedule || userDaySchedule.hora_entrada !== 'OFF')) {
+                      const [timePart, ampmPart] = earliest.split(' ');
+                      let [h, minVal] = timePart.split(':').map(Number);
+                      if (ampmPart === 'PM' && h < 12) h += 12;
+                      if (ampmPart === 'AM' && h === 12) h = 0;
+                      const earliestMins = h * 60 + minVal;
 
-                    const delayMin = Math.max(0, earliestMins - expectedMins);
+                      const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
+                      let [eh, em] = expTimePart.split(':').map(Number);
+                      if (expAmpmPart === 'PM' && eh < 12) eh += 12;
+                      if (expAmpmPart === 'AM' && eh === 12) eh = 0;
+                      const expectedMins = eh * 60 + em;
+
+                      delayMin = Math.max(0, earliestMins - expectedMins);
+                    }
 
                     return {
                       date: dateStr,
@@ -668,16 +700,33 @@ export const AppProvider = ({ children }) => {
     }
 
     let expectedTimeStr = '07:00 AM';
-    if (employee.role === 'Servicio') expectedTimeStr = '08:00 AM';
-    else if (SUPERVISORY_ROLES.includes(employee.role)) expectedTimeStr = '08:00 AM';
+    const userDaySchedule = weeklySchedules.find(
+      s => String(s.username).trim().toLowerCase() === String(employee.username).trim().toLowerCase() && s.fecha === punchDateStr
+    );
 
-    const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
-    let [eh, em] = expTimePart.split(':').map(Number);
-    if (expAmpmPart === 'PM' && eh < 12) eh += 12;
-    if (expAmpmPart === 'AM' && eh === 12) eh = 0;
-    const expectedMins = eh * 60 + em;
+    if (SUPERVISORY_ROLES.includes(employee.role)) {
+      expectedTimeStr = '--';
+    } else if (userDaySchedule && userDaySchedule.hora_entrada && userDaySchedule.hora_entrada !== 'OFF') {
+      const [hStr, mStr] = userDaySchedule.hora_entrada.split(':');
+      const hourNum = parseInt(hStr);
+      const ampm = hourNum >= 12 ? 'PM' : 'AM';
+      const displayHour = hourNum > 12 ? hourNum - 12 : (hourNum === 0 ? 12 : hourNum);
+      expectedTimeStr = `${displayHour.toString().padStart(2, '0')}:${mStr} ${ampm}`;
+    } else {
+      if (employee.role === 'Servicio') expectedTimeStr = '08:00 AM';
+    }
 
-    const delayMin = Math.max(0, currentMins - expectedMins);
+    let delayMin = 0;
+    if (!SUPERVISORY_ROLES.includes(employee.role) && (!userDaySchedule || userDaySchedule.hora_entrada !== 'OFF')) {
+      const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
+      let [eh, em] = expTimePart.split(':').map(Number);
+      if (expAmpmPart === 'PM' && eh < 12) eh += 12;
+      if (expAmpmPart === 'AM' && eh === 12) eh = 0;
+      const expectedMins = eh * 60 + em;
+
+      delayMin = Math.max(0, currentMins - expectedMins);
+    }
+
     handleClockIn(employee.username, punchDateStr, punchTimeStr, expectedTimeStr, delayMin);
 
     let logDate;
@@ -769,6 +818,7 @@ export const AppProvider = ({ children }) => {
       handleUpdateDevices, handleBiometricScan,
       handleSelectIncident, handleCloseIncidentDetail,
       loadDailyChecklists,
+      weeklySchedules, setWeeklySchedules,
       INITIAL_TRAINING_ROUTE
     }}>
       {children}
