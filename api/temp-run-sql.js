@@ -1,8 +1,8 @@
 import pg from 'pg';
 
 export default async function handler(req, res) {
-  // Direct connection credentials using Supavisor Pooler for sa-east-1 region
-  const connectionString = "postgres://postgres.jchpxowbxxfrivrloqkg:TCRXdgcuaVQkHu2r@aws-0-sa-east-1.pooler.supabase.com:6543/postgres";
+  // Direct connection string to pg database on port 5432
+  const connectionString = "postgres://postgres:TCRXdgcuaVQkHu2r@db.jchpxowbxxfrivrloqkg.supabase.co:5432/postgres";
   
   const client = new pg.Client({
     connectionString,
