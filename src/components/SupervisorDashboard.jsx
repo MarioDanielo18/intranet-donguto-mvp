@@ -1498,10 +1498,6 @@ export default function SupervisorDashboard({
 
   const getTasksForSelectedDate = () => {
     const todayStr = new Date().toISOString().split('T')[0];
-    // If it is today and we have no database records loaded, fall back to live checklists prop
-    if (selectedDateStr === todayStr && dbChecklists.length === 0) {
-      return checklists;
-    }
 
     return checklists.map(t => {
       const matched = dbChecklists.find(r => r.taskId === t.id);
@@ -1534,17 +1530,6 @@ export default function SupervisorDashboard({
   const getStoreComplianceForArea = (storeName, areaCode, dateStr, collaborator = 'TODOS') => {
     const todayStr = new Date().toISOString().split('T')[0];
     const storeDbChecklists = dbChecklists.filter(r => r.store === storeName || r.tienda === storeName);
-    
-    if (dateStr === todayStr && storeDbChecklists.length === 0) {
-      const filteredChecklists = checklists.filter(t => {
-        const matchArea = areaCode === 'GENERAL' || t.area === areaCode;
-        const matchCollab = isTaskAssignedTo(t.id, collaborator);
-        return matchArea && matchCollab;
-      });
-      const total = filteredChecklists.length;
-      const completed = filteredChecklists.filter(t => t.completado).length;
-      return total > 0 ? (completed / total) * 100 : 0;
-    }
 
     const tasksForDate = checklists.map(t => {
       const matched = storeDbChecklists.find(r => r.taskId === t.id);

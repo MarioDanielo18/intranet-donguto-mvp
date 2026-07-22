@@ -189,6 +189,7 @@ export const AppProvider = ({ children }) => {
   });
 
   const [checklists, setChecklists] = useState(INITIAL_CHECKLISTS);
+  const [lastLoadedDate, setLastLoadedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [cleaningTasks, setCleaningTasks] = useState(() => {
     const saved = localStorage.getItem('donguto-cleaning-tasks');
     if (!saved) return INITIAL_CLEANING_TASKS;
@@ -395,28 +396,31 @@ export const AppProvider = ({ children }) => {
   }, [isFirstSync, teamMembers]);
 
   // Load checklists from Supabase
-  const loadDailyChecklists = async (storeName) => {
+  const loadDailyChecklists = async (storeName, targetDate = null) => {
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const data = await checklistsService.fetchChecklists(todayStr, storeName);
+      const todayStr = targetDate || new Date().toISOString().split('T')[0];
+      setLastLoadedDate(todayStr);
+      const storeToLoad = storeName || (user?.store === 'Todas' ? '28 de Julio Miraflores' : user?.store) || '28 de Julio Miraflores';
+      const data = await checklistsService.fetchChecklists(todayStr, storeToLoad);
       if (data && data.status === 'success') {
         const list = data.records || data.checklists || [];
-        setChecklists(prev =>
-          prev.map(t => {
-            const dbCheck = list.find(item => (item.taskId || item.task_id) === t.id);
-            if (dbCheck) {
-              return {
-                ...t,
-                completado: dbCheck.completado,
-                evidencia: dbCheck.evidencia || null
-              };
-            }
-            return { ...t, completado: false, evidencia: null };
-          })
-        );
+        setChecklists(INITIAL_CHECKLISTS.map(t => {
+          const dbCheck = list.find(item => (item.taskId || item.task_id) === t.id);
+          if (dbCheck) {
+            return {
+              ...t,
+              completado: dbCheck.completado,
+              evidencia: dbCheck.evidencia || null
+            };
+          }
+          return { ...t, completado: false, evidencia: null };
+        }));
+      } else {
+        setChecklists(INITIAL_CHECKLISTS.map(t => ({ ...t, completado: false, evidencia: null })));
       }
     } catch (err) {
       console.warn('[Checklist Sync] Failed to load checklist from Supabase:', err);
+      setChecklists(INITIAL_CHECKLISTS.map(t => ({ ...t, completado: false, evidencia: null })));
     }
   };
 
@@ -426,8 +430,47 @@ export const AppProvider = ({ children }) => {
     }
   }, [user]);
 
+  // Automatically check for 24h date rollover (new day) or tab focus
+  useEffect(() => {
+    const checkDateRollover = () => {
+      const currentDateStr = new Date().toISOString().split('T')[0];
+      if (currentDateStr !== lastLoadedDate) {
+        console.log(`[Checklist Sync] Date changed from ${lastLoadedDate} to ${currentDateStr}. Resetting daily checklist for the new 24h period...`);
+        if (user) {
+          loadDailyChecklists(user.store === 'Todas' ? '28 de Julio Miraflores' : user.store, currentDateStr);
+        } else {
+          setChecklists(INITIAL_CHECKLISTS.map(t => ({ ...t, completado: false, evidencia: null })));
+          setLastLoadedDate(currentDateStr);
+        }
+      }
+    };
+
+    const interval = setInterval(checkDateRollover, 30000);
+    const handleFocus = () => checkDateRollover();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, [lastLoadedDate, user]);
+
+  useEffect(() => {
+    if (user && activeTab === 'checklist') {
+      const todayStr = new Date().toISOString().split('T')[0];
+      loadDailyChecklists(user.store === 'Todas' ? '28 de Julio Miraflores' : user.store, todayStr);
+    }
+  }, [activeTab, user]);
+
   // Save task in local state and supabase
   const handleSaveTask = async (taskId, completed, finalEvidencia = null) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (todayStr !== lastLoadedDate) {
+      setLastLoadedDate(todayStr);
+    }
+
     setChecklists(prev =>
       prev.map(t => {
         if (t.id === taskId) {
@@ -439,7 +482,6 @@ export const AppProvider = ({ children }) => {
 
     if (user) {
       try {
-        const todayStr = new Date().toISOString().split('T')[0];
         const data = await checklistsService.saveChecklistTask({
           taskId,
           date: todayStr,
@@ -449,7 +491,7 @@ export const AppProvider = ({ children }) => {
           store: user.store === 'Todas' ? '28 de Julio Miraflores' : user.store
         });
         if (data.status === 'success') {
-          console.log('[Checklist Sync] Saved successfully to Supabase');
+          console.log('[Checklist Sync] Saved successfully to Supabase for date:', todayStr);
         }
       } catch (err) {
         console.warn('[Checklist Sync] Failed to save, using local state fallback:', err);
