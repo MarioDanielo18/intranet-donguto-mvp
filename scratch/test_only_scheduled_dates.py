@@ -41,7 +41,7 @@ def main():
                 'minute': dt_obj.minute
             }
 
-    print("=== RECALCULATION WITH SMART SHIFT DETECTION ===\n")
+    print("=== REPORTE SOLO CON FECHAS DE HORARIO REGISTRADO POR ADMIN (JULIO 06 EN ADELANTE) ===\n")
     
     user_totals = {}
     
@@ -57,49 +57,45 @@ def main():
         
         expected_str = sched_map.get((uname, dt))
         
-        if expected_str:
-            if expected_str in ["OFF", "BARRANCO", "DESCANSO"]:
-                exp_mins = None
-            else:
-                eh, em = map(int, expected_str.split(':'))
-                exp_mins = eh * 60 + em
-        else:
-            # Smart default based on actual punch time of day:
-            # If actual punch is >= 13:00 (afternoon), default shift is Closing (14:30)
-            # If actual punch is < 13:00 (morning), default shift is Opening (07:00 or 08:00)
-            if act_h >= 13:
-                exp_mins = 14 * 60 + 30 # 14:30
-            else:
-                exp_mins = 7 * 60 + 0 # 07:00
-                
+        # ONLY calculate delay if an admin schedule entry exists for this date and user!
         delay = 0
-        if exp_mins is not None:
+        scheduled_days_worked = 0
+        
+        if expected_str and expected_str not in ["OFF", "BARRANCO", "DESCANSO"]:
+            eh, em = map(int, expected_str.split(':'))
+            exp_mins = eh * 60 + em
             diff = act_mins - exp_mins
-            # Only count delay if punch is after expected time (with 5 min tolerance)
-            # And if diff > 240 mins (4 hrs) without dynamic schedule, ignore outlier checkout-only punches
-            if 5 < diff <= 240 or (expected_str and diff > 5):
+            if diff > 5:
                 delay = diff
+            scheduled_days_worked = 1
+        elif expected_str in ["OFF", "BARRANCO", "DESCANSO"]:
+            scheduled_days_worked = 0
+        else:
+            # Dates before July 06 (no admin schedule provided) -> 0 delay, ignore from punctuality penalty
+            scheduled_days_worked = 0
                 
         if name not in user_totals:
-            user_totals[name] = {'total_delay': 0, 'count': 0}
+            user_totals[name] = {'total_delay': 0, 'scheduled_worked': 0, 'total_punches': 0}
             
         user_totals[name]['total_delay'] += delay
-        user_totals[name]['count'] += 1
+        user_totals[name]['scheduled_worked'] += scheduled_days_worked
+        user_totals[name]['total_punches'] += 1
 
     ranking = []
     for name, data in user_totals.items():
-        avg = data['total_delay'] / data['count'] if data['count'] > 0 else 0
-        ranking.append((name, avg, data['total_delay'], data['count']))
+        sw = data['scheduled_worked']
+        avg = data['total_delay'] / sw if sw > 0 else 0
+        ranking.append((name, avg, data['total_delay'], sw, data['total_punches']))
         
     ranking.sort(key=lambda x: x[1], reverse=True)
     
-    print(f"{'Colaborador':<35} | {'Promedio':<15} | {'Total':<12} | {'Marcaciones'}")
-    print("-" * 75)
-    for name, avg, tot, count in ranking:
+    print(f"{'Colaborador':<32} | {'Promedio Tardanza':<18} | {'Min Totales':<12} | {'Días Prog. Marcados':<20} | {'Total Marcaciones'}")
+    print("-" * 105)
+    for name, avg, tot, sw, tp in ranking:
         hrs = int(avg // 60)
         mins = int(round(avg % 60))
         fmt = f"{hrs} hr {mins} min" if hrs > 0 else f"{mins} min"
-        print(f"{name:<35} | {fmt:<15} | {tot:<12} | {count}")
+        print(f"{name:<32} | {fmt:<18} | {tot:<12} | {sw:<20} | {tp}")
 
 if __name__ == "__main__":
     main()

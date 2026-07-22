@@ -327,55 +327,37 @@ export const AppProvider = ({ children }) => {
                     const latest = sortedPunches.length > 1 ? sortedPunches[sortedPunches.length - 1] : null;
 
                     // Dynamic schedule resolving
-                    let expectedTimeStr = '07:00 AM';
+                    // Dynamic schedule resolving
+                    let expectedTimeStr = '--';
                     const userDaySchedule = (schedulesList || []).find(
                       s => String(s.username).trim().toLowerCase() === String(m.username).trim().toLowerCase() && s.fecha === dateStr
                     );
 
+                    let delayMin = 0;
+
                     if (SUPERVISORY_ROLES.includes(m.role)) {
                       expectedTimeStr = '--';
-                    } else if (userDaySchedule && userDaySchedule.hora_entrada && userDaySchedule.hora_entrada !== 'OFF') {
+                    } else if (userDaySchedule && userDaySchedule.hora_entrada && !['OFF', 'BARRANCO', 'DESCANSO'].includes(userDaySchedule.hora_entrada)) {
                       const [hStr, mStr] = userDaySchedule.hora_entrada.split(':');
                       const hourNum = parseInt(hStr, 10);
                       const ampm = hourNum >= 12 ? 'PM' : 'AM';
                       const displayHour = hourNum > 12 ? hourNum - 12 : (hourNum === 0 ? 12 : hourNum);
                       expectedTimeStr = `${displayHour.toString().padStart(2, '0')}:${mStr} ${ampm}`;
-                    } else {
-                      // Smart default based on actual punch time:
-                      // If punch is in afternoon (>= 13:00 / 01:00 PM), default expected time for Closing shift is 02:30 PM (14:30)
-                      // If punch is in morning (< 13:00), default expected time for Opening shift is 07:00 AM
-                      const [timePart, ampmPart] = earliest.split(' ');
-                      let [h] = timePart.split(':').map(Number);
-                      if (ampmPart === 'PM' && h < 12) h += 12;
-                      if (ampmPart === 'AM' && h === 12) h = 0;
-                      
-                      if (h >= 13) {
-                        expectedTimeStr = '02:30 PM';
-                      } else {
-                        expectedTimeStr = '07:00 AM';
-                      }
-                    }
 
-                    let delayMin = 0;
-                    if (!SUPERVISORY_ROLES.includes(m.role) && (!userDaySchedule || (userDaySchedule.hora_entrada !== 'OFF' && userDaySchedule.hora_entrada !== 'BARRANCO'))) {
+                      // Calculate tardiness only when an explicit schedule exists
                       const [timePart, ampmPart] = earliest.split(' ');
                       let [h, minVal] = timePart.split(':').map(Number);
                       if (ampmPart === 'PM' && h < 12) h += 12;
                       if (ampmPart === 'AM' && h === 12) h = 0;
                       const earliestMins = h * 60 + minVal;
 
-                      const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
-                      let [eh, em] = expTimePart.split(':').map(Number);
-                      if (expAmpmPart === 'PM' && eh < 12) eh += 12;
-                      if (expAmpmPart === 'AM' && eh === 12) eh = 0;
-                      const expectedMins = eh * 60 + em;
-
+                      const expectedMins = hourNum * 60 + parseInt(mStr, 10);
                       const diff = earliestMins - expectedMins;
                       if (diff > 5) {
-                        if (userDaySchedule || diff <= 240) {
-                          delayMin = diff;
-                        }
+                        delayMin = diff;
                       }
+                    } else if (userDaySchedule && userDaySchedule.hora_entrada) {
+                      expectedTimeStr = userDaySchedule.hora_entrada;
                     }
 
                     return {
@@ -758,42 +740,29 @@ export const AppProvider = ({ children }) => {
       if (isDuplicateTime) return { success: false, message: 'Asistencia ya registrada para esta hora' };
     }
 
-    let expectedTimeStr = '07:00 AM';
+    let expectedTimeStr = '--';
     const userDaySchedule = weeklySchedules.find(
       s => String(s.username).trim().toLowerCase() === String(employee.username).trim().toLowerCase() && s.fecha === punchDateStr
     );
 
+    let delayMin = 0;
+
     if (SUPERVISORY_ROLES.includes(employee.role)) {
       expectedTimeStr = '--';
-    } else if (userDaySchedule && userDaySchedule.hora_entrada && userDaySchedule.hora_entrada !== 'OFF') {
+    } else if (userDaySchedule && userDaySchedule.hora_entrada && !['OFF', 'BARRANCO', 'DESCANSO'].includes(userDaySchedule.hora_entrada)) {
       const [hStr, mStr] = userDaySchedule.hora_entrada.split(':');
-      const hourNum = parseInt(hStr);
+      const hourNum = parseInt(hStr, 10);
       const ampm = hourNum >= 12 ? 'PM' : 'AM';
       const displayHour = hourNum > 12 ? hourNum - 12 : (hourNum === 0 ? 12 : hourNum);
       expectedTimeStr = `${displayHour.toString().padStart(2, '0')}:${mStr} ${ampm}`;
-    } else {
-      const currentHour = now.getHours();
-      if (currentHour >= 13) {
-        expectedTimeStr = '02:30 PM';
-      } else {
-        expectedTimeStr = '07:00 AM';
-      }
-    }
 
-    let delayMin = 0;
-    if (!SUPERVISORY_ROLES.includes(employee.role) && (!userDaySchedule || (userDaySchedule.hora_entrada !== 'OFF' && userDaySchedule.hora_entrada !== 'BARRANCO'))) {
-      const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
-      let [eh, em] = expTimePart.split(':').map(Number);
-      if (expAmpmPart === 'PM' && eh < 12) eh += 12;
-      if (expAmpmPart === 'AM' && eh === 12) eh = 0;
-      const expectedMins = eh * 60 + em;
-
+      const expectedMins = hourNum * 60 + parseInt(mStr, 10);
       const diff = currentMins - expectedMins;
       if (diff > 5) {
-        if (userDaySchedule || diff <= 240) {
-          delayMin = diff;
-        }
+        delayMin = diff;
       }
+    } else if (userDaySchedule && userDaySchedule.hora_entrada) {
+      expectedTimeStr = userDaySchedule.hora_entrada;
     }
 
     handleClockIn(employee.username, punchDateStr, punchTimeStr, expectedTimeStr, delayMin);
