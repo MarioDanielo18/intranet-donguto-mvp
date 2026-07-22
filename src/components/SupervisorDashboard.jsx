@@ -1420,6 +1420,16 @@ export default function SupervisorDashboard({
     setSelectedCollaborator('TODOS');
   }, [filterArea]);
 
+  const formatDurationHrMin = (totalMinutes) => {
+    if (!totalMinutes || totalMinutes <= 0) return '0 min';
+    const mins = Math.round(totalMinutes);
+    const hrs = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    if (hrs > 0 && remMins > 0) return `${hrs} hr ${remMins} min`;
+    if (hrs > 0) return `${hrs} hr`;
+    return `${remMins} min`;
+  };
+
   const [checklistStoreFilter, setChecklistStoreFilter] = useState('28 de Julio Miraflores');
   const [dbChecklists, setDbChecklists] = useState([]);
   const [loadingChecklists, setLoadingChecklists] = useState(false);
@@ -2349,7 +2359,7 @@ export default function SupervisorDashboard({
                   <div style={{ backgroundColor: 'var(--bg-main)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                     <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Retraso Promedio</span>
                     <strong style={{ fontSize: '20px', color: avgDelay > 10 ? 'var(--error)' : avgDelay > 5 ? 'var(--warning)' : 'var(--success)', display: 'block', margin: '4px 0' }}>
-                      {avgDelay.toFixed(1)} min
+                      {formatDurationHrMin(avgDelay)}
                     </strong>
                     <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Puntualidad: {punctualityRate.toFixed(0)}%</span>
                   </div>
@@ -2446,7 +2456,7 @@ export default function SupervisorDashboard({
 
     const statsByStore = getStorePunctualityStats();
     const tiendaTardona = statsByStore.length > 0 ? statsByStore[0].store : 'N/A';
-    const tardonaMinutes = statsByStore.length > 0 ? statsByStore[0].avgDelay.toFixed(1) : '0';
+    const tardonaMinutes = statsByStore.length > 0 ? formatDurationHrMin(statsByStore[0].avgDelay) : '0 min';
 
     const topPerformers = approvedMembers
       .filter(m => ['Barista', 'Cocina', 'Servicio'].includes(m.role))
@@ -2499,7 +2509,7 @@ export default function SupervisorDashboard({
       {
         id: 1,
         title: `Optimización Horaria en Sede ${tiendaTardona}`,
-        description: `La sede de ${tiendaTardona} presenta el mayor índice de tardanzas con un promedio de ${tardonaMinutes} minutos de retraso por colaborador. Se propone implementar un bono mensual de puntualidad o ajustar el horario de entrada a las 06:45 AM con 15 minutos de tolerancia para la apertura.`,
+        description: `La sede de ${tiendaTardona} presenta el mayor índice de tardanzas con un promedio de ${tardonaMinutes} de retraso por colaborador. Se propone implementar un bono mensual de puntualidad o ajustar el horario de entrada a las 06:45 AM con 15 minutos de tolerancia para la apertura.`,
         urgency: 'ALTA'
       },
       {
@@ -2532,7 +2542,7 @@ export default function SupervisorDashboard({
               {topPerformers.length > 0 ? topPerformers[0].name : 'Cargando...'}
             </strong>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              Retraso: {topPerformers.length > 0 ? topPerformers[0].avgDelay.toFixed(1) : 0} min (Sede: {topPerformers.length > 0 ? topPerformers[0].store : 'N/A'})
+              Retraso: {topPerformers.length > 0 ? formatDurationHrMin(topPerformers[0].avgDelay) : '0 min'} (Sede: {topPerformers.length > 0 ? topPerformers[0].store : 'N/A'})
             </span>
           </div>
 
@@ -2541,7 +2551,7 @@ export default function SupervisorDashboard({
             <strong style={{ fontSize: '18px', color: 'var(--error)', display: 'block', margin: '4px 0' }}>
               Sede {tiendaTardona}
             </strong>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Retraso Promedio: {tardonaMinutes} min</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Retraso Promedio: {tardonaMinutes}</span>
           </div>
 
           <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', padding: '15px', borderRadius: 'var(--radius-sm)' }}>
@@ -2591,7 +2601,7 @@ export default function SupervisorDashboard({
                       <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{collab.role} - Sede: {collab.store}</span>
                     </div>
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--success)' }}>
-                      Retraso: {collab.avgDelay.toFixed(1)}m
+                      Retraso: {formatDurationHrMin(collab.avgDelay)}
                     </span>
                   </div>
                 ))}
@@ -2614,7 +2624,7 @@ export default function SupervisorDashboard({
                       <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         {hasDelayAlert && (
                           <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--error)' }}>
-                            Retraso: {collab.avgDelay.toFixed(1)}m
+                            Retraso: {formatDurationHrMin(collab.avgDelay)}
                           </span>
                         )}
                         {hasTrainingAlert && (
@@ -2887,10 +2897,8 @@ export default function SupervisorDashboard({
                                   color: delayVal > 15 ? 'var(--error)' : delayVal > 0 ? 'var(--warning)' : 'var(--success)'
                                 }}>
                                   {delayVal > 0 
-                                    ? (delayVal >= 60 
-                                        ? `+${Math.floor(delayVal / 60)}h ${delayVal % 60}min` 
-                                        : `+${delayVal} min`) 
-                                    : 'Puntual'}
+                                    ? `+${formatDurationHrMin(delayVal)}`
+                                    : '0 min'}
                                 </span>
                               </td>
                               <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>{log.totalPunches || 1}</td>
@@ -3646,7 +3654,7 @@ export default function SupervisorDashboard({
                         {log.checkOutTime ? `🚪 ${log.checkOutTime}` : '—'}
                       </td>
                       <td style={{ padding: '12px 15px', fontWeight: 'bold', color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
-                        {log.time ? (log.delayMin > 0 ? `+${log.delayMin} min` : 'Sin retraso') : '—'}
+                        {log.time ? (log.delayMin > 0 ? `+${formatDurationHrMin(log.delayMin)}` : 'Sin retraso') : '—'}
                       </td>
                       <td style={{ padding: '12px 15px' }}>
                         <span style={{
@@ -3731,6 +3739,14 @@ export default function SupervisorDashboard({
     );
   };
     const renderTechnicalPanelTab = () => {
+    
+    // Helper para formatear duración en horas y minutos
+    const formatDurationHrMin = (minutos) => {
+      if (!minutos || minutos === 0) return '0 min';
+      const h = Math.floor(minutos / 60);
+      const m = Math.round(minutos % 60);
+      return h > 0 ? `${h}h ${m}min` : `${m} min`;
+    };
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
@@ -4673,10 +4689,8 @@ main();`}
                                     color: delayVal > 15 ? 'var(--error)' : delayVal > 0 ? 'var(--warning)' : 'var(--success)'
                                   }}>
                                     {delayVal > 0 
-                                      ? (delayVal >= 60 
-                                          ? `+${Math.floor(delayVal / 60)}h ${delayVal % 60}min` 
-                                          : `+${delayVal} min`) 
-                                      : 'Puntual'}
+                                      ? `+${formatDurationHrMin(delayVal)}`
+                                      : '0 min'}
                                   </span>
                                 </td>
                                 <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>{log.totalPunches || 1}</td>
@@ -5329,7 +5343,7 @@ main();`}
                         minWidth: '140px'
                       }}
                     >
-                      <option value="28 de Julio Miraflores">🏢 28 de Julio Miraflores</option>
+                      <option value="28 de Julio Miraflores">🏢 Sede 28 de Julio Miraflores</option>
                     </select>
                   </div>
                 )}
@@ -5571,7 +5585,7 @@ main();`}
                         <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                           <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '5px', backgroundColor: 'var(--bg-main)', padding: '15px', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center' }}>
                             <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Retraso Promedio Sede</span>
-                            <span style={{ fontSize: '32px', fontWeight: 800, color: ratingColor }}>{myStoreStat.avgDelay.toFixed(1)} min</span>
+                            <span style={{ fontSize: '32px', fontWeight: 800, color: ratingColor }}>{formatDurationHrMin(myStoreStat.avgDelay)}</span>
                             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Basado en {myStoreStat.totalLogs} marcaciones</span>
                           </div>
                           
@@ -5589,7 +5603,7 @@ main();`}
                                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
                                         <span style={{ fontWeight: 600 }}>{m.name}</span>
                                         <span style={{ fontWeight: 700, color: m.avgDelay > 5 ? 'var(--error)' : 'var(--text-muted)' }}>
-                                          {m.avgDelay.toFixed(1)} min ({m.totalLogs} marcaciones)
+                                          {formatDurationHrMin(m.avgDelay)} ({m.totalLogs} marcaciones)
                                         </span>
                                       </div>
                                       <div style={{ height: '6px', backgroundColor: 'var(--bg-main)', borderRadius: '3px', overflow: 'hidden' }}>
@@ -6162,7 +6176,7 @@ main();`}
                             </div>
                             <div style={{ border: '1px solid var(--border)', padding: '12px', borderRadius: '6px', textAlign: 'center', backgroundColor: 'var(--bg-main)' }}>
                               <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>Retraso Promedio</span>
-                              <strong style={{ fontSize: '18px', color: avgDelay > 5 ? 'var(--error)' : 'var(--success)' }}>{avgDelay.toFixed(1)} min</strong>
+                              <strong style={{ fontSize: '18px', color: avgDelay > 5 ? 'var(--error)' : 'var(--success)' }}>{formatDurationHrMin(avgDelay)}</strong>
                             </div>
                           </div>
 

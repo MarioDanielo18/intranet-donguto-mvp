@@ -48,7 +48,7 @@ export const AttendanceLogs = ({ arrivalLogs }) => {
                 <td style={{ padding: '10px 10px', fontWeight: 700, color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
                   {log.delayMin > 0 
                     ? (log.delayMin >= 60 
-                        ? `+${Math.floor(log.delayMin / 60)}h ${log.delayMin % 60}min` 
+                        ? `+${Math.floor(log.delayMin / 60)} hr ${log.delayMin % 60} min` 
                         : `+${log.delayMin} min`) 
                     : '0 min'}
                 </td>

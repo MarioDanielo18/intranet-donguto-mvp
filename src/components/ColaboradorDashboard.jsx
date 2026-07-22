@@ -1131,7 +1131,7 @@ export default function ColaboradorDashboard({
                 <div className="card" style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '5px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border)' }}>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>RETRASO PROMEDIO</span>
                   <span style={{ fontSize: '18px', fontWeight: 800, color: avgDelay > 5 ? 'var(--error)' : 'var(--success)' }}>
-                    {avgDelay.toFixed(1)} min
+                    {avgDelay >= 60 ? `${Math.floor(avgDelay / 60)} hr ${Math.round(avgDelay % 60)} min` : `${Math.round(avgDelay)} min`}
                   </span>
                 </div>
                 <div className="card" style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '5px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border)' }}>
