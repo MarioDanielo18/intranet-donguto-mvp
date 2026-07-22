@@ -336,16 +336,28 @@ export const AppProvider = ({ children }) => {
                       expectedTimeStr = '--';
                     } else if (userDaySchedule && userDaySchedule.hora_entrada && userDaySchedule.hora_entrada !== 'OFF') {
                       const [hStr, mStr] = userDaySchedule.hora_entrada.split(':');
-                      const hourNum = parseInt(hStr);
+                      const hourNum = parseInt(hStr, 10);
                       const ampm = hourNum >= 12 ? 'PM' : 'AM';
                       const displayHour = hourNum > 12 ? hourNum - 12 : (hourNum === 0 ? 12 : hourNum);
                       expectedTimeStr = `${displayHour.toString().padStart(2, '0')}:${mStr} ${ampm}`;
                     } else {
-                      if (m.role === 'Servicio') expectedTimeStr = '08:00 AM';
+                      // Smart default based on actual punch time:
+                      // If punch is in afternoon (>= 13:00 / 01:00 PM), default expected time for Closing shift is 02:30 PM (14:30)
+                      // If punch is in morning (< 13:00), default expected time for Opening shift is 07:00 AM
+                      const [timePart, ampmPart] = earliest.split(' ');
+                      let [h] = timePart.split(':').map(Number);
+                      if (ampmPart === 'PM' && h < 12) h += 12;
+                      if (ampmPart === 'AM' && h === 12) h = 0;
+                      
+                      if (h >= 13) {
+                        expectedTimeStr = '02:30 PM';
+                      } else {
+                        expectedTimeStr = '07:00 AM';
+                      }
                     }
 
                     let delayMin = 0;
-                    if (!SUPERVISORY_ROLES.includes(m.role) && (!userDaySchedule || userDaySchedule.hora_entrada !== 'OFF')) {
+                    if (!SUPERVISORY_ROLES.includes(m.role) && (!userDaySchedule || (userDaySchedule.hora_entrada !== 'OFF' && userDaySchedule.hora_entrada !== 'BARRANCO'))) {
                       const [timePart, ampmPart] = earliest.split(' ');
                       let [h, minVal] = timePart.split(':').map(Number);
                       if (ampmPart === 'PM' && h < 12) h += 12;
@@ -358,7 +370,12 @@ export const AppProvider = ({ children }) => {
                       if (expAmpmPart === 'AM' && eh === 12) eh = 0;
                       const expectedMins = eh * 60 + em;
 
-                      delayMin = Math.max(0, earliestMins - expectedMins);
+                      const diff = earliestMins - expectedMins;
+                      if (diff > 5) {
+                        if (userDaySchedule || diff <= 240) {
+                          delayMin = diff;
+                        }
+                      }
                     }
 
                     return {
@@ -755,18 +772,28 @@ export const AppProvider = ({ children }) => {
       const displayHour = hourNum > 12 ? hourNum - 12 : (hourNum === 0 ? 12 : hourNum);
       expectedTimeStr = `${displayHour.toString().padStart(2, '0')}:${mStr} ${ampm}`;
     } else {
-      if (employee.role === 'Servicio') expectedTimeStr = '08:00 AM';
+      const currentHour = now.getHours();
+      if (currentHour >= 13) {
+        expectedTimeStr = '02:30 PM';
+      } else {
+        expectedTimeStr = '07:00 AM';
+      }
     }
 
     let delayMin = 0;
-    if (!SUPERVISORY_ROLES.includes(employee.role) && (!userDaySchedule || userDaySchedule.hora_entrada !== 'OFF')) {
+    if (!SUPERVISORY_ROLES.includes(employee.role) && (!userDaySchedule || (userDaySchedule.hora_entrada !== 'OFF' && userDaySchedule.hora_entrada !== 'BARRANCO'))) {
       const [expTimePart, expAmpmPart] = expectedTimeStr.split(' ');
       let [eh, em] = expTimePart.split(':').map(Number);
       if (expAmpmPart === 'PM' && eh < 12) eh += 12;
       if (expAmpmPart === 'AM' && eh === 12) eh = 0;
       const expectedMins = eh * 60 + em;
 
-      delayMin = Math.max(0, currentMins - expectedMins);
+      const diff = currentMins - expectedMins;
+      if (diff > 5) {
+        if (userDaySchedule || diff <= 240) {
+          delayMin = diff;
+        }
+      }
     }
 
     handleClockIn(employee.username, punchDateStr, punchTimeStr, expectedTimeStr, delayMin);
