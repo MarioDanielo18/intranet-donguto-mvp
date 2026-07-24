@@ -15,10 +15,9 @@ export const AttendanceLogs = ({ arrivalLogs }) => {
         <thead>
           <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)' }}>
             <th style={{ padding: '8px 10px' }}>Fecha</th>
-            <th style={{ padding: '8px 10px' }}>Hora de Entrada</th>
-            <th style={{ padding: '8px 10px' }}>Hora de Salida</th>
             <th style={{ padding: '8px 10px' }}>Hora Esperada</th>
-            <th style={{ padding: '8px 10px' }}>Retraso (Min)</th>
+            <th style={{ padding: '8px 10px' }}>Hora de Marcaje</th>
+            <th style={{ padding: '8px 10px' }}>Retraso</th>
             <th style={{ padding: '8px 10px', textAlign: 'center' }}>Total Marcajes</th>
             <th style={{ padding: '8px 10px' }}>Estado</th>
           </tr>
@@ -42,9 +41,8 @@ export const AttendanceLogs = ({ arrivalLogs }) => {
             return (
               <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td style={{ padding: '10px 10px', fontWeight: 600 }}>{log.date}</td>
-                <td style={{ padding: '10px 10px' }}>{log.time}</td>
-                <td style={{ padding: '10px 10px' }}>{log.checkOutTime || '--'}</td>
                 <td style={{ padding: '10px 10px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
+                <td style={{ padding: '10px 10px', fontWeight: 600 }}>{log.time}</td>
                 <td style={{ padding: '10px 10px', fontWeight: 700, color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
                   {log.delayMin > 0 
                     ? (log.delayMin >= 60 

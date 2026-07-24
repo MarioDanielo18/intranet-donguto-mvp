@@ -3614,8 +3614,7 @@ export default function SupervisorDashboard({
                   <th style={{ padding: '12px 15px', fontWeight: 700 }}>Rol</th>
                   <th style={{ padding: '12px 15px', fontWeight: 700 }}>DNI / ID Biométrico</th>
                   <th style={{ padding: '12px 15px', fontWeight: 700 }}>Entrada Programada</th>
-                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>Hora Llegada</th>
-                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>Hora Salida</th>
+                  <th style={{ padding: '12px 15px', fontWeight: 700 }}>Hora de Marcaje</th>
                   <th style={{ padding: '12px 15px', fontWeight: 700 }}>Retraso</th>
                   <th style={{ padding: '12px 15px', fontWeight: 700 }}>Estado</th>
                 </tr>
@@ -3649,9 +3648,6 @@ export default function SupervisorDashboard({
                       <td style={{ padding: '12px 15px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
                       <td style={{ padding: '12px 15px', fontWeight: log.time ? 'bold' : 'normal', color: log.time ? 'var(--text-main)' : 'var(--text-muted)' }}>
                         {log.time ? `🚪 ${log.time}` : '—'}
-                      </td>
-                      <td style={{ padding: '12px 15px', fontWeight: log.checkOutTime ? 'bold' : 'normal', color: log.checkOutTime ? 'var(--text-main)' : 'var(--text-muted)' }}>
-                        {log.checkOutTime ? `🚪 ${log.checkOutTime}` : '—'}
                       </td>
                       <td style={{ padding: '12px 15px', fontWeight: 'bold', color: log.delayMin > 0 ? 'var(--error)' : 'var(--success)' }}>
                         {log.time ? (log.delayMin > 0 ? `+${formatDurationHrMin(log.delayMin)}` : 'Sin retraso') : '—'}
@@ -4659,7 +4655,6 @@ main();`}
                           <th style={{ padding: '10px 12px', fontWeight: 700 }}>Fecha</th>
                           <th style={{ padding: '10px 12px', fontWeight: 700 }}>Programado</th>
                           <th style={{ padding: '10px 12px', fontWeight: 700 }}>Entrada</th>
-                          <th style={{ padding: '10px 12px', fontWeight: 700 }}>Salida</th>
                           <th style={{ padding: '10px 12px', fontWeight: 700 }}>Tardanza</th>
                           <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'center' }}>Total</th>
                           <th style={{ padding: '10px 12px', fontWeight: 700 }}>Marcaciones Registradas</th>
@@ -4681,7 +4676,6 @@ main();`}
                                 <td style={{ padding: '10px 12px', fontWeight: 600 }}>{log.date}</td>
                                 <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
                                 <td style={{ padding: '10px 12px', color: 'var(--success)', fontWeight: 600 }}>{log.time}</td>
-                                <td style={{ padding: '10px 12px' }}>{log.checkOutTime || '--'}</td>
                                 <td style={{ padding: '10px 12px' }}>
                                   <span style={{
                                     fontWeight: 800,
@@ -6200,8 +6194,7 @@ main();`}
                                 <tr style={{ backgroundColor: 'var(--bg-main)', borderBottom: '1px solid var(--border)' }}>
                                   <th style={{ padding: '10px' }}>Fecha</th>
                                   <th style={{ padding: '10px' }}>Entrada Programada</th>
-                                  <th style={{ padding: '10px' }}>Hora Llegada</th>
-                                  <th style={{ padding: '10px' }}>Hora Salida</th>
+                                  <th style={{ padding: '10px' }}>Hora de Marcaje</th>
                                   <th style={{ padding: '10px' }}>Retraso</th>
                                   <th style={{ padding: '10px', textAlign: 'center' }}>Total Marcajes</th>
                                 </tr>
@@ -6213,7 +6206,6 @@ main();`}
                                       <td style={{ padding: '10px', fontWeight: 600 }}>{log.date}</td>
                                       <td style={{ padding: '10px', color: 'var(--text-muted)' }}>{log.expectedTime}</td>
                                       <td style={{ padding: '10px' }}>{log.time}</td>
-                                      <td style={{ padding: '10px' }}>{log.checkOutTime || '--'}</td>
                                       <td style={{ padding: '10px' }}>
                                         <span style={{
                                           fontWeight: 800,
@@ -6233,7 +6225,7 @@ main();`}
                                   ))
                                 ) : (
                                   <tr>
-                                    <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                    <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                                       Sin marcaciones de llegada registradas.
                                     </td>
                                   </tr>

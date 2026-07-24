@@ -1164,10 +1164,9 @@ export default function ColaboradorDashboard({
                     textAlign: 'center'
                   }}>
                     <strong style={{ fontSize: '13px' }}>🟢 Asistencia Activa</strong>
-                    <div style={{ fontSize: '12.5px', display: 'flex', justifyContent: 'space-between', marginTop: '4px', borderTop: '1px solid rgba(22, 163, 74, 0.2)', paddingTop: '4px' }}>
-                      <span>Entrada: <strong>{todaysLog?.time}</strong></span>
-                      <span>Salida: <strong>{todaysLog?.checkOutTime || '--'}</strong></span>
-                      <span>Marcajes: <strong>{todaysLog?.totalPunches || 1}</strong></span>
+                    <div style={{ fontSize: '12.5px', display: 'flex', justifyContent: 'space-around', marginTop: '4px', borderTop: '1px solid rgba(22, 163, 74, 0.2)', paddingTop: '4px' }}>
+                      <span>Hora de Entrada: <strong>{todaysLog?.time}</strong></span>
+                      <span>Marcajes Registrados: <strong>{todaysLog?.totalPunches || 1}</strong></span>
                     </div>
                   </div>
                 )}

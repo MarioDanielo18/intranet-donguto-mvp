@@ -302,22 +302,12 @@ export const AppProvider = ({ children }) => {
                   
                   const punchesByDate = {};
                   userPunches.forEach(p => {
-                    let finalTime = p.time;
-                    let finalDate = p.date;
-                    if (p.timestamp) {
-                      const pTime = new Date(p.timestamp);
-                      if (pTime && !isNaN(pTime.getTime())) {
-                        const hours = pTime.getHours();
-                        const minutes = pTime.getMinutes();
-                        const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
-                        const displayMinutes = minutes.toString().padStart(2, '0');
-                        const ampm = hours >= 12 ? 'PM' : 'AM';
-                        finalTime = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
-                        finalDate = pTime.toISOString().split('T')[0];
-                      }
+                    const finalTime = p.time;
+                    const finalDate = p.date;
+                    if (finalDate && finalTime) {
+                      if (!punchesByDate[finalDate]) punchesByDate[finalDate] = [];
+                      punchesByDate[finalDate].push(finalTime);
                     }
-                    if (!punchesByDate[finalDate]) punchesByDate[finalDate] = [];
-                    punchesByDate[finalDate].push(finalTime);
                   });
 
                   const rebuiltLogs = Object.keys(punchesByDate).map(dateStr => {
