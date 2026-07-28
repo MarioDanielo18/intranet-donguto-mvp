@@ -88,14 +88,20 @@ const COLLABORATOR_ROLES = {
   'Ruth Sarahi Laurente Olivera': 'Barista'
 };
 
-const isTaskAssignedTo = (taskId, collaboratorName) => {
+const isTaskAssignedTo = (taskId, collaboratorName, membersList = []) => {
   if (!collaboratorName || collaboratorName === 'TODOS') return true;
   
-  const role = COLLABORATOR_ROLES[collaboratorName];
+  const member = (membersList || []).find(m => 
+    m.name === collaboratorName || 
+    m.username === collaboratorName || 
+    (m.name && collaboratorName && m.name.toLowerCase().includes(collaboratorName.split(' ')[0].toLowerCase()))
+  );
+  
+  const role = member ? member.role : (COLLABORATOR_ROLES[collaboratorName] || null);
   if (!role) return true;
   
   if (role === 'Barista') {
-    return taskId.startsWith('B-') || taskId.startsWith('CL-') && !['CL-K1', 'CL-K2', 'CL-K3', 'CL-K4', 'CL-M2', 'CL-S1', 'CL-S2', 'CL-S3', 'CL-S4'].includes(taskId);
+    return taskId.startsWith('B-') || (taskId.startsWith('CL-') && !['CL-K1', 'CL-K2', 'CL-K3', 'CL-K4', 'CL-M2', 'CL-S1', 'CL-S2', 'CL-S3', 'CL-S4'].includes(taskId));
   }
   if (role === 'Cocina') {
     return taskId.startsWith('K-') || ['CL-K1', 'CL-K2', 'CL-K3', 'CL-K4', 'CL-M2'].includes(taskId);
@@ -1511,7 +1517,14 @@ export default function SupervisorDashboard({
     const todayStr = new Date().toISOString().split('T')[0];
 
     return checklists.map(t => {
-      const matched = dbChecklists.find(r => r.taskId === t.id);
+      let matched = null;
+      if (selectedCollaborator && selectedCollaborator !== 'TODOS') {
+        const collabFirst = selectedCollaborator.split(' ')[0].toLowerCase();
+        matched = dbChecklists.find(r => (r.taskId === t.id || r.task_id === t.id) && r.colaborador && r.colaborador.toLowerCase().includes(collabFirst));
+      } else {
+        matched = dbChecklists.find(r => r.taskId === t.id || r.task_id === t.id);
+      }
+
       if (matched) {
         return {
           ...t,
@@ -1521,7 +1534,7 @@ export default function SupervisorDashboard({
       }
 
       // For historical dates, fall back to MOCK_HISTORY if no database record exists
-      if (selectedDateStr !== todayStr) {
+      if (selectedDateStr !== todayStr && selectedCollaborator === 'TODOS') {
         const isCompleted = (MOCK_HISTORY[selectedDateStr]?.completedIds || []).includes(t.id);
         return {
           ...t,
@@ -1543,7 +1556,14 @@ export default function SupervisorDashboard({
     const storeDbChecklists = dbChecklists.filter(r => r.store === storeName || r.tienda === storeName);
 
     const tasksForDate = checklists.map(t => {
-      const matched = storeDbChecklists.find(r => r.taskId === t.id);
+      let matched = null;
+      if (collaborator && collaborator !== 'TODOS') {
+        const collabFirst = collaborator.split(' ')[0].toLowerCase();
+        matched = storeDbChecklists.find(r => (r.taskId === t.id || r.task_id === t.id) && r.colaborador && r.colaborador.toLowerCase().includes(collabFirst));
+      } else {
+        matched = storeDbChecklists.find(r => r.taskId === t.id || r.task_id === t.id);
+      }
+
       if (matched) {
         return {
           ...t,
@@ -1551,7 +1571,7 @@ export default function SupervisorDashboard({
         };
       }
 
-      if (dateStr !== todayStr) {
+      if (dateStr !== todayStr && collaborator === 'TODOS') {
         const isCompleted = (MOCK_HISTORY[dateStr]?.completedIds || []).includes(t.id);
         return {
           ...t,
@@ -1567,7 +1587,7 @@ export default function SupervisorDashboard({
 
     const filtered = tasksForDate.filter(t => {
       const matchArea = areaCode === 'GENERAL' || t.area === areaCode;
-      const matchCollab = isTaskAssignedTo(t.id, collaborator);
+      const matchCollab = isTaskAssignedTo(t.id, collaborator, teamMembers);
       return matchArea && matchCollab;
     });
     const total = filtered.length;
@@ -1594,7 +1614,13 @@ export default function SupervisorDashboard({
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '8px', borderLeft: '2px solid var(--border)', marginTop: '4px' }}>
             {['28 de Julio Miraflores'].map(storeName => {
-              const matched = dbChecklists.find(r => r.taskId === t.id && (r.store === storeName || r.tienda === storeName));
+              let matched = null;
+              if (selectedCollaborator && selectedCollaborator !== 'TODOS') {
+                const collabFirst = selectedCollaborator.split(' ')[0].toLowerCase();
+                matched = dbChecklists.find(r => (r.taskId === t.id || r.task_id === t.id) && (r.store === storeName || r.tienda === storeName) && r.colaborador && r.colaborador.toLowerCase().includes(collabFirst));
+              } else {
+                matched = dbChecklists.find(r => (r.taskId === t.id || r.task_id === t.id) && (r.store === storeName || r.tienda === storeName));
+              }
               const completed = matched ? matched.completado : false;
               const evidence = matched ? matched.evidencia : null;
               const collaborator = matched ? matched.colaborador : null;
@@ -1791,191 +1817,220 @@ export default function SupervisorDashboard({
   };
 
   const renderCalendarioView = () => {
-    const weekdays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    const [yearStr, monthNumStr] = calendarMonth.split('-');
-    const yearNum = parseInt(yearStr);
-    const monthNum = parseInt(monthNumStr);
-    const daysInSelectedMonth = new Date(yearNum, monthNum, 0).getDate();
-    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const selectedMonthName = monthNames[monthNum] || 'Julio';
-    const todayStr = new Date().toISOString().split('T')[0];
+    try {
+      const weekdays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+      const curMonthStr = calendarMonth || '2026-07';
+      const parts = curMonthStr.split('-');
+      const yearNum = parseInt(parts[0] || '2026');
+      const monthNum = parseInt(parts[1] || '7');
+      const daysInSelectedMonth = new Date(yearNum, monthNum, 0).getDate();
+      const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      const selectedMonthName = monthNames[monthNum] || 'Julio';
+      const todayStr = new Date().toISOString().split('T')[0];
 
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {/* Calendar Card */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-              <div>
-                <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Calendario de Cumplimiento - {selectedMonthName} {yearNum}</h3>
-                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Visualización de cumplimiento del departamento: <strong style={{ color: 'var(--primary)' }}>{filterArea}</strong>
-                  {selectedCollaborator !== 'TODOS' && <span> | Colaborador: <strong style={{ color: 'var(--primary)' }}>{selectedCollaborator}</strong></span>}.
-                  Haz clic en un día registrado para ver su checklist detallado.
-                </p>
+      // Calculate averages for selected month
+      let sumW1 = 0;
+      for (let d = 1; d <= 7; d++) {
+        const dateStr = `${curMonthStr}-${d.toString().padStart(2, '0')}`;
+        sumW1 += getComplianceForStats(filterArea, dateStr, selectedCollaborator);
+      }
+      const avgW1 = sumW1 / 7;
+
+      let sumW2 = 0;
+      for (let d = 8; d <= 14; d++) {
+        const dateStr = `${curMonthStr}-${d.toString().padStart(2, '0')}`;
+        sumW2 += getComplianceForStats(filterArea, dateStr, selectedCollaborator);
+      }
+      const avgW2 = sumW2 / 7;
+
+      let sumMonth = 0;
+      let daysWithData = 0;
+      for (let d = 1; d <= daysInSelectedMonth; d++) {
+        const dateStr = `${curMonthStr}-${d.toString().padStart(2, '0')}`;
+        if (dateStr <= todayStr) {
+          sumMonth += getComplianceForStats(filterArea, dateStr, selectedCollaborator);
+          daysWithData++;
+        }
+      }
+      const avgMonth = daysWithData > 0 ? sumMonth / daysWithData : 0;
+      const avgYear = (90.8 * 5 + avgMonth) / 6;
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Calendar Card */}
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Calendario de Cumplimiento - {selectedMonthName} {yearNum}</h3>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Visualización de cumplimiento del departamento: <strong style={{ color: 'var(--primary)' }}>{filterArea}</strong>
+                    {selectedCollaborator !== 'TODOS' && <span> | Colaborador: <strong style={{ color: 'var(--primary)' }}>{selectedCollaborator}</strong></span>}.
+                    Haz clic en un día registrado para ver su checklist detallado.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Mes:</span>
+                  <select
+                    value={calendarMonth}
+                    onChange={(e) => setCalendarMonth(e.target.value)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'var(--bg-main)',
+                      color: 'var(--text-main)',
+                      fontWeight: 700,
+                      fontSize: '12.5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="2026-07">Julio 2026 (Mes Actual)</option>
+                    <option value="2026-06">Junio 2026</option>
+                    <option value="2026-08">Agosto 2026</option>
+                  </select>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Mes:</span>
-                <select
-                  value={calendarMonth}
-                  onChange={(e) => setCalendarMonth(e.target.value)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--bg-main)',
-                    color: 'var(--text-main)',
-                    fontWeight: 700,
-                    fontSize: '12.5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="2026-07">Julio 2026 (Mes Actual)</option>
-                  <option value="2026-06">Junio 2026</option>
-                  <option value="2026-08">Agosto 2026</option>
-                </select>
+              
+              {/* Color Legend */}
+              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', fontSize: '11px', fontWeight: 600 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--success)' }} />
+                  <span>Excelente (&ge;90%)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--warning)' }} />
+                  <span>Regular (70-89%)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--error)' }} />
+                  <span>Alerta (&lt;70%)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--text-muted)', opacity: 0.3 }} />
+                  <span>Sin registrar</span>
+                </div>
               </div>
             </div>
-            
-            {/* Color Legend */}
-            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', fontSize: '11px', fontWeight: 600 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--success)' }} />
-                <span>Excelente (&ge;90%)</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--warning)' }} />
-                <span>Regular (70-89%)</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--error)' }} />
-                <span>Alerta (&lt;70%)</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--text-muted)', opacity: 0.3 }} />
-                <span>Sin registrar</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Calendar Grid Wrapper for Mobile Scroll */}
-          <div className="calendar-scroll-container">
-            <div className="calendar-grid-minwidth" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              {/* Weekdays header */}
-              <div className="calendar-grid-minwidth" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 700, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '5px' }}>
-                {weekdays.map(w => (
-                  <div key={w} style={{ padding: '8px 0' }}>{w}</div>
-                ))}
-              </div>
+            {/* Calendar Grid Wrapper for Mobile Scroll */}
+            <div className="calendar-scroll-container">
+              <div className="calendar-grid-minwidth" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                {/* Weekdays header */}
+                <div className="calendar-grid-minwidth" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 700, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '5px' }}>
+                  {weekdays.map(w => (
+                    <div key={w} style={{ padding: '8px 0' }}>{w}</div>
+                  ))}
+                </div>
 
-              {/* Days grid */}
-              <div className="calendar-grid-minwidth" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
-                {Array.from({ length: daysInSelectedMonth }, (_, i) => {
-                  const day = i + 1;
-                  const dateStr = `${calendarMonth}-${day.toString().padStart(2, '0')}`;
-                  const hasData = dateStr <= todayStr;
-                  
-                  let pct = 0;
-                  let bg = 'var(--bg-main)';
-                  let color = 'var(--text-muted)';
-                  let border = '1px solid var(--border)';
-                  let statusLabel = 'Sin datos';
-                  
-                  if (hasData) {
-                    pct = getComplianceForStats(filterArea, dateStr, selectedCollaborator);
-                    if (pct >= 90) {
-                      bg = 'var(--success-light)';
-                      color = 'var(--success)';
-                      border = '1px solid var(--success)';
-                      statusLabel = 'Excelente';
-                    } else if (pct >= 70) {
-                      bg = 'var(--warning-light)';
-                      color = 'var(--warning)';
-                      border = '1px solid var(--warning)';
-                      statusLabel = 'Regular';
-                    } else {
-                      bg = 'var(--error-light)';
-                      color = 'var(--error)';
-                      border = '1px solid var(--error)';
-                      statusLabel = 'Alerta';
+                {/* Days grid */}
+                <div className="calendar-grid-minwidth" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+                  {Array.from({ length: daysInSelectedMonth }, (_, i) => {
+                    const day = i + 1;
+                    const dateStr = `${curMonthStr}-${day.toString().padStart(2, '0')}`;
+                    const hasData = dateStr <= todayStr;
+                    
+                    let pct = 0;
+                    let bg = 'var(--bg-main)';
+                    let color = 'var(--text-muted)';
+                    let border = '1px solid var(--border)';
+                    let statusLabel = 'Sin datos';
+                    
+                    if (hasData) {
+                      pct = getComplianceForStats(filterArea, dateStr, selectedCollaborator);
+                      if (pct >= 90) {
+                        bg = 'var(--success-light)';
+                        color = 'var(--success)';
+                        border = '1px solid var(--success)';
+                        statusLabel = 'Excelente';
+                      } else if (pct >= 70) {
+                        bg = 'var(--warning-light)';
+                        color = 'var(--warning)';
+                        border = '1px solid var(--warning)';
+                        statusLabel = 'Regular';
+                      } else {
+                        bg = 'var(--error-light)';
+                        color = 'var(--error)';
+                        border = '1px solid var(--error)';
+                        statusLabel = 'Alerta';
+                      }
                     }
-                  }
 
-                  return (
-                    <div
-                      key={day}
-                      onClick={() => {
-                        if (hasData) {
-                          setSelectedDateStr(dateStr);
-                          if (typeof loadDailyChecklists === 'function') {
-                            const currentStore = checklistStoreFilter === 'Todas' ? (user?.store === 'Todas' ? '28 de Julio Miraflores' : user?.store) : checklistStoreFilter;
-                            loadDailyChecklists(currentStore, dateStr);
+                    return (
+                      <div
+                        key={day}
+                        onClick={() => {
+                          if (hasData) {
+                            setSelectedDateStr(dateStr);
+                            if (typeof loadDailyChecklists === 'function') {
+                              const currentStore = checklistStoreFilter === 'Todas' ? (user?.store === 'Todas' ? '28 de Julio Miraflores' : user?.store) : checklistStoreFilter;
+                              loadDailyChecklists(currentStore, dateStr);
+                            }
+                            setViewMode('DIARIO');
                           }
-                          setViewMode('DIARIO');
-                        }
-                      }}
-                      className={(hasData ? "animate-scale-in " : "") + "calendar-day-cell"}
-                      style={{
-                        height: '90px',
-                        padding: '10px',
-                        borderRadius: 'var(--radius-sm)',
-                        backgroundColor: bg,
-                        border: border,
-                        color: color,
-                        cursor: hasData ? 'pointer' : 'default',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        opacity: hasData ? 1 : 0.45,
-                        transition: 'all 0.2s ease',
-                        boxShadow: hasData ? 'var(--shadow-sm)' : 'none',
-                        position: 'relative',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (hasData) {
-                          e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                          e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (hasData) {
-                          e.currentTarget.style.transform = 'none';
-                          e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-                        }
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '15px', fontWeight: 800 }}>{day}</span>
-                        {hasData && (
-                          <span style={{
-                            fontSize: '8px',
-                            fontWeight: 800,
-                            textTransform: 'uppercase',
-                            backgroundColor: color,
-                            color: '#fff',
-                            padding: '1px 4px',
-                            borderRadius: '3px'
-                          }}>
-                            {statusLabel}
-                          </span>
+                        }}
+                        className={(hasData ? "animate-scale-in " : "") + "calendar-day-cell"}
+                        style={{
+                          height: '90px',
+                          padding: '10px',
+                          borderRadius: 'var(--radius-sm)',
+                          backgroundColor: bg,
+                          border: border,
+                          color: color,
+                          cursor: hasData ? 'pointer' : 'default',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          opacity: hasData ? 1 : 0.45,
+                          transition: 'all 0.2s ease',
+                          boxShadow: hasData ? 'var(--shadow-sm)' : 'none',
+                          position: 'relative',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (hasData) {
+                            e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                            e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (hasData) {
+                            e.currentTarget.style.transform = 'none';
+                            e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                          }
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '15px', fontWeight: 800 }}>{day}</span>
+                          {hasData && (
+                            <span style={{
+                              fontSize: '8px',
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              backgroundColor: color,
+                              color: '#fff',
+                              padding: '1px 4px',
+                              borderRadius: '3px'
+                            }}>
+                              {statusLabel}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {hasData ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)' }}>{pct.toFixed(0)}%</span>
+                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Cumplido</span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Pendiente</span>
                         )}
                       </div>
-                      
-                      {hasData ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)' }}>{pct.toFixed(0)}%</span>
-                          <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Cumplido</span>
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Pendiente</span>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
         {/* Aggregates Dashboard Row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' }}>
@@ -2037,6 +2092,14 @@ export default function SupervisorDashboard({
         </div>
       </div>
     );
+    } catch (err) {
+      console.error("[Calendario Render Error]:", err);
+      return (
+        <div className="card" style={{ padding: '25px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <p>Cargando información del calendario...</p>
+        </div>
+      );
+    }
   };
 
   const renderWeeklyCleaningChecklist = () => {
