@@ -1555,7 +1555,8 @@ export default function SupervisorDashboard({
         return {
           ...t,
           completado: matched.completado,
-          evidencia: matched.evidencia
+          evidencia: matched.evidencia,
+          colaborador: matched.colaborador
         };
       }
 
@@ -1563,7 +1564,8 @@ export default function SupervisorDashboard({
         return {
           ...t,
           completado: t.completado || false,
-          evidencia: t.evidencia || null
+          evidencia: t.evidencia || null,
+          colaborador: t.completado ? (user?.name || null) : null
         };
       }
 
@@ -1573,14 +1575,16 @@ export default function SupervisorDashboard({
         return {
           ...t,
           completado: isCompleted,
-          evidencia: isCompleted ? (t.requiere_foto ? MOCK_PHOTO_URL : null) : null
+          evidencia: isCompleted ? (t.requiere_foto ? MOCK_PHOTO_URL : null) : null,
+          colaborador: isCompleted ? 'Equipo' : null
         };
       }
 
       return {
         ...t,
         completado: false,
-        evidencia: null
+        evidencia: null,
+        colaborador: null
       };
     });
   };
@@ -1606,7 +1610,8 @@ export default function SupervisorDashboard({
       if (matched) {
         return {
           ...t,
-          completado: matched.completado
+          completado: matched.completado,
+          colaborador: matched.colaborador
         };
       }
 
@@ -1644,6 +1649,56 @@ export default function SupervisorDashboard({
 
   const getComplianceForStats = (areaCode, dateStr, collaborator = 'TODOS') => {
     return getStoreComplianceForArea(checklistStoreFilter, areaCode, dateStr, collaborator);
+  };
+
+  const renderAreaContributorSummary = (areaCode) => {
+    const tasksForArea = getTasksForSelectedDate().filter(t => t.area === areaCode && isTaskAssignedTo(t.id, filterArea === areaCode ? selectedCollaborator : 'TODOS'));
+    const totalRequired = tasksForArea.length;
+    if (totalRequired === 0) return null;
+
+    const completedTasks = tasksForArea.filter(t => t.completado);
+    const totalCompleted = completedTasks.length;
+
+    if (totalCompleted === 0) {
+      return (
+        <div style={{ padding: '6px 10px', backgroundColor: 'var(--bg-main)', borderRadius: '4px', border: '1px dashed var(--border)', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+          ⚪ Sin tareas completadas aún en este turno.
+        </div>
+      );
+    }
+
+    const collabCounts = {};
+    completedTasks.forEach(t => {
+      const name = t.colaborador || 'Equipo';
+      collabCounts[name] = (collabCounts[name] || 0) + 1;
+    });
+
+    const areaPct = ((totalCompleted / totalRequired) * 100).toFixed(0);
+
+    return (
+      <div style={{ padding: '8px 12px', backgroundColor: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontWeight: 800 }}>
+          <span style={{ color: 'var(--text-main)' }}>👥 Aporte de Colaboradores ({totalCompleted}/{totalRequired} completadas)</span>
+          <span style={{ color: areaPct >= 90 ? 'var(--success)' : areaPct >= 70 ? 'var(--warning)' : 'var(--error)' }}>{areaPct}% Área</span>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {Object.entries(collabCounts).map(([name, count]) => {
+            const contribPct = ((count / totalRequired) * 100).toFixed(1);
+            return (
+              <div key={name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px' }}>
+                <span style={{ color: 'var(--text-main)' }}>
+                  👤 <strong>{name}</strong>: {count} {count === 1 ? 'tarea' : 'tareas'}
+                </span>
+                <span style={{ fontSize: '9.5px', fontWeight: 800, backgroundColor: 'var(--success-light)', color: 'var(--success)', padding: '1px 6px', borderRadius: '10px', border: '1px solid var(--success)' }}>
+                  +{contribPct}% al área
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   const renderTaskItem = (t) => {
@@ -1701,11 +1756,22 @@ export default function SupervisorDashboard({
       );
     }
 
+    const isCompleted = t.completado;
+    const collabName = t.colaborador;
+
     return (
       <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', fontSize: '12px', borderBottom: '1px solid var(--bg-main)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <span style={{ color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '240px' }} title={t.descripcion}>{t.descripcion}</span>
-          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>👤 Responsable: {getTaskResponsible(t.id)}</span>
+          {isCompleted && collabName ? (
+            <span style={{ fontSize: '10.5px', color: 'var(--success)', fontWeight: 600 }}>
+              👤 Realizado por: <strong>{collabName}</strong>
+            </span>
+          ) : (
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+              👤 Responsable: {getTaskResponsible(t.id)}
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {t.evidencia && (
@@ -5885,6 +5951,7 @@ main();`}
                     {(filterArea === 'GENERAL' || filterArea === 'BARRA') && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <h4 style={{ margin: '0 0 5px 0', borderBottom: '2px solid var(--primary)', paddingBottom: '4px', color: 'var(--primary)' }}>BARRA</h4>
+                        {renderAreaContributorSummary('BARRA')}
                         <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '4px' }}>
                           {getTasksForSelectedDate()
                             .filter(t => t.area === 'BARRA')
@@ -5898,6 +5965,7 @@ main();`}
                     {(filterArea === 'GENERAL' || filterArea === 'COCINA') && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <h4 style={{ margin: '0 0 5px 0', borderBottom: '2px solid var(--secondary)', paddingBottom: '4px', color: 'var(--secondary)' }}>COCINA</h4>
+                        {renderAreaContributorSummary('COCINA')}
                         <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '4px' }}>
                           {getTasksForSelectedDate()
                             .filter(t => t.area === 'COCINA')
@@ -5911,6 +5979,7 @@ main();`}
                     {(filterArea === 'GENERAL' || filterArea === 'SALON') && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <h4 style={{ margin: '0 0 5px 0', borderBottom: '2px solid #d97706', paddingBottom: '4px', color: '#d97706' }}>SALÓN</h4>
+                        {renderAreaContributorSummary('SALON')}
                         <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '4px' }}>
                           {getTasksForSelectedDate()
                             .filter(t => t.area === 'SALON')
