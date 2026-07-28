@@ -335,6 +335,7 @@ export default function SupervisorDashboard({
   const [selectedUser, setSelectedUser] = useState(null);
   const [previewPhoto, setPreviewPhoto] = useState(null);
   const [selectedAuditLog, setSelectedAuditLog] = useState(null);
+  const [calendarMonth, setCalendarMonth] = useState('2026-07');
   
   // States for Incident Dashboard
   const [incStoreFilter, setIncStoreFilter] = useState('28 de Julio Miraflores');
@@ -1791,49 +1792,49 @@ export default function SupervisorDashboard({
 
   const renderCalendarioView = () => {
     const weekdays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    const daysInJune = 30;
-
-    // Calculate Week 1 (June 1 - 7) average
-    let sumW1 = 0;
-    for (let d = 1; d <= 7; d++) {
-      const dateStr = `2026-06-${d.toString().padStart(2, '0')}`;
-      sumW1 += getComplianceForStats(filterArea, dateStr, selectedCollaborator);
-    }
-    const avgW1 = sumW1 / 7;
-
-    // Calculate Week 2 (June 8 - 14, data available for 8-12)
-    let sumW2 = 0;
-    let daysW2 = 0;
-    for (let d = 8; d <= 12; d++) {
-      const dateStr = `2026-06-${d.toString().padStart(2, '0')}`;
-      sumW2 += getComplianceForStats(filterArea, dateStr, selectedCollaborator);
-      daysW2++;
-    }
-    const avgW2 = daysW2 > 0 ? sumW2 / daysW2 : 0;
-
-    // Calculate June monthly average (June 1 - 12)
-    let sumMonth = 0;
-    for (let d = 1; d <= 12; d++) {
-      const dateStr = `2026-06-${d.toString().padStart(2, '0')}`;
-      sumMonth += getComplianceForStats(filterArea, dateStr, selectedCollaborator);
-    }
-    const avgMonth = sumMonth / 12;
-
-    // Calculate 2026 Yearly average (weighted Jan-May as 90.8% and June as calculated)
-    const avgYear = (90.8 * 5 + avgMonth) / 6;
+    const [yearStr, monthNumStr] = calendarMonth.split('-');
+    const yearNum = parseInt(yearStr);
+    const monthNum = parseInt(monthNumStr);
+    const daysInSelectedMonth = new Date(yearNum, monthNum, 0).getDate();
+    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const selectedMonthName = monthNames[monthNum] || 'Julio';
+    const todayStr = new Date().toISOString().split('T')[0];
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Calendar Card */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <div>
-              <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Calendario de Cumplimiento - Junio 2026</h3>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                Visualización de cumplimiento del departamento: <strong style={{ color: 'var(--primary)' }}>{filterArea}</strong>
-                {selectedCollaborator !== 'TODOS' && <span> | Colaborador: <strong style={{ color: 'var(--primary)' }}>{selectedCollaborator}</strong></span>}.
-                Haz clic en un día registrado para ver su checklist detallado.
-              </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+              <div>
+                <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Calendario de Cumplimiento - {selectedMonthName} {yearNum}</h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Visualización de cumplimiento del departamento: <strong style={{ color: 'var(--primary)' }}>{filterArea}</strong>
+                  {selectedCollaborator !== 'TODOS' && <span> | Colaborador: <strong style={{ color: 'var(--primary)' }}>{selectedCollaborator}</strong></span>}.
+                  Haz clic en un día registrado para ver su checklist detallado.
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Mes:</span>
+                <select
+                  value={calendarMonth}
+                  onChange={(e) => setCalendarMonth(e.target.value)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--bg-main)',
+                    color: 'var(--text-main)',
+                    fontWeight: 700,
+                    fontSize: '12.5px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="2026-07">Julio 2026 (Mes Actual)</option>
+                  <option value="2026-06">Junio 2026</option>
+                  <option value="2026-08">Agosto 2026</option>
+                </select>
+              </div>
             </div>
             
             {/* Color Legend */}
@@ -1869,10 +1870,10 @@ export default function SupervisorDashboard({
 
               {/* Days grid */}
               <div className="calendar-grid-minwidth" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
-                {Array.from({ length: daysInJune }, (_, i) => {
+                {Array.from({ length: daysInSelectedMonth }, (_, i) => {
                   const day = i + 1;
-                  const dateStr = `2026-06-${day.toString().padStart(2, '0')}`;
-                  const hasData = day <= 12;
+                  const dateStr = `${calendarMonth}-${day.toString().padStart(2, '0')}`;
+                  const hasData = dateStr <= todayStr;
                   
                   let pct = 0;
                   let bg = 'var(--bg-main)';
@@ -1906,6 +1907,10 @@ export default function SupervisorDashboard({
                       onClick={() => {
                         if (hasData) {
                           setSelectedDateStr(dateStr);
+                          if (typeof loadDailyChecklists === 'function') {
+                            const currentStore = checklistStoreFilter === 'Todas' ? (user?.store === 'Todas' ? '28 de Julio Miraflores' : user?.store) : checklistStoreFilter;
+                            loadDailyChecklists(currentStore, dateStr);
+                          }
                           setViewMode('DIARIO');
                         }
                       }}

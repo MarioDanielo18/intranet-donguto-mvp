@@ -33,10 +33,17 @@ export default async function handler(req, res) {
     try {
       let query = supabase
         .from('checklists_completados')
-        .select('*')
-        .eq('date', date);
+        .select('*');
 
-      if (store !== 'Todas') {
+      if (date && date !== 'all' && date !== 'TODOS') {
+        if (date.length === 7) {
+          query = query.gte('date', `${date}-01`).lte('date', `${date}-31`);
+        } else {
+          query = query.eq('date', date);
+        }
+      }
+
+      if (store && store !== 'Todas') {
         query = query.eq('store', store);
       }
 
