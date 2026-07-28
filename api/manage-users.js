@@ -102,7 +102,16 @@ export default async function handler(req, res) {
           { username: 'amosqueradg', password: 'dg.anto.M43801', name: 'Antonio Mosquera', role: 'Operaciones', store: 'Todas', biometric_id: '43801971' },
           { username: 'cvidaldg', password: 'dg.ciro.V85721', name: 'Ciro Svith Vidal Ignacio', role: 'Cocina', store: '28 de Julio Miraflores', biometric_id: '61268415' },
           { username: 'aolivosdg', password: 'dg.aria.O72619', name: 'Ariana Olivos', role: 'Servicio', store: '28 de Julio Miraflores', biometric_id: '147242' },
-          { username: 'gusdg', password: 'dg.gus.G9012', name: 'Gus', role: 'Barista', store: '28 de Julio Miraflores' }
+          { username: 'gusdg', password: 'dg.gus.G9012', name: 'Gus', role: 'Barista', store: '28 de Julio Miraflores' },
+
+          // TIENDA ARRIOLA - LA VICTORIA
+          { username: 'mlucerodg', password: 'dg.migu.L43278', name: 'Miguel Lucero Paredes', role: 'Barista', store: 'Arriola - La Victoria', telefono: '944543278' },
+          { username: 'drodriguezdg', password: 'dg.dama.R85573', name: 'Damaris Rodriguez Navarro', role: 'Cocina', store: 'Arriola - La Victoria', telefono: '954188573' },
+          { username: 'oataujedg', password: 'dg.omar.A18223', name: 'Omar Atauje Vargas', role: 'Barista', store: 'Arriola - La Victoria', telefono: '915918223' },
+          { username: 'blossiodg', password: 'dg.brun.L99936', name: 'Brunella Lossio Duran', role: 'Servicio', store: 'Arriola - La Victoria', telefono: '972099936' },
+          { username: 'smartinezdg', password: 'dg.sand.M42764', name: 'Sandro Martinez Peña', role: 'Cocina', store: 'Arriola - La Victoria', telefono: '988542764' },
+          { username: 'srojasdg', password: 'dg.shar.R99069', name: 'Sharon Rojas Castro', role: 'Servicio', store: 'Arriola - La Victoria', telefono: '947799069' },
+          { username: 'alaradg', password: 'dg.adri.L14568', name: 'Adrian Lara Hoyos', role: 'Servicio', store: 'Arriola - La Victoria', telefono: '938414568' }
         ];
 
         for (const userToSeed of usersToSeed) {
