@@ -111,7 +111,15 @@ export default async function handler(req, res) {
           { username: 'blossiodg', password: 'dg.brun.L99936', name: 'Brunella Lossio Duran', role: 'Servicio', store: 'Arriola - La Victoria', telefono: '972099936' },
           { username: 'smartinezdg', password: 'dg.sand.M42764', name: 'Sandro Martinez Peña', role: 'Cocina', store: 'Arriola - La Victoria', telefono: '988542764' },
           { username: 'srojasdg', password: 'dg.shar.R99069', name: 'Sharon Rojas Castro', role: 'Servicio', store: 'Arriola - La Victoria', telefono: '947799069' },
-          { username: 'alaradg', password: 'dg.adri.L14568', name: 'Adrian Lara Hoyos', role: 'Servicio', store: 'Arriola - La Victoria', telefono: '938414568' }
+          { username: 'alaradg', password: 'dg.adri.L14568', name: 'Adrian Lara Hoyos', role: 'Servicio', store: 'Arriola - La Victoria', telefono: '938414568' },
+
+          // SEDE BARRANCO
+          { username: 'hugazdg', password: 'dg.hugo.U53034', name: 'Hugo César Ugaz Gálvez', role: 'Cocina', store: 'Barranco', email: 'cesarugaz010600l@gmail.com', telefono: '938853034' },
+          { username: 'shuaylladg', password: 'dg.shak.H74355', name: 'Shakira Elfi Huaylla Donayres', role: 'Servicio', store: 'Barranco', email: 'Shakirahuaylla5@gmail.com', telefono: '923774355' },
+          { username: 'lluyodg', password: 'dg.luis.L16565', name: 'Luis Daniel Luyo Arce', role: 'Cocina', store: 'Barranco', email: 'daniel_luyo@hotmail.com', telefono: '955516565' },
+          { username: 'jzapaterdg', password: 'dg.jime.Z95452', name: 'Jimena Tamara Zapater Farfán', role: 'Servicio', store: 'Barranco', email: 'jzapaterfarfan@gmail.com', telefono: '993695452' },
+          { username: 'vlobosdg', password: 'dg.vict.L46876', name: 'Victor Adolfo Lobos Contreras', role: 'Barista', store: 'Barranco', email: 'vincitore_21@hotmail.com', telefono: '910346876' },
+          { username: 'molayadg', password: 'dg.math.O28974', name: 'Mathius Olaya Capcha', role: 'Barista', store: 'Barranco', email: 'mathiussaoc29@gmail.com', telefono: '973228974' }
         ];
 
         for (const userToSeed of usersToSeed) {
