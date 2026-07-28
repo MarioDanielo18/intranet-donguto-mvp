@@ -1637,16 +1637,8 @@ export default function SupervisorDashboard({
       return matchArea && matchCollab;
     });
 
-    const registeredInFiltered = filtered.filter(t => storeDbChecklists.some(r => r.taskId === t.id || r.task_id === t.id));
-
-    let total = filtered.length;
-    let completed = filtered.filter(t => t.completado).length;
-
-    if (registeredInFiltered.length > 0 && areaCode === 'GENERAL') {
-      total = registeredInFiltered.length;
-      completed = registeredInFiltered.filter(t => t.completado).length;
-    }
-
+    const total = filtered.length;
+    const completed = filtered.filter(t => t.completado).length;
     return total > 0 ? (completed / total) * 100 : 0;
   };
 
