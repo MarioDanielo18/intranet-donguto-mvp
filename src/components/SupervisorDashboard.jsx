@@ -1439,6 +1439,7 @@ export default function SupervisorDashboard({
 
   const [checklistStoreFilter, setChecklistStoreFilter] = useState('28 de Julio Miraflores');
   const [dbChecklists, setDbChecklists] = useState([]);
+  const [monthDbChecklists, setMonthDbChecklists] = useState([]);
   const [loadingChecklists, setLoadingChecklists] = useState(false);
 
   const fetchChecklistsFromDb = async (date, store) => {
@@ -1459,9 +1460,29 @@ export default function SupervisorDashboard({
     }
   };
 
+  const fetchMonthChecklistsFromDb = async (monthStr, store) => {
+    try {
+      const res = await fetch(`/api/checklists?date=${monthStr}&store=${store}`);
+      const data = await res.json();
+      if (data.status === 'success' && data.records) {
+        setMonthDbChecklists(data.records);
+      } else {
+        setMonthDbChecklists([]);
+      }
+    } catch (err) {
+      console.warn('[Month Checklist Fetch] Failed:', err);
+      setMonthDbChecklists([]);
+    }
+  };
+
   useEffect(() => {
     fetchChecklistsFromDb(selectedDateStr, checklistStoreFilter);
   }, [selectedDateStr, checklistStoreFilter]);
+
+  useEffect(() => {
+    const monthStr = selectedDateStr ? selectedDateStr.substring(0, 7) : (calendarMonth || '2026-07');
+    fetchMonthChecklistsFromDb(monthStr, checklistStoreFilter);
+  }, [selectedDateStr, calendarMonth, checklistStoreFilter]);
 
   const visibleMembers = (() => {
     const isSuperUser = ['Técnico', 'Gerente'].includes(user.role);
@@ -1515,14 +1536,19 @@ export default function SupervisorDashboard({
 
   const getTasksForSelectedDate = () => {
     const todayStr = new Date().toISOString().split('T')[0];
+    const allRecords = [...monthDbChecklists, ...dbChecklists];
+    const storeDbChecklists = allRecords.filter(r => 
+      (checklistStoreFilter === 'Todas' || r.store === checklistStoreFilter || r.tienda === checklistStoreFilter) &&
+      (r.date === selectedDateStr || r.fecha === selectedDateStr)
+    );
 
     return checklists.map(t => {
       let matched = null;
       if (selectedCollaborator && selectedCollaborator !== 'TODOS') {
         const collabFirst = selectedCollaborator.split(' ')[0].toLowerCase();
-        matched = dbChecklists.find(r => (r.taskId === t.id || r.task_id === t.id) && r.colaborador && r.colaborador.toLowerCase().includes(collabFirst));
+        matched = storeDbChecklists.find(r => (r.taskId === t.id || r.task_id === t.id) && r.colaborador && r.colaborador.toLowerCase().includes(collabFirst));
       } else {
-        matched = dbChecklists.find(r => r.taskId === t.id || r.task_id === t.id);
+        matched = storeDbChecklists.find(r => r.taskId === t.id || r.task_id === t.id);
       }
 
       if (matched) {
@@ -1530,6 +1556,14 @@ export default function SupervisorDashboard({
           ...t,
           completado: matched.completado,
           evidencia: matched.evidencia
+        };
+      }
+
+      if (selectedDateStr === todayStr) {
+        return {
+          ...t,
+          completado: t.completado || false,
+          evidencia: t.evidencia || null
         };
       }
 
@@ -1553,7 +1587,12 @@ export default function SupervisorDashboard({
 
   const getStoreComplianceForArea = (storeName, areaCode, dateStr, collaborator = 'TODOS') => {
     const todayStr = new Date().toISOString().split('T')[0];
-    const storeDbChecklists = dbChecklists.filter(r => r.store === storeName || r.tienda === storeName);
+    const allRecords = [...monthDbChecklists, ...dbChecklists];
+
+    const storeDbChecklists = allRecords.filter(r => 
+      (storeName === 'Todas' || r.store === storeName || r.tienda === storeName) &&
+      (r.date === dateStr || r.fecha === dateStr)
+    );
 
     const tasksForDate = checklists.map(t => {
       let matched = null;
@@ -1568,6 +1607,13 @@ export default function SupervisorDashboard({
         return {
           ...t,
           completado: matched.completado
+        };
+      }
+
+      if (dateStr === todayStr) {
+        return {
+          ...t,
+          completado: t.completado || false
         };
       }
 
@@ -1590,19 +1636,22 @@ export default function SupervisorDashboard({
       const matchCollab = isTaskAssignedTo(t.id, collaborator, teamMembers);
       return matchArea && matchCollab;
     });
-    const total = filtered.length;
-    const completed = filtered.filter(t => t.completado).length;
+
+    const registeredInFiltered = filtered.filter(t => storeDbChecklists.some(r => r.taskId === t.id || r.task_id === t.id));
+
+    let total = filtered.length;
+    let completed = filtered.filter(t => t.completado).length;
+
+    if (registeredInFiltered.length > 0 && areaCode === 'GENERAL') {
+      total = registeredInFiltered.length;
+      completed = registeredInFiltered.filter(t => t.completado).length;
+    }
+
     return total > 0 ? (completed / total) * 100 : 0;
   };
 
   const getComplianceForStats = (areaCode, dateStr, collaborator = 'TODOS') => {
-    if (checklistStoreFilter === 'Todas') {
-      const stores = ['28 de Julio Miraflores'];
-      const compliances = stores.map(store => getStoreComplianceForArea(store, areaCode, dateStr, collaborator));
-      return compliances.reduce((acc, val) => acc + val, 0) / stores.length;
-    } else {
-      return getStoreComplianceForArea(checklistStoreFilter, areaCode, dateStr, collaborator);
-    }
+    return getStoreComplianceForArea(checklistStoreFilter, areaCode, dateStr, collaborator);
   };
 
   const renderTaskItem = (t) => {
@@ -1935,10 +1984,23 @@ export default function SupervisorDashboard({
                     let color = 'var(--text-muted)';
                     let border = '1px solid var(--border)';
                     let statusLabel = 'Sin datos';
-                    
+                    let hasDayRecords = false;
+
                     if (hasData) {
                       pct = getComplianceForStats(filterArea, dateStr, selectedCollaborator);
-                      if (pct >= 90) {
+                      const allRecords = [...monthDbChecklists, ...dbChecklists];
+                      const dayRecs = allRecords.filter(r => 
+                        (checklistStoreFilter === 'Todas' || r.store === checklistStoreFilter || r.tienda === checklistStoreFilter) &&
+                        (r.date === dateStr || r.fecha === dateStr)
+                      );
+                      hasDayRecords = dayRecs.length > 0 || dateStr === todayStr || (MOCK_HISTORY[dateStr]?.completedIds?.length > 0);
+
+                      if (!hasDayRecords && dateStr < todayStr) {
+                        bg = 'var(--bg-main)';
+                        color = 'var(--text-muted)';
+                        border = '1px dashed var(--border)';
+                        statusLabel = 'Sin registrar';
+                      } else if (pct >= 90) {
                         bg = 'var(--success-light)';
                         color = 'var(--success)';
                         border = '1px solid var(--success)';
@@ -2006,7 +2068,7 @@ export default function SupervisorDashboard({
                               fontSize: '8px',
                               fontWeight: 800,
                               textTransform: 'uppercase',
-                              backgroundColor: color,
+                              backgroundColor: statusLabel === 'Sin registrar' ? 'var(--text-muted)' : color,
                               color: '#fff',
                               padding: '1px 4px',
                               borderRadius: '3px'
@@ -2017,10 +2079,14 @@ export default function SupervisorDashboard({
                         </div>
                         
                         {hasData ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)' }}>{pct.toFixed(0)}%</span>
-                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Cumplido</span>
-                          </div>
+                          hasDayRecords ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)' }}>{pct.toFixed(0)}%</span>
+                              <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Cumplido</span>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin registrar</span>
+                          )
                         ) : (
                           <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Pendiente</span>
                         )}
