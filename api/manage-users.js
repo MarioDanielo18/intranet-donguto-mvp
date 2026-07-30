@@ -118,7 +118,8 @@ export default async function handler(req, res) {
           { username: 'lluyodg', password: 'dg.luis.L16565', name: 'Luis Daniel Luyo Arce', role: 'Cocina', store: 'Barranco', email: 'daniel_luyo@hotmail.com', telefono: '955516565' },
           { username: 'jzapaterdg', password: 'dg.jime.Z95452', name: 'Jimena Tamara Zapater Farfán', role: 'Servicio', store: 'Barranco', email: 'jzapaterfarfan@gmail.com', telefono: '993695452' },
           { username: 'vlobosdg', password: 'dg.vict.L46876', name: 'Victor Adolfo Lobos Contreras', role: 'Barista', store: 'Barranco', email: 'vincitore_21@hotmail.com', telefono: '910346876' },
-          { username: 'molayadg', password: 'dg.math.O28974', name: 'Mathius Olaya Capcha', role: 'Barista', store: 'Barranco', email: 'mathiussaoc29@gmail.com', telefono: '973228974' }
+          { username: 'molayadg', password: 'dg.math.O28974', name: 'Mathius Olaya Capcha', role: 'Barista', store: 'Barranco', email: 'mathiussaoc29@gmail.com', telefono: '973228974' },
+          { username: 'fmurrietadg', password: 'dg.feli.M78772', name: 'Felipe Manuel Murrieta Gutiérrez', role: 'Servicio', store: 'Barranco', email: 'felipe.murrieta.96@gmail.com', telefono: '926869740', dni: '76078772' }
         ];
 
         for (const userToSeed of usersToSeed) {
