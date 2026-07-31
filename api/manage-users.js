@@ -97,8 +97,6 @@ export default async function handler(req, res) {
           { username: 'avasquezdg', password: 'dg.alex.V38314', name: 'Alexander Vásquez Villalobos', role: 'Servicio', store: '28 de Julio Miraflores', email: 'Alexito1836@gmail.com', telefono: '992838314', biometric_id: '61096401' },
           { username: 'mbravodg', password: 'dg.moni.B75773', name: 'Mónica Daniela Bravo Rodríguez', role: 'Servicio', store: '28 de Julio Miraflores', email: 'Monikbrav7@gmail.com', telefono: '908757732', biometric_id: '06587622' },
           { username: 'fsotodg', password: 'dg.fran.S04464', name: 'Franchesca Giovana Soto Chávez', role: 'Cocina', store: '28 de Julio Miraflores', email: 'fgschavez@gmail.com', telefono: '958004464', biometric_id: '72306939' },
-          { username: 'psilvadg', password: 'dg.patr.S26393', name: 'Patrick Silva Chávez', role: 'Barista', store: '28 de Julio Miraflores', email: 'murciegus@gmail.com', telefono: '979526393' },
-          { username: 'jaymadg', password: 'dg.jesu.A22582', name: 'Jesus Ayma Chaparro', role: 'Barista', store: '28 de Julio Miraflores', email: 'jesusaymachaparro@gmail.com', telefono: '912322582', biometric_id: '60979426' },
           { username: 'cvidaldg', password: 'dg.ciro.V85721', name: 'Ciro Svith Vidal Ignacio', role: 'Cocina', store: '28 de Julio Miraflores', biometric_id: '61268415' },
           { username: 'aolivosdg', password: 'dg.aria.O72619', name: 'Ariana Olivos', role: 'Servicio', store: '28 de Julio Miraflores', biometric_id: '147242' },
           { username: 'gusdg', password: 'dg.gus.G9012', name: 'Gus', role: 'Barista', store: '28 de Julio Miraflores' },
@@ -172,14 +170,7 @@ export default async function handler(req, res) {
         needsRefresh = true;
       }
 
-      if (jayma && (!jayma.biometric_id || jayma.biometric_id !== '60979426')) {
-        console.log('[seeder] Updating Jesus Ayma biometric_id to 60979426 in Supabase...');
-        await supabase
-          .from('usuarios')
-          .update({ biometric_id: '60979426' })
-          .eq('username', 'jaymadg');
-        needsRefresh = true;
-      }
+
 
       const avasquez = (users || []).find(u => u.username === 'avasquezdg');
       if (avasquez && (!avasquez.biometric_id || avasquez.biometric_id !== '61096401')) {

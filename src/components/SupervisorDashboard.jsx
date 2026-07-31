@@ -83,8 +83,6 @@ const COLLABORATOR_ROLES = {
   'Alexis Ocampo Rodríguez': 'Cocina',
   'Franchesca Giovana Soto Chávez': 'Cocina',
   'Emily Egocheaga Ormeño': 'Cocina',
-  'Patrick Silva Chávez': 'Barista',
-  'Jesus Ayma Chaparro': 'Barista',
   'Ruth Sarahi Laurente Olivera': 'Barista'
 };
 
