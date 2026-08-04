@@ -60,7 +60,7 @@ const INITIAL_CHECKLISTS = [
   { id: 'K-AP-3', area: 'COCINA', tipo_turno: 'APERTURA', descripcion: 'Encender hornos and freidora. Verificar cilindros de gas.', requiere_foto: true, completado: false },
   { id: 'K-AP-4', area: 'COCINA', tipo_turno: 'APERTURA', descripcion: 'Revisar equipos de frío (conservadores a 3°-4°C y congeladores a -16° a -18°C).', requiere_foto: true, completado: false },
   { id: 'K-AP-5', area: 'COCINA', tipo_turno: 'APERTURA', descripcion: 'Lavar y desinfectar tablas de picar, mesas de trabajo y trapos.', requiere_foto: true, completado: false },
-  { id: 'K-AP-6', area: 'COCINA', tipo_turno: 'APERTURA', descripcion: 'Hacer inventario de cocina y emitir requerimiento de pedidos (si aplica).', requiere_foto: true, completado: false },
+  { id: 'K-AP-6', area: 'COCINA', tipo_turno: 'APERTURA', descripcion: 'Hacer inventario de cocina y emitir requerimiento de pedidos (Programado para los días Viernes).', requiere_foto: true, completado: false },
   { id: 'K-AP-7', area: 'COCINA', tipo_turno: 'APERTURA', descripcion: 'Revisar fechas de vencimiento y rotulado de materias primas.', requiere_foto: true, completado: false },
   { id: 'K-AP-8', area: 'COCINA', tipo_turno: 'APERTURA', descripcion: 'Tener listo el mice and place de verduras, filetes y salsas fechadas.', requiere_foto: true, completado: false },
 
@@ -86,7 +86,7 @@ const INITIAL_CHECKLISTS = [
   { id: 'S-AP-6', area: 'SALON', tipo_turno: 'APERTURA', descripcion: 'Limpieza y abastecimiento de estacion - Limpieza de mobiliario, abastecimiento de servilletas, sorbetes, cubiertos, sal, pimienta y azucar.', requiere_foto: true, completado: false },
   { id: 'S-AP-7', area: 'SALON', tipo_turno: 'APERTURA', descripcion: 'Atender - en base a los pasos de servicios de la marca y entregar los QR para las reseñas.', requiere_foto: true, completado: false },
   { id: 'S-AP-8', area: 'SALON', tipo_turno: 'APERTURA', descripcion: 'Pizarra del dia - Actualizar pizarra ya sea de desayuno, plato del dia y promociones del día (verificar que la pizarra este siempre limpia y ordenada).', requiere_foto: true, completado: false },
-  { id: 'S-AP-9', area: 'SALON', tipo_turno: 'APERTURA', descripcion: 'Inventario de Servicio: Azucares, productos descartable, contrometros de visa - ticketera, producto de limpieza y cucharitas de espreso, americano y vasos lata.', requiere_foto: true, completado: false },
+  { id: 'S-AP-9', area: 'SALON', tipo_turno: 'APERTURA', descripcion: 'Inventario de Servicio: Azucares, descartables, ticketera, productos de limpieza y cucharitas (Programado para los días Viernes).', requiere_foto: true, completado: false },
 
   // SALON - RELEVO
   { id: 'S-RL-1', area: 'SALON', tipo_turno: 'RELEVO', descripcion: 'Limpieza de SSHH. - Limpieza de inodoros, lavatorios, piso y abastecimiento de papel, jabón.', requiere_foto: true, completado: false },
@@ -96,14 +96,14 @@ const INITIAL_CHECKLISTS = [
   { id: 'S-CI-1', area: 'SALON', tipo_turno: 'CIERRE', descripcion: 'Limpieza de mesas y sillas - Limpieza con limpiatodo de mesas y verificar que las sillas y sillon esten libres de residuos.', requiere_foto: true, completado: false },
   { id: 'S-CI-2', area: 'SALON', tipo_turno: 'CIERRE', descripcion: 'Limpieza de salón, terraza y directorios - Barrido y trapeado.', requiere_foto: true, completado: false },
   { id: 'S-CI-3', area: 'SALON', tipo_turno: 'CIERRE', descripcion: 'Limpieza de SSHH. - Limpieza de inodoros y caños (con limpiatodo y lejia), porta papel toalla, porta jabon, dispensador de papel higienico, tapa de tacho y toda superficie, pulido de espejos, lavar con cepillo y lejia la parte interna del inodoro, verificar que haya papel higienico y papel toalla. Barrido y trapeado con limpia todo y lejia.', requiere_foto: true, completado: false },
-  { id: 'S-CI-4', area: 'SALON', tipo_turno: 'CIERRE', descripcion: 'Inventario de Servicio: Azucares, productos descartable, contrometros de visa - ticketera, producto de limpieza y cucharitas de espreso, americano y vasos lata.', requiere_foto: true, completado: false },
+  { id: 'S-CI-4', area: 'SALON', tipo_turno: 'CIERRE', descripcion: 'Inventario de Servicio: Azucares, descartables, ticketera, productos de limpieza y cucharitas (Programado para los días Viernes).', requiere_foto: true, completado: false },
   { id: 'S-CI-5', area: 'SALON', tipo_turno: 'CIERRE', descripcion: 'Atender - en base a los pasos de servicios de la marca y entregar los QR para las reseñas.', requiere_foto: true, completado: false },
   { id: 'S-CI-6', area: 'SALON', tipo_turno: 'CIERRE', descripcion: 'Apagado de luces de salon encendidas, tablet, musica, computadora y cuadre de caja - Informar al administrador si existe alguna anomalia o necesidad de mantenimiento.', requiere_foto: true, completado: false },
 ];
 
 const INITIAL_CLEANING_TASKS = [
   { id: 'CL-1', descripcion: 'Limpieza de mueble en general y menaje', frecuencia: 'SEMANAL', area: 'SALON', completedDays: {} },
-  { id: 'CL-2', descripcion: 'Limpieza y pulido de vitrina de lunas', frecuencia: 'SEMANAL', area: 'SALON', completedDays: {} },
+  { id: 'CL-2', descripcion: 'Limpieza y pulido de vitrina de lunas, puertas o espejo grande (2 veces por semana: Mañana / Cierre)', frecuencia: 'SEMANAL', area: 'SALON', completedDays: {} },
   { id: 'CL-3', descripcion: 'Limpieza de máquina de hielo por fuera/dentro', frecuencia: 'MENSUAL', area: 'BARRA', completedDays: {} },
   { id: 'CL-4', descripcion: 'Limpieza de visicooler de barra', frecuencia: 'SEMANAL', area: 'BARRA', completedDays: {}, role: 'Barista' },
   { id: 'CL-5', descripcion: 'Limpieza profunda de exhibidora de postres', frecuencia: 'SEMANAL', area: 'BARRA', completedDays: {}, role: 'Barista' },
@@ -111,7 +111,7 @@ const INITIAL_CLEANING_TASKS = [
   { id: 'CL-12', descripcion: 'Limpieza de electrodomésticos licuadoras/microondas', frecuencia: 'SEMANAL', area: 'BARRA', completedDays: {}, role: 'Barista' },
   { id: 'CL-13', descripcion: 'Lavado de coctelería y tazas en repisa', frecuencia: 'SEMANAL', area: 'BARRA', completedDays: {}, role: 'Barista' },
   { id: 'CL-14', descripcion: 'Limpieza de dispensador de papel', frecuencia: 'SEMANAL', area: 'SALON', completedDays: {}, role: 'Servicio' },
-  { id: 'CL-17', descripcion: 'Limpieza de vinos y estante de botellas', frecuencia: 'SEMANAL', area: 'SALON', completedDays: {}, role: 'Servicio' },
+  { id: 'CL-17', descripcion: 'Limpieza de vinos y estante de botellas', frecuencia: 'SEMANAL', area: 'BARRA', completedDays: {}, role: 'Barista' },
   { id: 'CL-K1', descripcion: 'Limpieza profunda de hornos, freidoras y planchas', frecuencia: 'SEMANAL', area: 'COCINA', completedDays: {}, role: 'Cocina' },
   { id: 'CL-K2', descripcion: 'Desinfección profunda de estantes y menaje de cocina', frecuencia: 'SEMANAL', area: 'COCINA', completedDays: {}, role: 'Cocina' },
   { id: 'CL-K3', descripcion: 'Limpieza de paredes y trampas de grasa de cocina', frecuencia: 'SEMANAL', area: 'COCINA', completedDays: {}, role: 'Cocina' },
