@@ -299,7 +299,12 @@ export const AppProvider = ({ children }) => {
               const updatedUsers = databaseUsers.map(m => {
                 const bioId = String(m.biometricId || m.biometric_id || '').trim();
                 if (bioId && m.role !== 'Gerente') {
-                  const userPunches = punchesData.punches.filter(p => String(p.biometric_id) === bioId);
+                  const bioIdNum = parseInt(bioId, 10);
+                  const userPunches = punchesData.punches.filter(p => {
+                    const pBioStr = String(p.biometric_id || '').trim();
+                    const pBioNum = parseInt(pBioStr, 10);
+                    return pBioStr === bioId || (!isNaN(bioIdNum) && pBioNum === bioIdNum);
+                  });
                   if (userPunches.length === 0) return { ...m, arrivalLogs: [] };
                   
                   const punchesByDate = {};
