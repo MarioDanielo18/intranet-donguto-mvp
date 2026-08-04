@@ -2425,8 +2425,9 @@ export default function SupervisorDashboard({
   };
 
   const renderMultistoreDashboard = () => {
-    const storesList = ['28 de Julio Miraflores'];
-    
+    const storesList = ['28 de Julio Miraflores', 'Arriola - La Victoria', 'Barranco'];
+    const filteredStores = monitoringStoreFilter === 'Todas' ? storesList : storesList.filter(s => s === monitoringStoreFilter);
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2448,14 +2449,17 @@ export default function SupervisorDashboard({
             value={monitoringStoreFilter}
             onChange={(e) => setMonitoringStoreFilter(e.target.value)}
             className="input"
-            style={{ padding: '5px 10px', fontSize: '12.5px', height: '32px', minWidth: '180px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
+            style={{ padding: '5px 10px', fontSize: '12.5px', height: '32px', minWidth: '220px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
           >
+            <option value="Todas">🌐 Todas las Sedes Habilitadas</option>
             <option value="28 de Julio Miraflores">🏢 Sede 28 de Julio Miraflores</option>
+            <option value="Arriola - La Victoria">🏢 Sede Arriola - La Victoria</option>
+            <option value="Barranco">🏢 Sede Barranco</option>
           </select>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-          {storesList.map(storeName => {
+          {filteredStores.map(storeName => {
             const storeMembers = approvedMembers.filter(m => m.store === storeName);
             const storeLogs = auditLogs.filter(log => log.tienda === storeName);
             

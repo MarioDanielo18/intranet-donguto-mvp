@@ -86,10 +86,10 @@ export default async function handler(req, res) {
           { username: 'onavarrodg', password: 'dg.osca.N9405', name: 'Oscar Navarro', role: 'Gerente', store: 'Todas' },
           { username: 'gechevarriadg', password: 'dg.gabr.E9087', name: 'Gabriela Echevarría', role: 'Gerente', store: 'Todas' },
           { username: 'cnizamadg', password: 'dg.chri.N9633', name: 'Christian Nizama', role: 'Administrador', store: '28 de Julio Miraflores', biometric_id: '44179147' },
-          { username: 'arianadg', password: 'dg.aria.A9928', name: 'Ariana', role: 'Auditor', store: '28 de Julio Miraflores', biometric_id: '43588725' },
+          { username: 'arianadg', password: 'dg.aria.A9928', name: 'Ariana', role: 'Auditor', store: 'Todas', biometric_id: '43588725' },
           { username: 'ccuevadg', password: 'dg.chri.C9458', name: 'Christian Cueva', role: 'Administrador', store: 'Todas' },
           { username: 'woviedodg', password: 'dg.wilf.O9580', name: 'Wilfredo Oviedo', role: 'Auditor', store: 'Todas', biometric_id: '41670259' },
-          { username: 'jsisniegasdg', password: 'dg.john.S15832', name: 'John Sisniegas Toralba', role: 'Auditor', store: '28 de Julio Miraflores', email: 'john.sisniegas.t@gmail.com' },
+          { username: 'jsisniegasdg', password: 'dg.john.S15832', name: 'John Sisniegas Toralba', role: 'Auditor', store: 'Todas', email: 'john.sisniegas.t@gmail.com' },
           { username: 'jortizdg', password: 'dg.juan.O9040', name: 'Juan Ortiz', role: 'Administrador', store: 'Todas' },
           { username: 'mquispedg', password: 'dg.mari.Q9008', name: 'Mario Quispe', role: 'Gerente', store: 'Todas', biometric_id: '898691' },
           { username: 'mquispetec', password: 'dg.mari.T8997', name: 'Mario Quispe (Técnico)', role: 'Técnico', store: 'Todas' },
@@ -145,6 +145,29 @@ export default async function handler(req, res) {
         if (updatedUsers) {
           users = updatedUsers;
         }
+      }
+
+      // Ensure Ariana and Auditors have store: 'Todas' in Supabase
+      const arianaUser = (users || []).find(u => u.username === 'arianadg');
+      if (arianaUser && arianaUser.store !== 'Todas') {
+        console.log('[seeder] Updating Ariana store permission to "Todas" in Supabase...');
+        await supabase
+          .from('usuarios')
+          .update({ store: 'Todas' })
+          .eq('username', 'arianadg');
+        
+        arianaUser.store = 'Todas';
+      }
+
+      const johnUser = (users || []).find(u => u.username === 'jsisniegasdg');
+      if (johnUser && johnUser.store !== 'Todas') {
+        console.log('[seeder] Updating John Sisniegas store permission to "Todas" in Supabase...');
+        await supabase
+          .from('usuarios')
+          .update({ store: 'Todas' })
+          .eq('username', 'jsisniegasdg');
+
+        johnUser.store = 'Todas';
       }
 
       // Ensure Christian Cueva and Jesus Ayma have correct biometric_id and role mapped in database
