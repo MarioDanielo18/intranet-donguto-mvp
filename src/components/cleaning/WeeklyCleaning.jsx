@@ -32,12 +32,26 @@ const WeeklyCleaning = ({ user, cleaningTasks, onSaveCleaning }) => {
 
   const [selectedWeekId, setSelectedWeekId] = useState(currentWeekObj.id);
 
-  const weeklyTasks = cleaningTasks.filter(t => t.frecuencia === 'SEMANAL').filter(t => !t.role || t.role === user.role);
+  // Area filter state, default based on user role
+  const getUserDefaultArea = (role) => {
+    if (role === 'Cocina') return 'COCINA';
+    if (role === 'Barista') return 'BARRA';
+    if (role === 'Servicio') return 'SALON';
+    return 'TODAS';
+  };
+
+  const [selectedArea, setSelectedArea] = useState(getUserDefaultArea(user?.role));
+
+  const allWeeklyTasks = cleaningTasks.filter(t => t.frecuencia === 'SEMANAL');
+  const filteredTasks = allWeeklyTasks.filter(t => {
+    if (selectedArea === 'TODAS') return true;
+    return t.area === selectedArea || t.role === (selectedArea === 'COCINA' ? 'Cocina' : selectedArea === 'BARRA' ? 'Barista' : 'Servicio');
+  });
 
   const selectedWeek = monthWeeks.find(w => w.id === selectedWeekId) || currentWeekObj;
   
-  const completedCountWeek = weeklyTasks.filter(t => t.completedDays[selectedWeekId]).length;
-  const totalCountWeek = weeklyTasks.length;
+  const completedCountWeek = filteredTasks.filter(t => t.completedDays[selectedWeekId]).length;
+  const totalCountWeek = filteredTasks.length;
   const weekProgress = totalCountWeek > 0 ? (completedCountWeek / totalCountWeek) * 100 : 0;
 
   const isFutureWeek = currentDay < selectedWeek.startDay;
@@ -55,6 +69,35 @@ const WeeklyCleaning = ({ user, cleaningTasks, onSaveCleaning }) => {
         </p>
       </div>
 
+      {/* Area Filter Selector Tabs */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        {[
+          { id: 'TODAS', label: '🌐 TODAS LAS ÁREAS' },
+          { id: 'BARRA', label: '☕ BARRA' },
+          { id: 'COCINA', label: '🍳 COCINA' },
+          { id: 'SALON', label: '💁 SALÓN' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setSelectedArea(tab.id)}
+            className="btn"
+            style={{
+              padding: '6px 14px',
+              fontSize: '11px',
+              fontWeight: 700,
+              borderRadius: '20px',
+              backgroundColor: selectedArea === tab.id ? 'var(--primary)' : 'var(--bg-main)',
+              color: selectedArea === tab.id ? '#fff' : 'var(--text-main)',
+              border: selectedArea === tab.id ? 'none' : '1px solid var(--border)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Week Tabs */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '5px 0' }}>
         {monthWeeks.map((week) => {
@@ -62,7 +105,7 @@ const WeeklyCleaning = ({ user, cleaningTasks, onSaveCleaning }) => {
           const isWeekCurrent = currentDay >= week.startDay && currentDay <= week.endDay;
           const isSelected = selectedWeekId === week.id;
           
-          const completedCount = weeklyTasks.filter(t => t.completedDays[week.id]).length;
+          const completedCount = filteredTasks.filter(t => t.completedDays[week.id]).length;
           const progress = totalCountWeek > 0 ? (completedCount / totalCountWeek) * 100 : 0;
           
           let badgeText = '';
@@ -159,7 +202,7 @@ const WeeklyCleaning = ({ user, cleaningTasks, onSaveCleaning }) => {
               alignItems: 'center',
               gap: '8px'
             }}>
-              <span>⚡ <strong>Registro Habilitado:</strong> Puedes completar las tareas de limpieza profunda semanal durante toda esta semana. Recuerda subir una foto como evidencia para cada tarea.</span>
+              <span>⚡ <strong>Registro Habilitado:</strong> Puedes completar las tareas de limpieza profunda semanal durante toda esta semana. Recuerda subir una o varias fotos como evidencia.</span>
             </div>
           );
         }
@@ -186,97 +229,103 @@ const WeeklyCleaning = ({ user, cleaningTasks, onSaveCleaning }) => {
 
       {/* Weekly Checklist Tasks */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {weeklyTasks.map((task) => {
-          const isCompleted = !!task.completedDays[selectedWeekId];
-          const evidenceUrl = task.evidenciaDays ? task.evidenciaDays[selectedWeekId] : null;
-          const hasEvidence = !!evidenceUrl;
-          const isLocked = isFutureWeek || isPastWeek;
-          
-          return (
-            <div
-              key={task.id}
-              onClick={() => {
-                if (isLocked) return;
-                if (!hasEvidence) {
-                  document.getElementById(`weekly-camera-input-${task.id}`).click();
-                } else {
-                  onSaveCleaning(task.id, selectedWeekId, !isCompleted, evidenceUrl);
-                }
-              }}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                padding: '12px',
-                borderRadius: 'var(--radius-sm)',
-                border: isCompleted ? '1px solid var(--success)' : '1px solid var(--border)',
-                backgroundColor: isCompleted 
-                  ? 'var(--success-light)' 
-                  : isLocked 
-                    ? '#fafafa' 
-                    : 'var(--bg-card)',
-                cursor: isLocked ? 'not-allowed' : 'pointer',
-                opacity: isLocked ? 0.75 : 1,
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {/* Checkbox */}
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  border: isCompleted ? 'none' : '2px solid var(--border)',
-                  backgroundColor: isCompleted ? 'var(--success)' : 'transparent',
+        {filteredTasks.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>No hay tareas de limpieza semanal registradas para esta área.</p>
+        ) : (
+          filteredTasks.map((task) => {
+            const isCompleted = !!task.completedDays[selectedWeekId];
+            const evidenceUrl = task.evidenciaDays ? task.evidenciaDays[selectedWeekId] : null;
+            const observationText = task.observacionesDays ? task.observacionesDays[selectedWeekId] : '';
+            const hasEvidence = !!evidenceUrl;
+            const isLocked = isFutureWeek || isPastWeek;
+            
+            return (
+              <div
+                key={task.id}
+                onClick={() => {
+                  if (isLocked) return;
+                  if (!isCompleted && !hasEvidence) {
+                    document.getElementById(`camera-input-weekly-${task.id}`)?.click();
+                  } else {
+                    onSaveCleaning(task.id, selectedWeekId, !isCompleted, evidenceUrl, observationText);
+                  }
+                }}
+                style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff',
-                  fontWeight: 'bold',
-                  fontSize: '11px',
-                  flexShrink: 0,
-                }}>
-                  {isCompleted ? '✓' : ''}
-                </div>
-
-                {/* Description */}
-                <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13px', color: isLocked ? 'var(--text-muted)' : 'var(--text-main)', textAlign: 'left' }}>
-                    {task.descripcion}
-                  </span>
-                  <span style={{
-                    fontSize: '9px',
-                    fontWeight: 700,
-                    backgroundColor: hasEvidence ? 'var(--success-light)' : 'var(--primary-light)',
-                    color: hasEvidence ? 'var(--success)' : 'var(--primary)',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    marginLeft: '8px',
-                    display: 'inline-block',
-                    border: '1px solid currentColor',
-                    whiteSpace: 'nowrap'
+                  flexDirection: 'column',
+                  gap: '8px',
+                  padding: '12px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: isCompleted ? '1px solid var(--success)' : '1px solid var(--border)',
+                  backgroundColor: isCompleted 
+                    ? 'var(--success-light)' 
+                    : isLocked 
+                      ? '#fafafa' 
+                      : 'var(--bg-card)',
+                  cursor: isLocked ? 'not-allowed' : 'pointer',
+                  opacity: isLocked ? 0.75 : 1,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {/* Checkbox */}
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    border: isCompleted ? 'none' : '2px solid var(--border)',
+                    backgroundColor: isCompleted ? 'var(--success)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    fontSize: '11px',
+                    flexShrink: 0,
                   }}>
-                    {hasEvidence ? 'EVIDENCIA CARGADA ✓' : 'FOTO EVIDENCIA REQUERIDA'}
-                  </span>
-                </div>
-              </div>
+                    {isCompleted ? '✓' : ''}
+                  </div>
 
-              {/* Weekly camera capture */}
-              {!isLocked && (
+                  {/* Description */}
+                  <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', color: isLocked ? 'var(--text-muted)' : 'var(--text-main)', textAlign: 'left' }}>
+                      {task.descripcion}
+                    </span>
+                    <span style={{
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      backgroundColor: hasEvidence ? 'var(--success-light)' : 'var(--primary-light)',
+                      color: hasEvidence ? 'var(--success)' : 'var(--primary)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      marginLeft: '8px',
+                      display: 'inline-block',
+                      border: '1px solid currentColor',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {hasEvidence ? 'EVIDENCIA CARGADA ✓' : 'FOTO EVIDENCIA REQUERIDA'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Weekly camera capture & observation input */}
                 <div style={{ marginLeft: '32px' }}>
                   <CameraEvidence
                     id={`weekly-${task.id}`}
                     evidence={evidenceUrl}
-                    onCapture={(compressedBase64) => onSaveCleaning(task.id, selectedWeekId, true, compressedBase64)}
-                    onRemove={() => onSaveCleaning(task.id, selectedWeekId, false, null)}
-                    label="📸 Abrir Cámara para Evidencia"
-                    successLabel="Foto tomada con éxito"
+                    observation={observationText}
+                    onCapture={(newEvidences) => onSaveCleaning(task.id, selectedWeekId, true, newEvidences, observationText)}
+                    onRemove={() => onSaveCleaning(task.id, selectedWeekId, false, null, null)}
+                    onObservationChange={(text) => onSaveCleaning(task.id, selectedWeekId, isCompleted, evidenceUrl, text)}
+                    label="📸 Tomar / Añadir Foto"
+                    successLabel="Fotos tomadas con éxito"
+                    disabled={isLocked}
                   />
                 </div>
-              )}
-            </div>
-          );
-        })}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

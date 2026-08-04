@@ -6678,7 +6678,7 @@ main();`}
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)',
+          backgroundColor: 'rgba(0,0,0,0.7)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -6690,26 +6690,64 @@ main();`}
             backgroundColor: '#fff',
             padding: '20px',
             borderRadius: 'var(--radius-md)',
-            maxWidth: '500px',
+            maxWidth: '550px',
             width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
             gap: '15px',
             boxShadow: 'var(--shadow-lg)'
           }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--text-main)' }}>Evidencia Fotográfica</h3>
-              <button onClick={() => setPreviewPhoto(null)} style={{ border: 'none', backgroundColor: 'transparent', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+              <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--text-main)', fontWeight: 800 }}>
+                📸 Evidencia Fotográfica ({(() => {
+                  if (!previewPhoto.img) return 0;
+                  if (typeof previewPhoto.img === 'string' && previewPhoto.img.startsWith('[')) {
+                    try { return JSON.parse(previewPhoto.img).length; } catch(e) { return 1; }
+                  }
+                  return Array.isArray(previewPhoto.img) ? previewPhoto.img.length : 1;
+                })()} fotos)
+              </h3>
+              <button onClick={() => setPreviewPhoto(null)} style={{ border: 'none', backgroundColor: 'transparent', fontSize: '18px', cursor: 'pointer', fontWeight: 'bold', color: 'var(--text-muted)' }}>✕</button>
             </div>
+
             <div style={{ textAlign: 'left', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div><strong>Área:</strong> <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{previewPhoto.area}</span></div>
               <div><strong>Tarea:</strong> {previewPhoto.task}</div>
+              {previewPhoto.observation && (
+                <div style={{ padding: '8px 12px', backgroundColor: 'var(--bg-main)', borderRadius: '6px', border: '1px solid var(--border)', marginTop: '4px' }}>
+                  📝 <strong>Observaciones:</strong> <span style={{ color: 'var(--text-main)', fontStyle: 'italic' }}>{previewPhoto.observation}</span>
+                </div>
+              )}
             </div>
-            <div style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden', height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f5' }}>
-              <img src={previewPhoto.img} alt="Evidencia" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+
+            {/* Photo Gallery Grid */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+              {(() => {
+                let imgList = [];
+                if (previewPhoto.img) {
+                  if (Array.isArray(previewPhoto.img)) {
+                    imgList = previewPhoto.img;
+                  } else if (typeof previewPhoto.img === 'string' && previewPhoto.img.startsWith('[')) {
+                    try { imgList = JSON.parse(previewPhoto.img); } catch(e) { imgList = [previewPhoto.img]; }
+                  } else {
+                    imgList = [previewPhoto.img];
+                  }
+                }
+                return imgList.map((src, i) => (
+                  <div key={i} style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden', width: imgList.length === 1 ? '100%' : 'calc(50% - 5px)', height: '240px', backgroundColor: '#f5f5f5', position: 'relative' }}>
+                    <img src={src} alt={`Evidencia ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    <span style={{ position: 'absolute', bottom: '6px', left: '6px', backgroundColor: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                      Foto #{i + 1}
+                    </span>
+                  </div>
+                ));
+              })()}
             </div>
+
             <button onClick={() => setPreviewPhoto(null)} className="btn btn-secondary" style={{ alignSelf: 'flex-end', padding: '6px 16px', fontSize: '12px' }}>
-              Cerrar
+              Cerrar Vista
             </button>
           </div>
         </div>,

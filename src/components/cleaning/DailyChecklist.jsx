@@ -81,11 +81,10 @@ const DailyChecklist = ({ user, checklists, onSaveTask }) => {
               <div
                 key={task.id}
                 onClick={() => {
-                  if (task.requiere_foto && !hasEvidence) {
-                    // Trigger hidden file input through ref or ID
-                    document.getElementById(`camera-input-${task.id}`).click();
+                  if (!task.completado && task.requiere_foto && !hasEvidence) {
+                    document.getElementById(`camera-input-${task.id}`)?.click();
                   } else {
-                    onSaveTask(task.id, !task.completado, task.evidencia);
+                    onSaveTask(task.id, !task.completado, task.evidencia, task.observaciones);
                   }
                 }}
                 style={{
@@ -143,19 +142,19 @@ const DailyChecklist = ({ user, checklists, onSaveTask }) => {
                   </div>
                 </div>
 
-                {/* Device Camera Capture */}
-                {task.requiere_foto && (
-                  <div style={{ marginLeft: '32px' }}>
-                    <CameraEvidence
-                      id={task.id}
-                      evidence={task.evidencia}
-                      onCapture={(compressedBase64) => onSaveTask(task.id, true, compressedBase64)}
-                      onRemove={() => onSaveTask(task.id, false, null)}
-                      label="📸 Abrir Cámara del Dispositivo"
-                      successLabel="Foto tomada con éxito"
-                    />
-                  </div>
-                )}
+                {/* Device Camera Capture & Observation Input */}
+                <div style={{ marginLeft: '32px' }}>
+                  <CameraEvidence
+                    id={task.id}
+                    evidence={task.evidencia}
+                    observation={task.observaciones || ''}
+                    onCapture={(newEvidences) => onSaveTask(task.id, true, newEvidences, task.observaciones)}
+                    onRemove={() => onSaveTask(task.id, false, null, null)}
+                    onObservationChange={(text) => onSaveTask(task.id, task.completado, task.evidencia, text)}
+                    label="📸 Tomar / Añadir Foto"
+                    successLabel="Fotos tomadas con éxito"
+                  />
+                </div>
               </div>
             );
           })

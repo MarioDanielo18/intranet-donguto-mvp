@@ -102,19 +102,22 @@ const INITIAL_CHECKLISTS = [
 ];
 
 const INITIAL_CLEANING_TASKS = [
-  { id: 'CL-1', descripcion: 'Limpieza de mueble en general y menaje', frecuencia: 'SEMANAL', completedDays: {} },
-  { id: 'CL-2', descripcion: 'Limpieza y pulido de vitrina de lunas', frecuencia: 'SEMANAL', completedDays: {} },
-  { id: 'CL-3', descripcion: 'Limpieza de máquina de hielo por fuera/dentro', frecuencia: 'MENSUAL', completedDays: {} },
-  { id: 'CL-4', descripcion: 'Limpieza de visicooler de barra', frecuencia: 'SEMANAL', completedDays: {}, role: 'Barista' },
-  { id: 'CL-5', descripcion: 'Limpieza profunda de exhibidora de postres', frecuencia: 'SEMANAL', completedDays: {}, role: 'Barista' },
-  { id: 'CL-9', descripcion: 'Limpieza de pared del área de barra', frecuencia: 'SEMANAL', completedDays: {}, role: 'Barista' },
-  { id: 'CL-12', descripcion: 'Limpieza de electrodomésticos licuadoras/microondas', frecuencia: 'SEMANAL', completedDays: {}, role: 'Barista' },
-  { id: 'CL-13', descripcion: 'Lavado de coctelería y tazas en repisa', frecuencia: 'SEMANAL', completedDays: {}, role: 'Barista' },
-  { id: 'CL-14', descripcion: 'Limpieza de dispensador de papel', frecuencia: 'SEMANAL', completedDays: {}, role: 'Servicio' },
-  { id: 'CL-17', descripcion: 'Limpieza de vinos y estante de botellas', frecuencia: 'SEMANAL', completedDays: {}, role: 'Servicio' },
-  { id: 'CL-M1', descripcion: 'Desincrustación profunda de caldera de máquina espresso', frecuencia: 'MENSUAL', completedDays: {} },
-  { id: 'CL-M2', descripcion: 'Limpieza profunda de campanas y extractores cocina', frecuencia: 'MENSUAL', completedDays: {} },
-  { id: 'CL-M3', descripcion: 'Sanitización profunda de cisternas y trampas de grasa', frecuencia: 'MENSUAL', completedDays: {} },
+  { id: 'CL-1', descripcion: 'Limpieza de mueble en general y menaje', frecuencia: 'SEMANAL', area: 'SALON', completedDays: {} },
+  { id: 'CL-2', descripcion: 'Limpieza y pulido de vitrina de lunas', frecuencia: 'SEMANAL', area: 'SALON', completedDays: {} },
+  { id: 'CL-3', descripcion: 'Limpieza de máquina de hielo por fuera/dentro', frecuencia: 'MENSUAL', area: 'BARRA', completedDays: {} },
+  { id: 'CL-4', descripcion: 'Limpieza de visicooler de barra', frecuencia: 'SEMANAL', area: 'BARRA', completedDays: {}, role: 'Barista' },
+  { id: 'CL-5', descripcion: 'Limpieza profunda de exhibidora de postres', frecuencia: 'SEMANAL', area: 'BARRA', completedDays: {}, role: 'Barista' },
+  { id: 'CL-9', descripcion: 'Limpieza de pared del área de barra', frecuencia: 'SEMANAL', area: 'BARRA', completedDays: {}, role: 'Barista' },
+  { id: 'CL-12', descripcion: 'Limpieza de electrodomésticos licuadoras/microondas', frecuencia: 'SEMANAL', area: 'BARRA', completedDays: {}, role: 'Barista' },
+  { id: 'CL-13', descripcion: 'Lavado de coctelería y tazas en repisa', frecuencia: 'SEMANAL', area: 'BARRA', completedDays: {}, role: 'Barista' },
+  { id: 'CL-14', descripcion: 'Limpieza de dispensador de papel', frecuencia: 'SEMANAL', area: 'SALON', completedDays: {}, role: 'Servicio' },
+  { id: 'CL-17', descripcion: 'Limpieza de vinos y estante de botellas', frecuencia: 'SEMANAL', area: 'SALON', completedDays: {}, role: 'Servicio' },
+  { id: 'CL-K1', descripcion: 'Limpieza profunda de hornos, freidoras y planchas', frecuencia: 'SEMANAL', area: 'COCINA', completedDays: {}, role: 'Cocina' },
+  { id: 'CL-K2', descripcion: 'Desinfección profunda de estantes y menaje de cocina', frecuencia: 'SEMANAL', area: 'COCINA', completedDays: {}, role: 'Cocina' },
+  { id: 'CL-K3', descripcion: 'Limpieza de paredes y trampas de grasa de cocina', frecuencia: 'SEMANAL', area: 'COCINA', completedDays: {}, role: 'Cocina' },
+  { id: 'CL-M1', descripcion: 'Desincrustación profunda de caldera de máquina espresso', frecuencia: 'MENSUAL', area: 'BARRA', completedDays: {} },
+  { id: 'CL-M2', descripcion: 'Limpieza profunda de campanas y extractores cocina', frecuencia: 'MENSUAL', area: 'COCINA', completedDays: {}, role: 'Cocina' },
+  { id: 'CL-M3', descripcion: 'Sanitización profunda de cisternas y trampas de grasa', frecuencia: 'MENSUAL', area: 'COCINA', completedDays: {} },
 ];
 
 export const INITIAL_TRAINING_ROUTE = [
