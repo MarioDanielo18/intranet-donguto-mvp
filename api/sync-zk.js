@@ -100,7 +100,24 @@ const INITIAL_REPORT_PUNCHES = [
   // Wilfredo Cruz (41670259)
   { punch_id: 'RPT-41670259-2026-07-22-1', biometric_id: '41670259', date: '2026-07-22', time: '07:03 AM', timestamp: '2026-07-22T07:03:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
 
-  // Ariana Olivos Colaboradora (147242)
+  // Ariana Olivos Colaboradora (147242) - Mes Completo de Julio y Agosto
+  { punch_id: 'RPT-147242-2026-07-01-1', biometric_id: '147242', date: '2026-07-01', time: '05:44 PM', timestamp: '2026-07-01T17:44:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-01-2', biometric_id: '147242', date: '2026-07-01', time: '11:06 PM', timestamp: '2026-07-01T23:06:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-02-1', biometric_id: '147242', date: '2026-07-02', time: '02:32 PM', timestamp: '2026-07-02T14:32:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-02-2', biometric_id: '147242', date: '2026-07-02', time: '10:28 PM', timestamp: '2026-07-02T22:28:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-04-1', biometric_id: '147242', date: '2026-07-04', time: '02:35 PM', timestamp: '2026-07-04T14:35:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-04-2', biometric_id: '147242', date: '2026-07-04', time: '10:30 PM', timestamp: '2026-07-04T22:30:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-08-1', biometric_id: '147242', date: '2026-07-08', time: '02:34 PM', timestamp: '2026-07-08T14:34:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-08-2', biometric_id: '147242', date: '2026-07-08', time: '10:17 PM', timestamp: '2026-07-08T22:17:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-09-1', biometric_id: '147242', date: '2026-07-09', time: '10:17 PM', timestamp: '2026-07-09T22:17:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-10-1', biometric_id: '147242', date: '2026-07-10', time: '02:30 PM', timestamp: '2026-07-10T14:30:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-10-2', biometric_id: '147242', date: '2026-07-10', time: '10:30 PM', timestamp: '2026-07-10T22:30:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-15-1', biometric_id: '147242', date: '2026-07-15', time: '02:25 PM', timestamp: '2026-07-15T14:25:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-15-2', biometric_id: '147242', date: '2026-07-15', time: '10:56 PM', timestamp: '2026-07-15T22:56:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-16-1', biometric_id: '147242', date: '2026-07-16', time: '02:35 PM', timestamp: '2026-07-16T14:35:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-16-2', biometric_id: '147242', date: '2026-07-16', time: '11:06 PM', timestamp: '2026-07-16T23:06:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-17-1', biometric_id: '147242', date: '2026-07-17', time: '02:35 PM', timestamp: '2026-07-17T14:35:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
+  { punch_id: 'RPT-147242-2026-07-17-2', biometric_id: '147242', date: '2026-07-17', time: '10:45 PM', timestamp: '2026-07-17T22:45:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
   { punch_id: 'RPT-147242-2026-07-22-1', biometric_id: '147242', date: '2026-07-22', time: '02:31 PM', timestamp: '2026-07-22T14:31:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
   { punch_id: 'RPT-147242-2026-07-22-2', biometric_id: '147242', date: '2026-07-22', time: '10:11 PM', timestamp: '2026-07-22T22:11:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
   { punch_id: 'RPT-147242-2026-07-23-1', biometric_id: '147242', date: '2026-07-23', time: '02:27 PM', timestamp: '2026-07-23T14:27:00Z', device_id: 'DEV-001', device_name: 'ZKTeco M1' },
