@@ -247,7 +247,13 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // 1. TRY SUPABASE Persistent Sync
+  // Build the canonical punches from INITIAL_REPORT_PUNCHES (always available)
+  const hardcodedPunches = INITIAL_REPORT_PUNCHES
+    .filter(p => !EXCLUDED_BIOMETRIC_IDS.includes(String(p.biometric_id)));
+
+  let supabasePunches = [];
+
+  // 1. TRY SUPABASE Persistent Sync (additive, not exclusive)
   const supabaseUrl = process.env.SUPABASE_URL || '';
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
@@ -255,70 +261,65 @@ export default async function handler(req, res) {
     try {
       const supabase = createClient(supabaseUrl, supabaseKey);
       
-      // Auto-seed initial report punches to Supabase if not present
-      try {
-        await supabase
-          .from('asistencia_biometrica')
-          .upsert(
-            INITIAL_REPORT_PUNCHES.map(p => ({
-              punch_id: p.punch_id,
-              biometric_id: p.biometric_id,
-              timestamp: p.timestamp,
-              device_id: p.device_id,
-              device_name: p.device_name
-            })),
-            { onConflict: 'punch_id', ignoreDuplicates: true }
-          );
-      } catch (seedErr) {
-        console.warn('[sync-zk] Auto-seed note:', seedErr.message);
-      }
+      // Auto-seed hardcoded punches to Supabase (fire-and-forget, don't block)
+      supabase
+        .from('asistencia_biometrica')
+        .upsert(
+          INITIAL_REPORT_PUNCHES.map(p => ({
+            punch_id: p.punch_id,
+            biometric_id: p.biometric_id,
+            timestamp: p.timestamp,
+            device_id: p.device_id,
+            device_name: p.device_name
+          })),
+          { onConflict: 'punch_id', ignoreDuplicates: true }
+        )
+        .then(({ error }) => {
+          if (error) console.warn('[sync-zk] Auto-seed note:', error.message);
+        })
+        .catch(err => console.warn('[sync-zk] Seed error:', err.message));
 
-      // Query latest attendance punches
+      // Query any ADDITIONAL live punches from Supabase (from real ZKTeco device)
       const { data: records, error } = await supabase
         .from('asistencia_biometrica')
         .select('*')
+        .not('punch_id', 'like', 'RPT-%')  // Only fetch NON-hardcoded punches
         .order('timestamp', { ascending: false })
-        .limit(1000);
+        .limit(500);
 
-      if (error) throw error;
+      if (!error && records && records.length > 0) {
+        supabasePunches = records
+          .filter(r => !EXCLUDED_BIOMETRIC_IDS.includes(String(r.biometric_id)))
+          .map(r => {
+            // Use Peru timezone offset (UTC-5) for display
+            const punchTime = new Date(r.timestamp);
+            const peruTime = new Date(punchTime.getTime() - 5 * 60 * 60 * 1000);
+            const hours = peruTime.getUTCHours();
+            const minutes = peruTime.getUTCMinutes();
+            const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+            const displayMinutes = minutes.toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const timeStr = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
+            const dateStr = `${peruTime.getUTCFullYear()}-${(peruTime.getUTCMonth()+1).toString().padStart(2,'0')}-${peruTime.getUTCDate().toString().padStart(2,'0')}`;
 
-      // Filter out removed personnel and map records
-      const punches = (records || [])
-        .filter(r => !EXCLUDED_BIOMETRIC_IDS.includes(String(r.biometric_id)))
-        .map(r => {
-          const punchTime = new Date(r.timestamp);
-          const hours = punchTime.getHours();
-          const minutes = punchTime.getMinutes();
-          const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
-          const displayMinutes = minutes.toString().padStart(2, '0');
-          const ampm = hours >= 12 ? 'PM' : 'AM';
-          const timeStr = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
-          const dateStr = punchTime.toISOString().split('T')[0];
-
-          return {
-            punch_id: r.punch_id,
-            biometric_id: String(r.biometric_id),
-            time: timeStr,
-            date: dateStr,
-            timestamp: r.timestamp,
-            device_id: r.device_id || 'DEV-001',
-            device_name: r.device_name || 'ZKTeco M1'
-          };
-        });
-
-      return res.status(200).json({
-        status: 'success',
-        message: 'Successfully synced punches from Supabase cloud database.',
-        punches: punches
-      });
+            return {
+              punch_id: r.punch_id,
+              biometric_id: String(r.biometric_id),
+              time: timeStr,
+              date: dateStr,
+              timestamp: r.timestamp,
+              device_id: r.device_id || 'DEV-001',
+              device_name: r.device_name || 'ZKTeco M1'
+            };
+          });
+      }
     } catch (dbError) {
-      console.error('[sync-zk] Supabase query failed, falling back to report punches:', dbError);
+      console.error('[sync-zk] Supabase query failed, using hardcoded punches only:', dbError.message);
     }
   }
 
-  // 2. FALLBACK IN-MEMORY / STATIC REPORT PUNCHES (If Supabase not reachable)
+  // 2. Also include any live in-memory punches from ADMS device push
   global.latestPunches = global.latestPunches || [];
-  
   const liveMemoryPunches = [...global.latestPunches].map(p => {
     const parts = p.timestamp.split(' ');
     const dateStr = parts[0];
@@ -329,14 +330,8 @@ export default async function handler(req, res) {
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
     const timeStr = `${displayHours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
-
     let localIso = '';
-    try {
-      localIso = new Date(`${dateStr}T${timePart}`).toISOString();
-    } catch (err) {
-      localIso = new Date().toISOString();
-    }
-
+    try { localIso = new Date(`${dateStr}T${timePart}`).toISOString(); } catch (e) { localIso = new Date().toISOString(); }
     return {
       punch_id: p.punch_id,
       biometric_id: String(p.biometric_id),
@@ -346,15 +341,38 @@ export default async function handler(req, res) {
       device_id: p.device_id,
       device_name: p.device_name
     };
-  });
+  }).filter(p => !EXCLUDED_BIOMETRIC_IDS.includes(String(p.biometric_id)));
 
-  const combinedPunches = [...INITIAL_REPORT_PUNCHES, ...liveMemoryPunches]
-    .filter(p => !EXCLUDED_BIOMETRIC_IDS.includes(String(p.biometric_id)));
+  // 3. MERGE all sources, dedup by punch_id (hardcoded takes priority)
+  const seenIds = new Set();
+  const allPunches = [];
+  
+  // Hardcoded first (always reliable - date/time pre-computed in Peru timezone)
+  for (const p of hardcodedPunches) {
+    if (!seenIds.has(p.punch_id)) {
+      seenIds.add(p.punch_id);
+      allPunches.push(p);
+    }
+  }
+  // Then Supabase live device punches
+  for (const p of supabasePunches) {
+    if (!seenIds.has(p.punch_id)) {
+      seenIds.add(p.punch_id);
+      allPunches.push(p);
+    }
+  }
+  // Then in-memory ADMS punches
+  for (const p of liveMemoryPunches) {
+    if (!seenIds.has(p.punch_id)) {
+      seenIds.add(p.punch_id);
+      allPunches.push(p);
+    }
+  }
 
   return res.status(200).json({
     status: 'success',
-    message: 'Synced punches from active personnel report (Fallback Mode).',
-    punches: combinedPunches
+    message: `Synced ${allPunches.length} punches (${hardcodedPunches.length} report + ${supabasePunches.length} live device + ${liveMemoryPunches.length} ADMS).`,
+    punches: allPunches
   });
 }
 

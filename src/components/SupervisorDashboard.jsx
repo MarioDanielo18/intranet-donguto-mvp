@@ -3706,6 +3706,9 @@ export default function SupervisorDashboard({
     const punctualCount = dateLogs.filter(l => l.time && l.delayMin === 0).length;
     const missingCount = totalCount - presentCount;
 
+    // Debug: log arrivalLogs status for diagnosing missing data
+    console.log(`[Attendance Tab] Date: ${selectedDateStr} | Present: ${presentCount}/${totalCount}`, visibleMembers.map(m => `${m.name}: ${(m.arrivalLogs||[]).length} logs, bioId: ${m.biometricId}`));
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
         
@@ -3798,7 +3801,84 @@ export default function SupervisorDashboard({
 
         {/* DETAILED ATTENDANCE FEED TABLE */}
         <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>📋 Planilla del día {new Date(selectedDateStr + 'T12:00:00').toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>📋 Planilla del día {new Date(selectedDateStr + 'T12:00:00').toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  // Generate CSV
+                  const headers = ['Colaborador','Rol','ID Biometrico','Entrada Programada','Hora de Entrada','Hora de Salida','Retraso','Estado'];
+                  const rows = dateLogs.map(log => [
+                    log.member.name,
+                    log.member.role,
+                    log.member.biometricId || 'No asignado',
+                    log.expectedTime,
+                    log.time || 'Sin registro',
+                    log.checkOutTime || 'Sin registro',
+                    log.time ? (log.delayMin > 0 ? `+${formatDurationHrMin(log.delayMin)}` : 'Sin retraso') : 'Ausente',
+                    log.time ? (log.delayMin > 0 ? 'Tardanza' : 'Puntual') : 'Ausente'
+                  ]);
+                  const csvContent = '\uFEFF' + [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `Asistencia_DonGuto_${selectedDateStr}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="btn btn-secondary"
+                style={{ padding: '6px 14px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                📥 Exportar CSV
+              </button>
+              <button
+                onClick={() => {
+                  // Generate printable HTML report
+                  const dateDisplay = new Date(selectedDateStr + 'T12:00:00').toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                  const tableRows = dateLogs.map(log => `
+                    <tr>
+                      <td style="padding:8px 10px;border:1px solid #ddd;font-weight:bold">${log.member.name}</td>
+                      <td style="padding:8px 10px;border:1px solid #ddd">${log.member.role}</td>
+                      <td style="padding:8px 10px;border:1px solid #ddd">${log.member.biometricId || 'N/A'}</td>
+                      <td style="padding:8px 10px;border:1px solid #ddd">${log.expectedTime}</td>
+                      <td style="padding:8px 10px;border:1px solid #ddd;font-weight:${log.time ? 'bold' : 'normal'};color:${log.time ? '#222' : '#999'}">${log.time || '—'}</td>
+                      <td style="padding:8px 10px;border:1px solid #ddd;font-weight:${log.checkOutTime ? 'bold' : 'normal'};color:${log.checkOutTime ? '#222' : '#999'}">${log.checkOutTime || '—'}</td>
+                      <td style="padding:8px 10px;border:1px solid #ddd;color:${log.delayMin > 0 ? '#dc2626' : '#16a34a'}">${log.time ? (log.delayMin > 0 ? '+' + formatDurationHrMin(log.delayMin) : 'Sin retraso') : '—'}</td>
+                      <td style="padding:8px 10px;border:1px solid #ddd">
+                        <span style="padding:3px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:${log.time ? (log.delayMin > 0 ? '#fef3c7' : '#dcfce7') : '#fee2e2'};color:${log.time ? (log.delayMin > 0 ? '#d97706' : '#16a34a') : '#dc2626'}">${log.time ? (log.delayMin > 0 ? 'Tardanza' : 'Puntual') : 'Ausente'}</span>
+                      </td>
+                    </tr>
+                  `).join('');
+                  const htmlReport = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Informe de Asistencia - Don Guto</title><style>@page{size:landscape;margin:15mm}body{font-family:Arial,sans-serif;margin:20px;color:#333}h1{color:#8b1a1a;font-size:18px;margin-bottom:4px}h2{font-size:14px;color:#555;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:15px}th{background:#8b1a1a;color:white;padding:10px;text-align:left;font-size:11px}td{padding:8px 10px;border:1px solid #ddd}.summary{display:flex;gap:20px;margin:15px 0}.summary-card{padding:10px 15px;border:1px solid #ddd;border-radius:6px;font-size:12px}.footer{margin-top:20px;font-size:10px;color:#999;text-align:center;border-top:1px solid #ddd;padding-top:8px}</style></head><body>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                      <div><h1>🏪 DON GUTO — Informe de Asistencia del Personal</h1><h2>${dateDisplay}</h2></div>
+                      <div style="text-align:right;font-size:11px;color:#666">Generado: ${new Date().toLocaleString('es-PE')}<br>Tienda: 28 de Julio Miraflores</div>
+                    </div>
+                    <div class="summary">
+                      <div class="summary-card"><strong>Total:</strong> ${totalCount} empleados</div>
+                      <div class="summary-card" style="color:#16a34a"><strong>Puntuales:</strong> ${punctualCount}</div>
+                      <div class="summary-card" style="color:#d97706"><strong>Tardanzas:</strong> ${lateCount}</div>
+                      <div class="summary-card" style="color:#dc2626"><strong>Ausentes:</strong> ${missingCount}</div>
+                    </div>
+                    <table>
+                      <thead><tr><th>Colaborador</th><th>Rol</th><th>ID Biométrico</th><th>Entrada Programada</th><th>Hora de Entrada</th><th>Hora de Salida</th><th>Retraso</th><th>Estado</th></tr></thead>
+                      <tbody>${tableRows}</tbody>
+                    </table>
+                    <div class="footer">Informe generado automáticamente por la Intranet Don Guto © ${new Date().getFullYear()}</div>
+                  </body></html>`;
+                  const printWin = window.open('', '_blank', 'width=1100,height=700');
+                  printWin.document.write(htmlReport);
+                  printWin.document.close();
+                  setTimeout(() => printWin.print(), 500);
+                }}
+                className="btn"
+                style={{ padding: '6px 14px', fontSize: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                🖨️ Imprimir / PDF
+              </button>
+            </div>
+          </div>
           
           <div className="table-responsive" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>

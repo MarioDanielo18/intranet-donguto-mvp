@@ -295,7 +295,10 @@ export const AppProvider = ({ children }) => {
           
           try {
             const punchesData = await attendanceService.syncZKPunches();
+            console.log('[ZK Sync] Response:', punchesData?.status, 'Punches count:', punchesData?.punches?.length, 'Message:', punchesData?.message);
             if (punchesData && punchesData.status === 'success' && punchesData.punches) {
+              console.log('[ZK Sync] Sample punch:', JSON.stringify(punchesData.punches[0]));
+              console.log('[ZK Sync] DB Users biometric IDs:', databaseUsers.map(u => `${u.name}: ${u.biometricId}`).join(', '));
               const updatedUsers = databaseUsers.map(m => {
                 const bioId = String(m.biometricId || m.biometric_id || '').trim();
                 if (bioId && m.role !== 'Gerente') {
