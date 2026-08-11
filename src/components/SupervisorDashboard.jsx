@@ -1419,6 +1419,8 @@ export default function SupervisorDashboard({
   const [viewMode, setViewMode] = useState('DIARIO');
   const [selectedDateStr, setSelectedDateStr] = useState(new Date().toISOString().split('T')[0]);
   const [selectedCollaborator, setSelectedCollaborator] = useState('TODOS');
+  // Sub-tabs inside the monitoring panel (below live stats)
+  const [punctualitySubTab, setPunctualitySubTab] = useState('indicadores'); // 'indicadores' | 'asistencias'
 
   // Reset collaborator filter when changing department
   useEffect(() => {
@@ -5799,8 +5801,143 @@ main();`}
                   ))}
                 </div>
 
-                {/* Tienda Mas Tardona Widget */}
-                {(() => {
+                {/* ── Punctuality sub-tab switcher ── */}
+                <div style={{
+                  display: 'flex',
+                  gap: '0',
+                  borderBottom: '2px solid var(--border)',
+                  marginBottom: '4px',
+                }}>
+                  {[
+                    { key: 'indicadores', label: '⏰ Indicadores de Puntualidad' },
+                    { key: 'asistencias', label: '📋 Asistencias del Día' },
+                  ].map(tab => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setPunctualitySubTab(tab.key)}
+                      style={{
+                        padding: '10px 20px',
+                        border: 'none',
+                        borderBottom: punctualitySubTab === tab.key
+                          ? '3px solid var(--primary)'
+                          : '3px solid transparent',
+                        marginBottom: '-2px',
+                        backgroundColor: 'transparent',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        color: punctualitySubTab === tab.key ? 'var(--primary)' : 'var(--text-muted)',
+                        transition: 'all 0.2s ease',
+                        fontFamily: 'inherit',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* ── Sub-tab: Asistencias del Día ── */}
+                {punctualitySubTab === 'asistencias' && (() => {
+                  // Build day logs same way as renderStaffAttendanceTab
+                  const dayLogs = [];
+                  visibleMembers.forEach(member => {
+                    if (member.role === 'Gerente') return;
+                    const log = (member.arrivalLogs || []).find(l => l.date === selectedDateStr);
+                    let expectedTimeStr = '07:00 AM';
+                    if (member.role === 'Servicio') expectedTimeStr = '08:00 AM';
+                    else if (['Administrador', 'Supervisor', 'Técnico', 'Auditor', 'Operaciones'].includes(member.role)) expectedTimeStr = '08:00 AM';
+                    if (log) {
+                      dayLogs.push({ member, expectedTime: log.expectedTime || expectedTimeStr, time: log.time, checkOutTime: log.checkOutTime, delayMin: log.delayMin || 0, status: log.delayMin > 0 ? 'Con Retraso' : 'Puntual' });
+                    } else {
+                      dayLogs.push({ member, expectedTime: expectedTimeStr, time: null, checkOutTime: null, delayMin: 0, status: 'Sin registrar' });
+                    }
+                  });
+                  const presentCount = dayLogs.filter(l => l.time).length;
+                  const lateCount    = dayLogs.filter(l => l.time && l.delayMin > 0).length;
+                  const missingCount = dayLogs.length - presentCount;
+
+                  return (
+                    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                      {/* KPI pills */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                        {[
+                          { label: 'Presentes', val: presentCount, color: 'var(--success)', bg: 'var(--success-light)', icon: '✅' },
+                          { label: 'Tardanzas', val: lateCount,    color: 'var(--warning)', bg: 'var(--warning-light)', icon: '⚠️' },
+                          { label: 'Ausentes',  val: missingCount, color: 'var(--error)',   bg: 'var(--error-light)',   icon: '❌' },
+                        ].map(k => (
+                          <div key={k.label} style={{ backgroundColor: k.bg, borderRadius: 'var(--radius-md)', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px', border: `1px solid ${k.color}22` }}>
+                            <span style={{ fontSize: '22px' }}>{k.icon}</span>
+                            <div>
+                              <div style={{ fontSize: '22px', fontWeight: 800, color: k.color, lineHeight: 1 }}>{k.val}</div>
+                              <div style={{ fontSize: '11px', fontWeight: 700, color: k.color, marginTop: '2px' }}>{k.label}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Attendance table */}
+                      <div className="table-responsive">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Colaborador</th>
+                              <th>Rol</th>
+                              <th>Entrada Prog.</th>
+                              <th>Hora Ingreso</th>
+                              <th>Hora Salida</th>
+                              <th>Retraso</th>
+                              <th>Estado</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {dayLogs.length === 0 ? (
+                              <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '30px' }}>Sin colaboradores visibles para esta sede.</td></tr>
+                            ) : (
+                              dayLogs
+                                .sort((a, b) => (b.delayMin || 0) - (a.delayMin || 0))
+                                .map((log, idx) => {
+                                  const isLate    = log.time && log.delayMin > 0;
+                                  const isMissing = !log.time;
+                                  const badgeStyle = isMissing
+                                    ? { bg: 'var(--error-light)',   color: 'var(--error)',   text: '❌ Ausente' }
+                                    : isLate
+                                    ? { bg: 'var(--warning-light)', color: 'var(--warning)', text: '⚠️ Tardanza' }
+                                    : { bg: 'var(--success-light)', color: 'var(--success)', text: '✅ Puntual' };
+                                  return (
+                                    <tr key={idx}>
+                                      <td style={{ fontWeight: 600 }}>{log.member.name}</td>
+                                      <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{log.member.role}</td>
+                                      <td>{log.expectedTime}</td>
+                                      <td style={{ fontWeight: log.time ? 600 : 400, color: log.time ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                                        {log.time || '—'}
+                                      </td>
+                                      <td style={{ color: 'var(--text-muted)' }}>{log.checkOutTime || '—'}</td>
+                                      <td style={{ fontWeight: 700, color: isLate ? 'var(--error)' : 'var(--text-muted)' }}>
+                                        {log.time ? (log.delayMin > 0 ? `+${log.delayMin} min` : 'Sin retraso') : '—'}
+                                      </td>
+                                      <td>
+                                        <span style={{
+                                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                          padding: '3px 10px', borderRadius: '100px', fontSize: '11px',
+                                          fontWeight: 700, backgroundColor: badgeStyle.bg, color: badgeStyle.color,
+                                        }}>
+                                          {badgeStyle.text}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* ── Sub-tab: Indicadores (original block) ── */}
+                {punctualitySubTab === 'indicadores' && (() => {
                   const storeStats = getStorePunctualityStats();
                   const isGlobalView = user.store === 'Todas';
                   
