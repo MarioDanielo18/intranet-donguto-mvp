@@ -98,16 +98,16 @@ const App = () => {
     <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingBottom: '60px' }}>
       
       {/* HEADER BAR */}
-      <header className="glass" style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 100 }}>
+      <header className="glass" style={{ borderBottom: '1px solid rgba(139, 26, 26, 0.08)', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}>
         <div className="container header-container" style={{ height: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {/* Logo brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ backgroundColor: 'var(--primary)', color: '#fff', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '16px' }}>
+            <div style={{ backgroundColor: 'var(--primary)', color: '#fff', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '15px', letterSpacing: '0.5px', fontFamily: "'Outfit', 'Inter', sans-serif", boxShadow: '0 2px 8px rgba(139, 26, 26, 0.3)' }}>
               DG
             </div>
             <div>
-              <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)', display: 'block', letterSpacing: '0.5px' }}>DON GUTO</span>
-              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginTop: '-4px', letterSpacing: '1px' }}>INTRANET • ONLINE</span>
+              <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)', display: 'block', letterSpacing: '0.5px', fontFamily: "'Outfit', 'Inter', sans-serif" }}>DON GUTO</span>
+              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginTop: '-3px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Intranet Operativa</span>
             </div>
           </div>
 
@@ -126,6 +126,7 @@ const App = () => {
                 cursor: 'pointer',
               }}
               title="Cambiar tema de la página"
+              aria-label={theme === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
             >
               {theme === 'light' ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}
             </button>
@@ -152,6 +153,7 @@ const App = () => {
                 onClick={() => setIsDrawerOpen(true)}
                 className="hamburger-btn"
                 title="Abrir menú"
+                aria-label="Abrir menú de navegación"
               >
                 ☰
               </button>
@@ -236,7 +238,7 @@ const App = () => {
           <div className="drawer-content" onClick={(e) => e.stopPropagation()}>
             <div className="drawer-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ backgroundColor: 'var(--primary)', color: '#fff', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '16px' }}>
+                <div style={{ backgroundColor: 'var(--primary)', color: '#fff', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '15px', letterSpacing: '0.5px', fontFamily: "'Outfit', 'Inter', sans-serif", boxShadow: '0 2px 8px rgba(139, 26, 26, 0.3)' }}>
                   DG
                 </div>
                 <div>
@@ -246,7 +248,10 @@ const App = () => {
               </div>
               <button 
                 onClick={() => setIsDrawerOpen(false)}
-                style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer', padding: '5px' }}
+                style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer', padding: '8px', borderRadius: '6px', transition: 'background 0.2s ease' }}
+                aria-label="Cerrar menú de navegación"
+                onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                onMouseLeave={(e) => e.target.style.background = 'transparent'}
               >
                 ✕
               </button>
