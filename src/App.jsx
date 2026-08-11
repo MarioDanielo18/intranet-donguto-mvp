@@ -310,6 +310,12 @@ const App = () => {
                     ⏰ Control de Asistencia
                   </button>
                   <button
+                    className={`drawer-btn ${activeTab === 'punctuality' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('punctuality'); setIsDrawerOpen(false); }}
+                  >
+                    ⏰ Indicadores de Puntualidad
+                  </button>
+                  <button
                     className={`drawer-btn ${activeTab === 'logs' ? 'active' : ''}`}
                     onClick={() => { setActiveTab('logs'); setIsDrawerOpen(false); }}
                   >
