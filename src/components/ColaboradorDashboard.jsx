@@ -1118,7 +1118,7 @@ export default function ColaboradorDashboard({
               <div style={{ borderBottom: '2px solid var(--border)', paddingBottom: '10px' }}>
                 <h3 style={{ margin: 0, color: 'var(--primary)' }}>Control de Asistencia del Colaborador</h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Registra tu hora de llegada a la tienda y visualiza tu historial de puntualidad.
+                  Visualiza tu historial de puntualidad y registros de asistencia.
                 </p>
               </div>
 
@@ -1142,40 +1142,6 @@ export default function ColaboradorDashboard({
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>TOTAL MARCACIONES</span>
                   <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)' }}>{totalLogs} días</span>
                 </div>
-              </div>
-
-              {/* Clock In Panel */}
-              <div className="card" style={{ padding: '20px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  🕒 Registrar Entrada del Día
-                </h4>
-
-                {clockedInToday && (
-                  <div style={{
-                    padding: '12px 20px',
-                    borderRadius: '8px',
-                    backgroundColor: 'var(--success-light)',
-                    border: '1px solid var(--success)',
-                    color: 'var(--success)',
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    textAlign: 'center'
-                  }}>
-                    <strong style={{ fontSize: '13px' }}>🟢 Asistencia Activa</strong>
-                    <div style={{ fontSize: '12.5px', display: 'flex', justifyContent: 'space-around', marginTop: '4px', borderTop: '1px solid rgba(22, 163, 74, 0.2)', paddingTop: '4px' }}>
-                      <span>Hora de Entrada: <strong>{todaysLog?.time}</strong></span>
-                      <span>Marcajes Registrados: <strong>{todaysLog?.totalPunches || 1}</strong></span>
-                    </div>
-                  </div>
-                )}
-
-                <BiometricScanner
-                  user={user}
-                  biometricDevices={biometricDevices}
-                  onBiometricScan={onBiometricScan}
-                />
               </div>
 
               {/* Attendance Logs History Table */}
