@@ -3769,18 +3769,6 @@ export default function SupervisorDashboard({
             >
               Siguiente →
             </button>
-
-            <span style={{
-              fontSize: '12px',
-              fontWeight: 800,
-              padding: '6px 12px',
-              borderRadius: '4px',
-              backgroundColor: selectedDateStr === new Date().toISOString().split('T')[0] ? 'var(--success-light)' : 'var(--primary-light)',
-              color: selectedDateStr === new Date().toISOString().split('T')[0] ? 'var(--success)' : 'var(--primary)',
-              border: '1px solid currentColor'
-            }}>
-              {selectedDateStr === new Date().toISOString().split('T')[0] ? '🟢 EN VIVO (HOY)' : '⏳ HISTÓRICO'}
-            </span>
           </div>
         </div>
 
@@ -6173,20 +6161,6 @@ main();`}
                     >
                       Siguiente →
                     </button>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <span style={{
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      padding: '6px 12px',
-                      borderRadius: '4px',
-                      backgroundColor: selectedDateStr === new Date().toISOString().split('T')[0] ? 'var(--success-light)' : 'var(--primary-light)',
-                      color: selectedDateStr === new Date().toISOString().split('T')[0] ? 'var(--success)' : 'var(--primary)',
-                      border: '1px solid currentColor'
-                    }}>
-                      {selectedDateStr === new Date().toISOString().split('T')[0] ? '🟢 EN VIVO (HOY)' : '⏳ HISTÓRICO'}
-                    </span>
                   </div>
                 </div>
 
