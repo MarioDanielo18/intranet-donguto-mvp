@@ -2427,8 +2427,16 @@ export default function SupervisorDashboard({
   };
 
   const renderMultistoreDashboard = () => {
-    const storesList = ['28 de Julio Miraflores', 'Basadre - San Isidro', 'Arriola - La Victoria', 'Barranco'];
-    const filteredStores = monitoringStoreFilter === 'Todas' ? storesList : storesList.filter(s => s === monitoringStoreFilter);
+    const storesList = [
+      'Miraflores (José Gálvez)',
+      'San Isidro (Jorge Basadre)',
+      'Santa Catalina / La Victoria',
+      'Barranco',
+      '28 de Julio Miraflores',
+      'Basadre - San Isidro',
+      'Arriola - La Victoria'
+    ];
+    const filteredStores = monitoringStoreFilter === 'Todas' ? storesList.slice(0, 4) : storesList.filter(s => s === monitoringStoreFilter || (s.includes('Miraflores') && monitoringStoreFilter.includes('Miraflores')) || (s.includes('Basadre') && monitoringStoreFilter.includes('San Isidro')));
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -2451,12 +2459,13 @@ export default function SupervisorDashboard({
             value={monitoringStoreFilter}
             onChange={(e) => setMonitoringStoreFilter(e.target.value)}
             className="input"
-            style={{ padding: '5px 10px', fontSize: '12.5px', height: '32px', minWidth: '220px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
+            style={{ padding: '5px 10px', fontSize: '12.5px', height: '32px', minWidth: '280px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
           >
-            <option value="Todas">🌐 Todas las Sedes Habilitadas</option>
-            <option value="28 de Julio Miraflores">🏢 Sede 28 de Julio Miraflores</option>
-            <option value="Arriola - La Victoria">🏢 Sede Arriola - La Victoria</option>
-            <option value="Barranco">🏢 Sede Barranco</option>
+            <option value="Todas">🌐 Todas las Sedes Habilitadas (4 Sedes)</option>
+            <option value="Miraflores (José Gálvez)">📍 Miraflores — Calle José Gálvez 432</option>
+            <option value="San Isidro (Jorge Basadre)">📍 San Isidro — Av. Jorge Basadre Grohmann 487</option>
+            <option value="Santa Catalina / La Victoria">📍 Santa Catalina / La Victoria — Av. Nicolás Arriola 503</option>
+            <option value="Barranco">📍 Barranco — Av. Almirante Miguel Grau 1640</option>
           </select>
         </div>
 
