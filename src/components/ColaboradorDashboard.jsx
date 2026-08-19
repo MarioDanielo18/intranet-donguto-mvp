@@ -9,6 +9,7 @@ import CartaDigital from './CartaDigital';
 import DailyChecklist from './cleaning/DailyChecklist';
 import WeeklyCleaning from './cleaning/WeeklyCleaning';
 import MonthlyCleaning from './cleaning/MonthlyCleaning';
+import UniformCheckinModal from './attendance/UniformCheckinModal';
 
 const GENERAL_TRAINING_COURSES = [
   {
@@ -267,6 +268,7 @@ export default function ColaboradorDashboard({
   const [userIp, setUserIp] = useState('Obteniendo IP...');
   const [selectedWifi, setSelectedWifi] = useState('external'); // '28 de Julio Miraflores' | 'external'
   const [mySchedOffset, setMySchedOffset] = useState(0);
+  const [showUniformModal, setShowUniformModal] = useState(false);
 
   useEffect(() => {
     fetch('https://api.ipify.org?format=json')
@@ -853,8 +855,16 @@ export default function ColaboradorDashboard({
     );
   };
 
+  const todayStr = currentTime.toISOString().split('T')[0];
+  const hasClockedInToday = arrivalLogs.some(log => log.date === todayStr);
+  const isCollaboratorRole = !['Administrador', 'Gerente', 'Auditor'].includes(user.role);
+  const shouldBlockForAttendance = (user.store === 'Basadre - San Isidro' || isCollaboratorRole) && !hasClockedInToday;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {(shouldBlockForAttendance || showUniformModal) && (
+        <UniformCheckinModal user={user} onClose={() => setShowUniformModal(false)} />
+      )}
       {/* Tab Menu Header */}
       <div className="card glass dashboard-tabs" style={{ padding: '0 12px', display: 'flex', gap: '5px' }}>
         <button
@@ -1115,11 +1125,31 @@ export default function ColaboradorDashboard({
 
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
-              <div style={{ borderBottom: '2px solid var(--border)', paddingBottom: '10px' }}>
-                <h3 style={{ margin: 0, color: 'var(--primary)' }}>Control de Asistencia del Colaborador</h3>
-                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Visualiza tu historial de puntualidad y registros de asistencia.
-                </p>
+              <div style={{ borderBottom: '2px solid var(--border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: 'var(--primary)' }}>Control de Asistencia del Colaborador</h3>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Visualiza tu historial de puntualidad y registros de asistencia.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowUniformModal(true)}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    borderRadius: '8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: 'var(--primary-light)',
+                    color: 'var(--primary)',
+                    border: '1px solid var(--primary)'
+                  }}
+                >
+                  📸 Tomar / Actualizar Foto de Uniforme
+                </button>
               </div>
 
               {/* Attendance Statistics Cards */}

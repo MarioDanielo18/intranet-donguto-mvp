@@ -514,7 +514,7 @@ export const AppProvider = ({ children }) => {
     );
   };
 
-  const handleClockIn = (username, date, time, expectedTime, delayMin) => {
+  const handleClockIn = (username, date, time, expectedTime, delayMin, photoUrl = null) => {
     setTeamMembers(prev =>
       prev.map(m => {
         if (m.username === username) {
@@ -550,7 +550,8 @@ export const AppProvider = ({ children }) => {
               checkOutTime: latestTime,
               totalPunches: uniquePunches.length,
               allPunches: uniquePunches,
-              delayMin: newDelayMin
+              delayMin: newDelayMin,
+              photoUrl: photoUrl || existingLog.photoUrl || null
             };
             
             const newLogs = [...logs];
@@ -566,7 +567,8 @@ export const AppProvider = ({ children }) => {
                 delayMin,
                 checkOutTime: null,
                 totalPunches: 1,
-                allPunches: [time]
+                allPunches: [time],
+                photoUrl: photoUrl || null
               }]
             };
           }
@@ -574,6 +576,67 @@ export const AppProvider = ({ children }) => {
         return m;
       })
     );
+  };
+
+  const handlePhotoClockIn = (username, photoUrl) => {
+    const now = new Date();
+    const punchDateStr = now.toISOString().split('T')[0];
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+    const displayMinutes = minutes.toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const punchTimeStr = `${displayHours.toString().padStart(2, '0')}:${displayMinutes} ${ampm}`;
+
+    const employee = teamMembers.find(m => m.username === username);
+    if (!employee) return { success: false, message: 'Usuario no encontrado' };
+
+    let expectedTimeStr = '08:00 AM';
+    const userDaySchedule = weeklySchedules.find(
+      s => String(s.username).trim().toLowerCase() === String(username).trim().toLowerCase() && s.fecha === punchDateStr
+    );
+
+    let delayMin = 0;
+    const currentMins = hours * 60 + minutes;
+
+    if (SUPERVISORY_ROLES.includes(employee.role)) {
+      expectedTimeStr = '--';
+    } else if (userDaySchedule && userDaySchedule.hora_entrada && !['OFF', 'BARRANCO', 'DESCANSO'].includes(userDaySchedule.hora_entrada)) {
+      const [hStr, mStr] = userDaySchedule.hora_entrada.split(':');
+      const hourNum = parseInt(hStr, 10);
+      const ampm = hourNum >= 12 ? 'PM' : 'AM';
+      const displayHour = hourNum > 12 ? hourNum - 12 : (hourNum === 0 ? 12 : hourNum);
+      expectedTimeStr = `${displayHour.toString().padStart(2, '0')}:${mStr} ${ampm}`;
+
+      const expectedMins = hourNum * 60 + parseInt(mStr, 10);
+      const diff = currentMins - expectedMins;
+      if (diff > 5) {
+        delayMin = diff;
+      }
+    }
+
+    handleClockIn(username, punchDateStr, punchTimeStr, expectedTimeStr, delayMin, photoUrl);
+
+    const newLog = {
+      id: `PHOTO-${Date.now().toString().slice(-4)}`,
+      date: now.toISOString(),
+      name: employee.name,
+      username: employee.username,
+      role: employee.role,
+      store: employee.store || 'Basadre - San Isidro',
+      deviceId: 'MOBILE-PHOTO',
+      deviceName: 'Foto de Uniforme en Celular',
+      status: 'Success',
+      photoUrl: photoUrl
+    };
+
+    setBiometricLogs(prev => {
+      const next = [newLog, ...prev];
+      localStorage.setItem('donguto-biometric-logs', JSON.stringify(next));
+      return next;
+    });
+
+    return { success: true, message: 'Asistencia y foto registradas con éxito' };
   };
 
   const handleApproveTrainingDay = (username, dayId, status) => {
@@ -849,7 +912,7 @@ export const AppProvider = ({ children }) => {
       detailIncidentId, setDetailIncidentId,
       handleLogin, handleLogout,
       handleSaveTask, handleSaveCleaning,
-      handleClockIn, handleApproveTrainingDay,
+      handleClockIn, handlePhotoClockIn, handleApproveTrainingDay,
       handleAddTeamMember, handleApproveCollaborator,
       handleRejectCollaborator, handleSaveAudit,
       handleUpdateCollaborator, handleAddIncident,

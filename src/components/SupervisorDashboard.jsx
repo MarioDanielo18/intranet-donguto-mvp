@@ -2427,7 +2427,7 @@ export default function SupervisorDashboard({
   };
 
   const renderMultistoreDashboard = () => {
-    const storesList = ['28 de Julio Miraflores', 'Arriola - La Victoria', 'Barranco'];
+    const storesList = ['28 de Julio Miraflores', 'Basadre - San Isidro', 'Arriola - La Victoria', 'Barranco'];
     const filteredStores = monitoringStoreFilter === 'Todas' ? storesList : storesList.filter(s => s === monitoringStoreFilter);
 
     return (
@@ -3212,7 +3212,7 @@ export default function SupervisorDashboard({
     });
 
     // Unique stores for filters (only for non-admins)
-    const uniqueStores = ['28 de Julio Miraflores'];
+    const uniqueStores = ['28 de Julio Miraflores', 'Basadre - San Isidro'];
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-fade-in">
