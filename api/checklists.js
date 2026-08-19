@@ -1,39 +1,29 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
-
-let supabase = null;
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
-}
+import { getSupabaseServer } from './lib/supabaseServer.js';
+import { setCorsHeaders, parseJsonBody, sendSuccess, sendError } from './lib/saasHelper.js';
 
 export default async function handler(req, res) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  const supabase = getSupabaseServer();
+
   if (!supabase) {
-    return res.status(200).json({ status: 'fallback', message: 'Supabase not configured. Using local fallback.' });
+    return sendSuccess(res, { status: 'fallback', message: 'Supabase not configured. Using local fallback.' });
   }
 
   // 1. GET: Load checklists for a specific date and store
   if (req.method === 'GET') {
-    const { date, store } = req.query;
+    const { date, store, organizationId } = req.query;
 
     if (!date || !store) {
-      return res.status(400).json({ error: 'Missing date or store query parameter.' });
+      return sendError(res, 'Missing date or store query parameter.', 400);
     }
 
     try {
-      let query = supabase
-        .from('checklists_completados')
-        .select('*');
+      let query = supabase.from('checklists_completados').select('*');
 
       if (date && date !== 'all' && date !== 'TODOS') {
         if (date.length === 7) {
@@ -47,24 +37,26 @@ export default async function handler(req, res) {
         query = query.eq('store', store);
       }
 
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      }
+
       const { data, error } = await query;
 
       if (error) {
-        // If the table doesn't exist, we return fallback rather than 500
         if (
           error.code === 'P0001' || 
           error.message.includes('relation "checklists_completados" does not exist') ||
           error.message.includes('Could not find the table') ||
           error.message.includes('schema cache')
         ) {
-          return res.status(200).json({ status: 'fallback', message: 'Table does not exist. Using fallback.' });
+          return sendSuccess(res, { status: 'fallback', message: 'Table does not exist. Using fallback.' });
         }
         throw error;
       }
 
-      return res.status(200).json({
-        status: 'success',
-        records: data.map(r => ({
+      return sendSuccess(res, {
+        records: (data || []).map(r => ({
           taskId: r.task_id,
           completado: r.completado,
           evidencia: r.evidencia,
@@ -75,61 +67,58 @@ export default async function handler(req, res) {
       });
     } catch (err) {
       console.error('[checklists GET] Error:', err);
-      return res.status(500).json({ error: err.message });
+      return sendError(res, err.message, 500);
     }
   }
 
   // 2. POST: Upsert checklist completion status and evidence
   if (req.method === 'POST') {
-    let body = '';
+    let body;
     try {
-      body = await new Promise((resolve, reject) => {
-        let data = '';
-        req.on('data', chunk => {
-          data += chunk;
-        });
-        req.on('end', () => {
-          resolve(JSON.parse(data));
-        });
-        req.on('error', reject);
-      });
+      body = await parseJsonBody(req);
     } catch (e) {
-      return res.status(400).json({ error: 'Invalid JSON request body.' });
+      return sendError(res, 'Invalid JSON request body.', 400);
     }
 
-    const { taskId, date, completado, evidencia, colaborador, store } = body;
+    const { taskId, date, completado, evidencia, colaborador, store, organizationId } = body;
 
     // Security Hardening: Server-side validation
     if (!taskId || typeof taskId !== 'string' || taskId.length > 100) {
-      return res.status(400).json({ error: 'Invalid or missing parameter: taskId' });
+      return sendError(res, 'Invalid or missing parameter: taskId', 400);
     }
     if (!date || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return res.status(400).json({ error: 'Invalid or missing parameter: date (expected YYYY-MM-DD)' });
+      return sendError(res, 'Invalid or missing parameter: date (expected YYYY-MM-DD)', 400);
     }
     if (typeof completado !== 'boolean') {
-      return res.status(400).json({ error: 'Invalid or missing parameter: completado' });
+      return sendError(res, 'Invalid or missing parameter: completado', 400);
     }
     if (evidencia !== null && evidencia !== undefined && typeof evidencia !== 'string') {
-      return res.status(400).json({ error: 'Invalid parameter: evidencia' });
+      return sendError(res, 'Invalid parameter: evidencia', 400);
     }
     if (!colaborador || typeof colaborador !== 'string' || colaborador.length > 100) {
-      return res.status(400).json({ error: 'Invalid or missing parameter: colaborador' });
+      return sendError(res, 'Invalid or missing parameter: colaborador', 400);
     }
     if (!store || typeof store !== 'string' || store.length > 100) {
-      return res.status(400).json({ error: 'Invalid or missing parameter: store' });
+      return sendError(res, 'Invalid or missing parameter: store', 400);
     }
 
     try {
-      const { data, error } = await supabase
+      const payload = {
+        task_id: taskId,
+        date: date,
+        completado: completado,
+        evidencia: evidencia || null,
+        colaborador: colaborador,
+        store: store
+      };
+
+      if (organizationId) {
+        payload.organization_id = organizationId;
+      }
+
+      const { error } = await supabase
         .from('checklists_completados')
-        .upsert({
-          task_id: taskId,
-          date: date,
-          completado: completado,
-          evidencia: evidencia || null,
-          colaborador: colaborador,
-          store: store
-        }, { onConflict: 'task_id,date,store' });
+        .upsert(payload, { onConflict: 'task_id,date,store' });
 
       if (error) {
         if (
@@ -138,17 +127,17 @@ export default async function handler(req, res) {
           error.message.includes('Could not find the table') ||
           error.message.includes('schema cache')
         ) {
-          return res.status(200).json({ status: 'fallback', message: 'Table does not exist. Using fallback.' });
+          return sendSuccess(res, { status: 'fallback', message: 'Table does not exist. Using fallback.' });
         }
         throw error;
       }
 
-      return res.status(200).json({ status: 'success', message: 'Checklist updated successfully.' });
+      return sendSuccess(res, { message: 'Checklist updated successfully.' });
     } catch (err) {
       console.error('[checklists POST] Error:', err);
-      return res.status(500).json({ error: err.message });
+      return sendError(res, err.message, 500);
     }
   }
 
-  return res.status(405).json({ error: 'Method not allowed.' });
+  return sendError(res, 'Method not allowed.', 405);
 }

@@ -1,72 +1,61 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from './lib/supabaseServer.js';
+import { setCorsHeaders, parseJsonBody, sendSuccess, sendError } from './lib/saasHelper.js';
 
 export default async function handler(req, res) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendError(res, 'Method not allowed', 405);
   }
 
-  // Read body from request
-  let body = '';
+  let body;
   try {
-    body = await new Promise((resolve, reject) => {
-      let data = '';
-      req.on('data', chunk => {
-        data += chunk;
-      });
-      req.on('end', () => {
-        resolve(JSON.parse(data));
-      });
-      req.on('error', reject);
-    });
+    body = await parseJsonBody(req);
   } catch (e) {
-    return res.status(400).json({ error: 'Invalid JSON request body' });
+    return sendError(res, 'Invalid JSON request body', 400);
   }
 
-  const { username, password } = body;
+  const { username, password, organizationSlug } = body;
   if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required' });
+    return sendError(res, 'Username and password are required', 400);
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || '';
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+  const supabase = getSupabaseServer();
 
-  // If Supabase is not configured, inform client to use local fallback
-  if (!supabaseUrl || !supabaseKey) {
-    return res.status(200).json({ status: 'fallback', message: 'Supabase not configured. Using local fallback.' });
+  // Fallback mode if Supabase is not configured
+  if (!supabase) {
+    return sendSuccess(res, { status: 'fallback', message: 'Supabase not configured. Using local fallback.' });
   }
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     // Query user by username
-    const { data: user, error } = await supabase
+    let query = supabase
       .from('usuarios')
       .select('*')
-      .eq('username', username.toLowerCase().trim())
-      .single();
+      .eq('username', username.toLowerCase().trim());
 
-    if (error || !user) {
-      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+    const { data: users, error } = await query;
+
+    if (error || !users || users.length === 0) {
+      return sendError(res, 'Usuario o contraseña incorrectos', 401);
     }
 
-    // Verify password (plain-text comparison for simplicity in this MVP config)
-    if (user.password !== password) {
-      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+    const user = users[0];
+
+    // Password comparison
+    const dbPassword = user.password_hash || user.password;
+    if (dbPassword !== password) {
+      return sendError(res, 'Usuario o contraseña incorrectos', 401);
     }
 
     // Return authenticated user profile (excluding password)
-    return res.status(200).json({
-      status: 'success',
+    return sendSuccess(res, {
       user: {
+        id: user.id,
         username: user.username,
         name: user.name,
         apellidos: user.apellidos || '',
@@ -74,13 +63,14 @@ export default async function handler(req, res) {
         email: user.email || '',
         telefono: user.telefono || '',
         role: user.role,
-        store: user.store,
-        biometricId: user.biometric_id || null
+        store: user.store_name || user.store || 'Todas',
+        biometricId: user.biometric_id || null,
+        organizationId: user.organization_id || null
       }
     });
 
   } catch (err) {
     console.error('[login-api] Error:', err);
-    return res.status(500).json({ error: 'Internal server error: ' + err.message });
+    return sendError(res, 'Internal server error: ' + err.message, 500);
   }
 }
