@@ -858,8 +858,7 @@ export default function ColaboradorDashboard({
   const todayStr = currentTime.toISOString().split('T')[0];
   const hasClockedInToday = arrivalLogs.some(log => log.date === todayStr);
   const isCollaboratorRole = !['Administrador', 'Gerente', 'Auditor'].includes(user.role);
-  const isExcludedStore = user?.store === '28 de Julio Miraflores' || user?.store === 'Miraflores (José Gálvez)' || user?.store?.includes('José Gálvez');
-  const shouldBlockForAttendance = isCollaboratorRole && !isExcludedStore && !hasClockedInToday;
+  const shouldBlockForAttendance = isCollaboratorRole && !hasClockedInToday;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

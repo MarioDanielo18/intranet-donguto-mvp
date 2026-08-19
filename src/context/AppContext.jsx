@@ -9,10 +9,9 @@ const AppContext = createContext(null);
 export const SUPERVISORY_ROLES = ['Administrador', 'Gerente', 'Supervisor', 'Técnico', 'Auditor', 'Operaciones'];
 
 export const OFFICIAL_STORES = [
-  { id: 'miraflores', name: 'Miraflores (José Gálvez)', address: 'Calle José Gálvez 432', hasBiometric: true },
-  { id: 'san_isidro', name: 'San Isidro (Jorge Basadre)', address: 'Av. Jorge Basadre Grohmann 487', hasBiometric: false },
-  { id: 'la_victoria', name: 'Santa Catalina / La Victoria', address: 'Av. Nicolás Arriola 503', hasBiometric: false },
-  { id: 'barranco', name: 'Barranco', address: 'Av. Almirante Miguel Grau 1640', hasBiometric: false }
+  { id: 'san_isidro', name: 'San Isidro (Jorge Basadre)', address: 'Av. Jorge Basadre Grohmann 487', status: 'Activa', hasBiometric: false },
+  { id: 'la_victoria', name: 'Santa Catalina / La Victoria', address: 'Av. Nicolás Arriola 503', status: 'Activa', hasBiometric: false },
+  { id: 'barranco', name: 'Barranco', address: 'Av. Almirante Miguel Grau 1640', status: 'Activa', hasBiometric: false }
 ];
 
 // Initialize mock data directly from Don Guto excel specs

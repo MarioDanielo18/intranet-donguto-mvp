@@ -2428,15 +2428,14 @@ export default function SupervisorDashboard({
 
   const renderMultistoreDashboard = () => {
     const storesList = [
-      'Miraflores (José Gálvez)',
       'San Isidro (Jorge Basadre)',
       'Santa Catalina / La Victoria',
       'Barranco',
-      '28 de Julio Miraflores',
       'Basadre - San Isidro',
-      'Arriola - La Victoria'
+      'Arriola - La Victoria',
+      '28 de Julio Miraflores'
     ];
-    const filteredStores = monitoringStoreFilter === 'Todas' ? storesList.slice(0, 4) : storesList.filter(s => s === monitoringStoreFilter || (s.includes('Miraflores') && monitoringStoreFilter.includes('Miraflores')) || (s.includes('Basadre') && monitoringStoreFilter.includes('San Isidro')));
+    const filteredStores = monitoringStoreFilter === 'Todas' ? storesList.slice(0, 3) : storesList.filter(s => s === monitoringStoreFilter || (s.includes('Basadre') && monitoringStoreFilter.includes('San Isidro')));
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -2444,7 +2443,7 @@ export default function SupervisorDashboard({
           <div>
             <h2 style={{ margin: 0, color: 'var(--primary)' }}>Centro de Control Multitienda (Monitoreo Supervisor)</h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: 'var(--text-muted)' }}>
-              Consolidado en tiempo real del desempeño operativo, asistencia y auditorías de todas las sedes de Don Guto.
+              Consolidado en tiempo real del desempeño operativo, asistencia y auditorías de todas las sedes activas de Don Guto.
             </p>
           </div>
           <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: 'var(--success-light)', color: 'var(--success)', padding: '4px 10px', borderRadius: '12px', border: '1px solid var(--success)' }}>
@@ -2461,8 +2460,7 @@ export default function SupervisorDashboard({
             className="input"
             style={{ padding: '5px 10px', fontSize: '12.5px', height: '32px', minWidth: '280px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}
           >
-            <option value="Todas">🌐 Todas las Sedes Habilitadas (4 Sedes)</option>
-            <option value="Miraflores (José Gálvez)">📍 Miraflores — Calle José Gálvez 432</option>
+            <option value="Todas">🌐 Todas las Sedes Activas (3 Sedes Operativas)</option>
             <option value="San Isidro (Jorge Basadre)">📍 San Isidro — Av. Jorge Basadre Grohmann 487</option>
             <option value="Santa Catalina / La Victoria">📍 Santa Catalina / La Victoria — Av. Nicolás Arriola 503</option>
             <option value="Barranco">📍 Barranco — Av. Almirante Miguel Grau 1640</option>
